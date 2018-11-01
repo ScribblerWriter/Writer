@@ -49,21 +49,38 @@ update msg model =
 countWords : String -> Model -> Model
 countWords words model =
     let
+        trimmedWordCount : Int
+        trimmedWordCount =
+            words
+                |> String.words
+                |> trimNonWords
+                |> List.length
+
         dif : Int
         dif =
-            List.length (String.words words) - model.actualWordsAtLastCheck
+            trimmedWordCount - model.actualWordsAtLastCheck
     in
     if dif > 0 then
         { model
             | writtenCount = model.writtenCount + dif
-            , actualWordsAtLastCheck = List.length (String.words words)
+            , actualWordsAtLastCheck = trimmedWordCount
         }
 
     else
-        { model | actualWordsAtLastCheck = List.length (String.words words) }
+        { model | actualWordsAtLastCheck = trimmedWordCount }
+
 
 trimNonWords : List String -> List String
-trimNonWords
+trimNonWords words =
+    words
+        |> List.filter isWordAlphNum
+
+
+isWordAlphNum : String -> Bool
+isWordAlphNum word =
+    String.any Char.isAlphaNum word
+
+
 
 -- View
 
