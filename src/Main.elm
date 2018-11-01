@@ -53,7 +53,7 @@ countWords words model =
         trimmedWordCount =
             words
                 |> String.words
-                |> trimNonWords
+                |> List.filter (String.any Char.isAlphaNum)
                 |> List.length
 
         dif : Int
@@ -68,17 +68,6 @@ countWords words model =
 
     else
         { model | actualWordsAtLastCheck = trimmedWordCount }
-
-
-trimNonWords : List String -> List String
-trimNonWords words =
-    words
-        |> List.filter isWordAlphNum
-
-
-isWordAlphNum : String -> Bool
-isWordAlphNum word =
-    String.any Char.isAlphaNum word
 
 
 

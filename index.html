@@ -4385,6 +4385,13 @@ var elm$core$Array$foldr = F3(
 var elm$core$Array$toList = function (array) {
 	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
 };
+var elm$core$Basics$add = _Basics_add;
+var elm$core$Basics$apR = F2(
+	function (x, f) {
+		return f(x);
+	});
+var elm$core$Basics$gt = _Utils_gt;
+var elm$core$Basics$sub = _Basics_sub;
 var elm$core$Basics$or = _Basics_or;
 var elm$core$Basics$and = _Basics_and;
 var elm$core$Basics$le = _Utils_le;
@@ -4404,20 +4411,6 @@ var elm$core$Char$isUpper = function (_char) {
 var elm$core$Char$isAlphaNum = function (_char) {
 	return elm$core$Char$isLower(_char) || (elm$core$Char$isUpper(_char) || elm$core$Char$isDigit(_char));
 };
-var elm$core$Maybe$Just = function (a) {
-	return {$: 'Just', a: a};
-};
-var elm$core$Maybe$Nothing = {$: 'Nothing'};
-var elm$core$String$any = _String_any;
-var author$project$Main$isWordAlphNum = function (word) {
-	return A2(elm$core$String$any, elm$core$Char$isAlphaNum, word);
-};
-var elm$core$Basics$apR = F2(
-	function (x, f) {
-		return f(x);
-	});
-var elm$core$Basics$add = _Basics_add;
-var elm$core$Basics$gt = _Utils_gt;
 var elm$core$List$foldl = F3(
 	function (func, acc, list) {
 		foldl:
@@ -4506,10 +4499,6 @@ var elm$core$List$filter = F2(
 			_List_Nil,
 			list);
 	});
-var author$project$Main$trimNonWords = function (words) {
-	return A2(elm$core$List$filter, author$project$Main$isWordAlphNum, words);
-};
-var elm$core$Basics$sub = _Basics_sub;
 var elm$core$List$length = function (xs) {
 	return A3(
 		elm$core$List$foldl,
@@ -4520,11 +4509,18 @@ var elm$core$List$length = function (xs) {
 		0,
 		xs);
 };
+var elm$core$Maybe$Just = function (a) {
+	return {$: 'Just', a: a};
+};
+var elm$core$Maybe$Nothing = {$: 'Nothing'};
+var elm$core$String$any = _String_any;
 var elm$core$String$words = _String_words;
 var author$project$Main$countWords = F2(
 	function (words, model) {
 		var trimmedWordCount = elm$core$List$length(
-			author$project$Main$trimNonWords(
+			A2(
+				elm$core$List$filter,
+				elm$core$String$any(elm$core$Char$isAlphaNum),
 				elm$core$String$words(words)));
 		var dif = trimmedWordCount - model.actualWordsAtLastCheck;
 		return (dif > 0) ? _Utils_update(
