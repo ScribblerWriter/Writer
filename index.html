@@ -4514,6 +4514,25 @@ var elm$core$Maybe$Just = function (a) {
 };
 var elm$core$Maybe$Nothing = {$: 'Nothing'};
 var elm$core$String$any = _String_any;
+var elm$core$String$join = F2(
+	function (sep, chunks) {
+		return A2(
+			_String_join,
+			sep,
+			_List_toArray(chunks));
+	});
+var elm$core$String$split = F2(
+	function (sep, string) {
+		return _List_fromArray(
+			A2(_String_split, sep, string));
+	});
+var elm$core$String$replace = F3(
+	function (before, after, string) {
+		return A2(
+			elm$core$String$join,
+			after,
+			A2(elm$core$String$split, before, string));
+	});
 var elm$core$String$words = _String_words;
 var author$project$Main$countWords = F2(
 	function (words, model) {
@@ -4521,7 +4540,12 @@ var author$project$Main$countWords = F2(
 			A2(
 				elm$core$List$filter,
 				elm$core$String$any(elm$core$Char$isAlphaNum),
-				elm$core$String$words(words)));
+				elm$core$String$words(
+					A3(
+						elm$core$String$replace,
+						'–',
+						' ',
+						A3(elm$core$String$replace, '—', ' ', words)))));
 		var dif = trimmedWordCount - model.actualWordsAtLastCheck;
 		return (dif > 0) ? _Utils_update(
 			model,
@@ -4750,19 +4774,7 @@ var elm$core$List$indexedMap = F2(
 			xs);
 	});
 var elm$core$String$all = _String_all;
-var elm$core$String$join = F2(
-	function (sep, chunks) {
-		return A2(
-			_String_join,
-			sep,
-			_List_toArray(chunks));
-	});
 var elm$core$String$uncons = _String_uncons;
-var elm$core$String$split = F2(
-	function (sep, string) {
-		return _List_fromArray(
-			A2(_String_split, sep, string));
-	});
 var elm$json$Json$Decode$indent = function (str) {
 	return A2(
 		elm$core$String$join,

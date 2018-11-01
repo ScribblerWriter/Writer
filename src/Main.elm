@@ -52,6 +52,8 @@ countWords words model =
         trimmedWordCount : Int
         trimmedWordCount =
             words
+                |> String.replace "—" " "
+                |> String.replace "–" " "
                 |> String.words
                 |> List.filter (String.any Char.isAlphaNum)
                 |> List.length
@@ -80,9 +82,3 @@ view model =
         [ div [] [ text ("Current count: " ++ String.fromInt model.writtenCount) ]
         , textarea [ cols 40, rows 10, placeholder "Start writing here!", onInput UpdateCount ] []
         ]
-
-
-
-{-
-
--}
