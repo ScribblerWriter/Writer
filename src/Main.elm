@@ -18,9 +18,15 @@ main =
 -- Model
 
 
+type CountMethod
+    = Additive
+    | Subtractive
+
+
 type alias Model =
     { writtenCount : Int
     , actualWordsAtLastCheck : Int
+    , countMethod : CountMethod
     }
 
 
@@ -28,6 +34,7 @@ init : Model
 init =
     { writtenCount = 0
     , actualWordsAtLastCheck = 0
+    , countMethod = Additive
     }
 
 
@@ -37,26 +44,29 @@ init =
 
 type Msg
     = UpdateCount String
+    | SetCountMethod CountMethod
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        UpdateCount words ->
-            countWords words model
+        UpdateCount document ->
+            if model.countMethod == Additive then
+                countWordsAdditive document model
+
+            else
+                countWordsSubtractive document model
+
+        SetCountMethod method ->
+            { model | countMethod = method }
 
 
-countWords : String -> Model -> Model
-countWords words model =
+countWordsAdditive : String -> Model -> Model
+countWordsAdditive document model =
     let
         trimmedWordCount : Int
         trimmedWordCount =
-            words
-                |> String.replace "—" " "
-                |> String.replace "–" " "
-                |> String.words
-                |> List.filter (String.any Char.isAlphaNum)
-                |> List.length
+            countWords document
 
         dif : Int
         dif =
@@ -72,6 +82,26 @@ countWords words model =
         { model | actualWordsAtLastCheck = trimmedWordCount }
 
 
+countWordsSubtractive : String -> Model -> Model
+countWordsSubtractive document model =
+    let
+        trimmedWordCount : Int
+        trimmedWordCount =
+            countWords document
+    in
+    { model | writtenCount = trimmedWordCount, actualWordsAtLastCheck = trimmedWordCount }
+
+
+countWords : String -> Int
+countWords document =
+    document
+        |> String.replace "—" " "
+        |> String.replace "–" " "
+        |> String.words
+        |> List.filter (String.any Char.isAlphaNum)
+        |> List.length
+
+
 
 -- View
 
@@ -79,6 +109,18 @@ countWords words model =
 view : Model -> Html Msg
 view model =
     div []
-        [ div [] [ text ("Current count: " ++ String.fromInt model.writtenCount) ]
-        , textarea [ cols 40, rows 10, placeholder "Start writing here!", onInput UpdateCount ] []
+        [ div []
+            [ radio (SetCountMethod Additive) "Additive" "CountMethod" (model.countMethod == Additive)
+            , radio (SetCountMethod Subtractive) "Subtractive" "CountMethod" (model.countMethod == Subtractive)
+            ]
+        , div [] [ text ("Current count: " ++ String.fromInt model.writtenCount) ]
+        , textarea [ cols 80, rows 50, placeholder "Start writing here!", onInput UpdateCount ] []
+        ]
+
+
+radio : Msg -> String -> String -> Bool -> Html Msg
+radio msg optionname groupname chosen =
+    label []
+        [ input [ type_ "radio", name groupname, checked chosen, onClick msg ] []
+        , text optionname
         ]
