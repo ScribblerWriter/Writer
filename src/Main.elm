@@ -1,9 +1,13 @@
 module Main exposing (Model, init, main)
 
 import Browser
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
+import Element exposing (..)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
+import Element.Input as Input
+import Element.Region as Region
+import Html exposing (Html)
 
 
 
@@ -23,18 +27,36 @@ type CountMethod
     | Subtractive
 
 
+type alias Monster =
+    { name : String
+    , imgSource : String
+    , killCount : Int
+    }
+
+
 type alias Model =
     { writtenCount : Int
+    , killProgress : Int
     , actualWordsAtLastCheck : Int
     , countMethod : CountMethod
+    , availableMonsters : List Monster
+    , currentMonster : Maybe Monster
     }
 
 
 init : Model
 init =
     { writtenCount = 0
+    , killProgress = 0
     , actualWordsAtLastCheck = 0
     , countMethod = Additive
+    , availableMonsters =
+        [ { name = "Bezos the Destroyer"
+          , imgSource = "images/bezos.png"
+          , killCount = 25
+          }
+        ]
+    , currentMonster = Nothing
     }
 
 
@@ -45,24 +67,24 @@ init =
 type Msg
     = UpdateCount String
     | SetCountMethod CountMethod
+    | StartFight
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
         UpdateCount document ->
-            if model.countMethod == Additive then
-                countWordsAdditive document model
-
-            else
-                countWordsSubtractive document model
+            updateCounts document model
 
         SetCountMethod method ->
             { model | countMethod = method }
 
+        StartFight ->
+            { model | currentMonster = List.head model.availableMonsters }
 
-countWordsAdditive : String -> Model -> Model
-countWordsAdditive document model =
+
+updateCounts : String -> Model -> Model
+updateCounts document model =
     let
         trimmedWordCount : Int
         trimmedWordCount =
@@ -72,24 +94,33 @@ countWordsAdditive document model =
         dif =
             trimmedWordCount - model.actualWordsAtLastCheck
     in
-    if dif > 0 then
-        { model
-            | writtenCount = model.writtenCount + dif
-            , actualWordsAtLastCheck = trimmedWordCount
-        }
+    { model
+        | writtenCount =
+            if dif > 0 then
+                model.writtenCount + dif
 
-    else
-        { model | actualWordsAtLastCheck = trimmedWordCount }
+            else if model.countMethod == Additive then
+                model.writtenCount
 
+            else
+                trimmedWordCount
+        , actualWordsAtLastCheck = trimmedWordCount
+        , killProgress =
+            case model.currentMonster of
+                Just monster ->
+                    if dif > 0 then
+                        if model.killProgress + dif >= monster.killCount then
+                            monster.killCount
 
-countWordsSubtractive : String -> Model -> Model
-countWordsSubtractive document model =
-    let
-        trimmedWordCount : Int
-        trimmedWordCount =
-            countWords document
-    in
-    { model | writtenCount = trimmedWordCount, actualWordsAtLastCheck = trimmedWordCount }
+                        else
+                            model.killProgress + dif
+
+                    else
+                        model.killProgress
+
+                Nothing ->
+                    0
+    }
 
 
 countWords : String -> Int
@@ -108,19 +139,115 @@ countWords document =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ div []
-            [ radio (SetCountMethod Additive) "Additive" "CountMethod" (model.countMethod == Additive)
-            , radio (SetCountMethod Subtractive) "Subtractive" "CountMethod" (model.countMethod == Subtractive)
-            ]
-        , div [] [ text ("Current count: " ++ String.fromInt model.writtenCount) ]
-        , textarea [ cols 80, rows 50, placeholder "Start writing here!", onInput UpdateCount ] []
+    Element.layout
+        [ Font.size 14
+        , padding 5
         ]
+    <|
+        column
+            [ width fill
+            , height fill
+            ]
+            [ el
+                [ Region.heading 1
+                , centerX
+                , Font.size 24
+                ]
+                (text "The Amazing Text Combatotron")
+            , row
+                [ width fill
+                , height fill
+                ]
+                [ column
+                    [ width fill
+                    , height fill
+                    ]
+                    [ row
+                        [ width fill
+                        , padding 5
+                        ]
+                        [ el
+                            [ width fill ]
+                            (text ("Current count: " ++ String.fromInt model.writtenCount))
+                        , Input.radioRow
+                            [ spacing 20 ]
+                            { onChange = SetCountMethod
+                            , selected = Just model.countMethod
+                            , label = Input.labelLeft [] (text "")
+                            , options =
+                                [ Input.option Additive (el [ alignRight ] (text "Additive"))
+                                , Input.option Subtractive (el [ alignRight ] (text "Subtractive"))
+                                ]
+                            }
+                        ]
+                    , Input.multiline
+                        [ width fill
+                        , height fill
+                        ]
+                        { onChange = UpdateCount
+                        , text = ""
+                        , placeholder = Nothing
+                        , label = Input.labelLeft [] (text "")
+                        , spellcheck = False
+                        }
+                    ]
+                , showMonsterOrButton model
+                ]
+            ]
 
 
-radio : Msg -> String -> String -> Bool -> Html Msg
-radio msg optionname groupname chosen =
-    label []
-        [ input [ type_ "radio", name groupname, checked chosen, onClick msg ] []
-        , text optionname
+showMonsterOrButton : Model -> Element Msg
+showMonsterOrButton model =
+    column
+        [ width (px 300)
+        , alignTop
+        ]
+        [ Input.button
+            [ centerX
+            , Border.rounded 2
+            , Border.width 1
+            , Border.solid
+            , Border.shadow
+                { offset = ( 1, 1 )
+                , size = 1
+                , blur = 5
+                , color = rgb255 0 0 0
+                }
+            , Background.color (rgb255 0 190 0)
+            ]
+            { onPress = Just StartFight
+            , label = text "Start fight!"
+            }
+        , case model.currentMonster of
+            Nothing ->
+                Element.none
+
+            Just monster ->
+                column
+                    [ width fill
+                    , alignTop
+                    ]
+                    [ image
+                        [ width fill
+                        , inFront
+                            (if model.killProgress >= monster.killCount then
+                                image
+                                    [ width fill
+                                    ]
+                                    { src = "images/explosion.gif"
+                                    , description = "You win!"
+                                    }
+
+                             else
+                                none
+                            )
+                        ]
+                        { src = monster.imgSource
+                        , description = monster.name
+                        }
+                    , el
+                        [ centerX
+                        ]
+                        (text (String.fromInt model.killProgress ++ " / " ++ String.fromInt monster.killCount))
+                    ]
         ]
