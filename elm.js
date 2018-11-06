@@ -1,13 +1,3 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Main</title>
-</head>
-
-<body>
-<div id="elm-f0111bc4e658d0f98db96260c16f7e49"></div>
-<script>
 (function(scope){
 'use strict';
 
@@ -10461,11 +10451,33 @@ var mdgriffith$elm_ui$Internal$Model$Text = function (a) {
 var mdgriffith$elm_ui$Element$text = function (content) {
 	return mdgriffith$elm_ui$Internal$Model$Text(content);
 };
-var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
+var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
+var mdgriffith$elm_ui$Internal$Model$Colored = F3(
+	function (a, b, c) {
+		return {$: 'Colored', a: a, b: b, c: c};
+	});
 var mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
 	function (a, b) {
 		return {$: 'StyleClass', a: a, b: b};
 	});
+var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
+	var red = _n0.a;
+	var green = _n0.b;
+	var blue = _n0.c;
+	var alpha = _n0.d;
+	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
+};
+var mdgriffith$elm_ui$Element$Background$color = function (clr) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$bgColor,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Colored,
+			'bg-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
+			'background-color',
+			clr));
+};
+var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
 var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 	return A2(
 		mdgriffith$elm_ui$Internal$Model$StyleClass,
@@ -10477,13 +10489,6 @@ var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 			elm$core$String$fromInt(radius) + 'px'));
 };
 var mdgriffith$elm_ui$Internal$Flag$shadows = mdgriffith$elm_ui$Internal$Flag$flag(19);
-var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
-	var red = _n0.a;
-	var green = _n0.b;
-	var blue = _n0.c;
-	var alpha = _n0.d;
-	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
-};
 var mdgriffith$elm_ui$Internal$Model$boxShadowName = function (shadow) {
 	return elm$core$String$concat(
 		_List_fromArray(
@@ -10701,7 +10706,9 @@ var author$project$Main$showMonsterOrButton = function (model) {
 							color: A3(mdgriffith$elm_ui$Element$rgb255, 0, 0, 0),
 							offset: _Utils_Tuple2(1, 1),
 							size: 1
-						})
+						}),
+						mdgriffith$elm_ui$Element$Background$color(
+						A3(mdgriffith$elm_ui$Element$rgb255, 0, 190, 0))
 					]),
 				{
 					label: mdgriffith$elm_ui$Element$text('Start fight!'),
@@ -10894,14 +10901,9 @@ var mdgriffith$elm_ui$Internal$Model$renderRoot = F3(
 					_List_fromArray(
 						[child]))));
 	});
-var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
 var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
 var mdgriffith$elm_ui$Internal$Flag$fontFamily = mdgriffith$elm_ui$Internal$Flag$flag(5);
 var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
-var mdgriffith$elm_ui$Internal$Model$Colored = F3(
-	function (a, b, c) {
-		return {$: 'Colored', a: a, b: b, c: c};
-	});
 var mdgriffith$elm_ui$Internal$Model$FontFamily = F2(
 	function (a, b) {
 		return {$: 'FontFamily', a: a, b: b};
@@ -11163,16 +11165,6 @@ var mdgriffith$elm_ui$Element$paddingEach = function (_n0) {
 			left));
 };
 var mdgriffith$elm_ui$Element$rgba = mdgriffith$elm_ui$Internal$Model$Rgba;
-var mdgriffith$elm_ui$Element$Background$color = function (clr) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$bgColor,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Colored,
-			'bg-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
-			'background-color',
-			clr));
-};
 var mdgriffith$elm_ui$Internal$Flag$borderColor = mdgriffith$elm_ui$Internal$Flag$flag(28);
 var mdgriffith$elm_ui$Element$Border$color = function (clr) {
 	return A2(
@@ -12547,12 +12539,3 @@ var author$project$Main$main = elm$browser$Browser$sandbox(
 	{init: author$project$Main$init, update: author$project$Main$update, view: author$project$Main$view});
 _Platform_export({'Main':{'init':author$project$Main$main(
 	elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));
-
-var app = Elm.Main.init({ node: document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49") });
-if (document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49"))
-{
-  document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49").innerText = 'This is a headless program, meaning there is nothing to show here.\n\nI started the program anyway though, and you can access it as `app` in the developer console.';
-}
-</script>
-</body>
-</html>

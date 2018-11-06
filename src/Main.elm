@@ -80,7 +80,10 @@ update msg model =
             { model | countMethod = method }
 
         StartFight ->
-            { model | currentMonster = List.head model.availableMonsters }
+            { model
+                | currentMonster = List.head model.availableMonsters
+                , killProgress = 0
+            }
 
 
 updateCounts : String -> Model -> Model
@@ -213,7 +216,6 @@ showMonsterOrButton model =
                 , blur = 5
                 , color = rgb255 0 0 0
                 }
-            , Background.color (rgb255 0 190 0)
             ]
             { onPress = Just StartFight
             , label = text "Start fight!"
