@@ -1,4 +1,4 @@
-module Main exposing (Model, init, main)
+port module Main exposing (Model, init, main)
 
 import Browser
 import Element exposing (..)
@@ -15,7 +15,12 @@ import Html exposing (Html)
 
 
 main =
-    Browser.sandbox { init = init, update = update, view = view }
+    Browser.element
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = subscriptions
+        }
 
 
 
@@ -52,14 +57,16 @@ availableMonsters =
     ]
 
 
-init : Model
-init =
-    { writtenCount = 0
-    , killProgress = 0
-    , actualWordsAtLastCheck = 0
-    , countMethod = Additive
-    , currentMonster = Nothing
-    }
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { writtenCount = 0
+      , killProgress = 0
+      , actualWordsAtLastCheck = 0
+      , countMethod = Additive
+      , currentMonster = Nothing
+      }
+    , Cmd.none
+    )
 
 
 
@@ -72,20 +79,22 @@ type Msg
     | StartFight
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UpdateCount document ->
-            updateCounts document model
+            ( updateCounts document model, Cmd.none )
 
         SetCountMethod method ->
-            { model | countMethod = method }
+            ( { model | countMethod = method }, Cmd.none )
 
         StartFight ->
-            { model
+            ( { model
                 | currentMonster = List.head availableMonsters
                 , killProgress = 0
-            }
+              }
+            , Cmd.none
+            )
 
 
 updateCounts : String -> Model -> Model
@@ -136,6 +145,15 @@ countWords document =
         |> String.words
         |> List.filter (String.any Char.isAlphaNum)
         |> List.length
+
+
+
+-- Subscriptions
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
 
 
 
