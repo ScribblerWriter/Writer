@@ -39,9 +39,17 @@ type alias Model =
     , killProgress : Int
     , actualWordsAtLastCheck : Int
     , countMethod : CountMethod
-    , availableMonsters : List Monster
     , currentMonster : Maybe Monster
     }
+
+
+availableMonsters : List Monster
+availableMonsters =
+    [ { name = "Bezos the Destroyer"
+      , imgSource = "images/bezos.png"
+      , killCount = 25
+      }
+    ]
 
 
 init : Model
@@ -50,12 +58,6 @@ init =
     , killProgress = 0
     , actualWordsAtLastCheck = 0
     , countMethod = Additive
-    , availableMonsters =
-        [ { name = "Bezos the Destroyer"
-          , imgSource = "images/bezos.png"
-          , killCount = 25
-          }
-        ]
     , currentMonster = Nothing
     }
 
@@ -81,7 +83,7 @@ update msg model =
 
         StartFight ->
             { model
-                | currentMonster = List.head model.availableMonsters
+                | currentMonster = List.head availableMonsters
                 , killProgress = 0
             }
 
