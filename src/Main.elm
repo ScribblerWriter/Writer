@@ -194,62 +194,63 @@ view model =
                         , spellcheck = False
                         }
                     ]
-                , showMonsterOrButton model
+                , column
+                    [ width (px 300)
+                    , alignTop
+                    ]
+                    [ Input.button
+                        [ centerX
+                        , padding 4
+                        , Border.rounded 2
+                        , Border.width 1
+                        , Border.solid
+                        , Border.shadow
+                            { offset = ( 1, 1 )
+                            , size = 1
+                            , blur = 5
+                            , color = rgb255 0 0 0
+                            }
+                        ]
+                        { onPress = Just StartFight
+                        , label = text "Start fight!"
+                        }
+                    , showMonster model
+                    ]
                 ]
             ]
 
 
-showMonsterOrButton : Model -> Element Msg
-showMonsterOrButton model =
-    column
-        [ width (px 300)
-        , alignTop
-        ]
-        [ Input.button
-            [ centerX
-            , Border.rounded 2
-            , Border.width 1
-            , Border.solid
-            , Border.shadow
-                { offset = ( 1, 1 )
-                , size = 1
-                , blur = 5
-                , color = rgb255 0 0 0
-                }
-            ]
-            { onPress = Just StartFight
-            , label = text "Start fight!"
-            }
-        , case model.currentMonster of
-            Nothing ->
-                Element.none
+showMonster : Model -> Element Msg
+showMonster model =
+    case model.currentMonster of
+        Nothing ->
+            Element.none
 
-            Just monster ->
-                column
+        Just monster ->
+            column
+                [ width fill
+                , alignTop
+                ]
+                [ image
                     [ width fill
-                    , alignTop
-                    ]
-                    [ image
-                        [ width fill
-                        , inFront
-                            (if model.killProgress >= monster.killCount then
-                                image
-                                    [ width fill
-                                    ]
-                                    { src = "images/explosion.gif"
-                                    , description = "You win!"
-                                    }
+                    , inFront
+                        (if model.killProgress >= monster.killCount then
+                            image
+                                [ width fill
+                                ]
+                                { src = "images/explosion.gif"
+                                , description = "You win!"
+                                }
 
-                             else
-                                none
-                            )
-                        ]
-                        { src = monster.imgSource
-                        , description = monster.name
-                        }
-                    , el
-                        [ centerX
-                        ]
-                        (text (String.fromInt model.killProgress ++ " / " ++ String.fromInt monster.killCount))
+                         else
+                            none
+                        )
                     ]
-        ]
+                    { src = monster.imgSource
+                    , description = monster.name
+                    }
+                , el
+                    [ centerX
+                    ]
+                    (text (String.fromInt model.killProgress ++ " / " ++ String.fromInt monster.killCount))
+                ]
