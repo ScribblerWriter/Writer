@@ -249,8 +249,30 @@ showMonster model =
                     { src = monster.imgSource
                     , description = monster.name
                     }
-                , el
-                    [ centerX
+                , row
+                    [ width fill
+                    , inFront
+                        (el
+                            [ centerX
+                            , centerY
+                            , width (px 300)
+                            , height (px 25)
+                            , Font.size 20
+                            ]
+                            (text (String.fromInt model.killProgress ++ " / " ++ String.fromInt monster.killCount))
+                        )
                     ]
-                    (text (String.fromInt model.killProgress ++ " / " ++ String.fromInt monster.killCount))
+                    [ el
+                        [ width (fillPortion model.killProgress)
+                        , Background.color (rgb255 10 240 10)
+                        , height (px 25)
+                        ]
+                        none
+                    , el
+                        [ width (fillPortion (monster.killCount - model.killProgress))
+                        , height (px 25)
+                        , Background.color (rgb255 200 200 200)
+                        ]
+                        none
+                    ]
                 ]
