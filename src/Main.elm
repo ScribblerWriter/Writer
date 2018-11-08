@@ -275,8 +275,8 @@ showMonster model =
                         (el
                             [ centerX
                             , centerY
-                            , width (px 300)
-                            , height (px 25)
+                            , width shrink
+                            , height shrink
                             , Font.size 20
                             ]
                             (text (String.fromInt model.killProgress ++ " / " ++ String.fromInt monster.killCount))
@@ -285,12 +285,12 @@ showMonster model =
                     [ el
                         [ width (fillPortion model.killProgress)
                         , Background.color (rgb255 10 240 10)
-                        , height (px 25)
+                        , height (px 30)
                         ]
                         none
                     , el
                         [ width (fillPortion (monster.killCount - model.killProgress))
-                        , height (px 25)
+                        , height (px 30)
                         , Background.color (rgb255 200 200 200)
                         ]
                         none
