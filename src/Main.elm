@@ -8,6 +8,8 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Html exposing (Html)
+import Task
+import Time
 
 
 
@@ -24,7 +26,7 @@ main =
 
 
 
--- Model
+-- counting data
 
 
 type CountMethod
@@ -32,19 +34,14 @@ type CountMethod
     | Subtractive
 
 
+
+-- monster data
+
+
 type alias Monster =
     { name : String
     , imgSource : String
     , killCount : Int
-    }
-
-
-type alias Model =
-    { writtenCount : Int
-    , killProgress : Int
-    , actualWordsAtLastCheck : Int
-    , countMethod : CountMethod
-    , currentMonster : Maybe Monster
     }
 
 
@@ -57,15 +54,30 @@ availableMonsters =
     ]
 
 
+
+-- Model
+
+
+type alias Model =
+    { writtenCount : Int
+    , killProgress : Int
+    , actualWordsAtLastCheck : Int
+    , currentText : String
+    , countMethod : CountMethod
+    , currentMonster : Maybe Monster
+    }
+
+
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { writtenCount = 0
       , killProgress = 0
       , actualWordsAtLastCheck = 0
+      , currentText = ""
       , countMethod = Additive
       , currentMonster = Nothing
       }
-    , Cmd.none
+    , loadText ()
     )
 
 
@@ -77,6 +89,8 @@ type Msg
     = UpdateCount String
     | SetCountMethod CountMethod
     | StartFight
+    | SaveToLocal Time.Posix
+    | LoadLocalComplete String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -95,6 +109,12 @@ update msg model =
               }
             , Cmd.none
             )
+
+        SaveToLocal frequency ->
+            ( model, saveText model.currentText )
+
+        LoadLocalComplete content ->
+            ( { model | currentText = content }, Cmd.none )
 
 
 updateCounts : String -> Model -> Model
@@ -134,6 +154,7 @@ updateCounts document model =
 
                 Nothing ->
                     0
+        , currentText = document
     }
 
 
@@ -153,7 +174,19 @@ countWords document =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ Time.every 5000 SaveToLocal
+        , textLoaded LoadLocalComplete
+        ]
+
+
+port saveText : String -> Cmd msg
+
+
+port loadText : () -> Cmd msg
+
+
+port textLoaded : (String -> msg) -> Sub msg
 
 
 
@@ -208,7 +241,7 @@ view model =
                         , height fill
                         ]
                         { onChange = UpdateCount
-                        , text = ""
+                        , text = model.currentText
                         , placeholder = Nothing
                         , label = Input.labelLeft [] (text "")
                         , spellcheck = False
