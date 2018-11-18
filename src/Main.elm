@@ -8,6 +8,8 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Html exposing (Html)
+import Json.Decode as JsonD
+import Json.Encode as JsonE
 import Task
 import Time
 
@@ -111,10 +113,17 @@ update msg model =
             )
 
         SaveToLocal frequency ->
-            ( model, saveText model.currentText )
+            ( model, saveText <| encodeSaveObject model )
 
         LoadLocalComplete content ->
-            ( { model | currentText = content }, Cmd.none )
+            ( { model
+                | currentText = getValue textDecoder content "Error loading text"
+                , writtenCount = getValue wordCountDecoder content -1
+                , countMethod = getValue methodDecoder content Additive
+                , actualWordsAtLastCheck = getValue actualCountDecoder content 0
+              }
+            , Cmd.none
+            )
 
 
 updateCounts : String -> Model -> Model
@@ -166,6 +175,75 @@ countWords document =
         |> String.words
         |> List.filter (String.any Char.isAlphaNum)
         |> List.length
+
+
+
+-- JSON encoder/decoder
+
+
+encodeSaveObject : Model -> String
+encodeSaveObject model =
+    JsonE.encode
+        0
+        (JsonE.object
+            [ ( "count", JsonE.int model.writtenCount )
+            , ( "text", JsonE.string model.currentText )
+            , ( "method", methodEncoder model.countMethod )
+            , ( "actualCount", JsonE.int model.actualWordsAtLastCheck )
+            ]
+        )
+
+
+methodEncoder : CountMethod -> JsonE.Value
+methodEncoder method =
+    case method of
+        Additive ->
+            JsonE.string "additive"
+
+        Subtractive ->
+            JsonE.string "subtractive"
+
+
+wordCountDecoder : JsonD.Decoder Int
+wordCountDecoder =
+    JsonD.field "count" JsonD.int
+
+
+textDecoder : JsonD.Decoder String
+textDecoder =
+    JsonD.field "text" JsonD.string
+
+
+actualCountDecoder : JsonD.Decoder Int
+actualCountDecoder =
+    JsonD.field "actualCount" JsonD.int
+
+
+methodDecoder : JsonD.Decoder CountMethod
+methodDecoder =
+    JsonD.field "method" JsonD.string
+        |> JsonD.andThen
+            (\str ->
+                case str of
+                    "additive" ->
+                        JsonD.succeed Additive
+
+                    "subtractive" ->
+                        JsonD.succeed Subtractive
+
+                    wrongValue ->
+                        JsonD.fail ("Count method decoding failed. Value: " ++ wrongValue)
+            )
+
+
+getValue : JsonD.Decoder a -> String -> a -> a
+getValue decoder string errorVal =
+    case JsonD.decodeString decoder string of
+        Err _ ->
+            errorVal
+
+        Ok value ->
+            value
 
 
 
