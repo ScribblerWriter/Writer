@@ -1,6 +1,7 @@
 port module Main exposing (Model, init, main)
 
 import Browser
+import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -47,13 +48,28 @@ type alias Monster =
     }
 
 
-availableMonsters : List Monster
+availableMonsters : Dict String Monster
 availableMonsters =
-    [ { name = "Bezos the Destroyer"
-      , imgSource = "./images/bezos.png"
-      , killCount = 25
-      }
-    ]
+    Dict.fromList
+        [ ( "Bezos the Destroyer"
+          , { name = "Bezos the Destroyer"
+            , imgSource = "./images/bezos.png"
+            , killCount = 25
+            }
+          )
+        , ( "KDP Support"
+          , { name = "KDP Support"
+            , imgSource = "./images/kdpsupport.png"
+            , killCount = 10
+            }
+          )
+        , ( "Carlos F"
+          , { name = "Carlos F"
+            , imgSource = "./images/carlosf.png"
+            , killCount = 50
+            }
+          )
+        ]
 
 
 
@@ -68,6 +84,7 @@ type alias Model =
     , countMethod : CountMethod
     , currentMonster : Maybe Monster
     , touched : Bool
+    , showMonsterPicker : Bool
     }
 
 
@@ -80,6 +97,7 @@ init _ =
       , countMethod = Additive
       , currentMonster = Nothing
       , touched = False
+      , showMonsterPicker = False
       }
     , loadText ()
     )
@@ -92,9 +110,10 @@ init _ =
 type Msg
     = UpdateCount String
     | SetCountMethod CountMethod
-    | StartFight
+    | StartFight String
     | SaveToLocal Time.Posix
     | LoadLocalComplete (Maybe String)
+    | PickMonster
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -106,10 +125,11 @@ update msg model =
         SetCountMethod method ->
             ( { model | countMethod = method }, Cmd.none )
 
-        StartFight ->
+        StartFight name ->
             ( { model
-                | currentMonster = List.head availableMonsters
+                | currentMonster = availableMonsters |> Dict.get name
                 , killProgress = 0
+                , showMonsterPicker = False
               }
             , Cmd.none
             )
@@ -133,6 +153,11 @@ update msg model =
 
                 Nothing ->
                     ( model, Cmd.none )
+
+        PickMonster ->
+            ( { model | showMonsterPicker = True }
+            , Cmd.none
+            )
 
 
 updateCounts : String -> Model -> Model
@@ -286,6 +311,13 @@ view model =
     Element.layout
         [ Font.size 14
         , padding 5
+        , inFront
+            (if model.showMonsterPicker then
+                showMonsterPicker
+
+             else
+                none
+            )
         ]
     <|
         column
@@ -364,8 +396,8 @@ view model =
                             , color = rgb255 0 0 0
                             }
                         ]
-                        { onPress = Just StartFight
-                        , label = text "Start fight!"
+                        { onPress = Just PickMonster
+                        , label = text "Fight Something!"
                         }
                     , showMonster model
                     ]
@@ -429,3 +461,58 @@ showMonster model =
                         none
                     ]
                 ]
+
+
+showMonsterPicker : Element Msg
+showMonsterPicker =
+    el
+        [ padding 5
+        , Background.color (rgb255 255 221 130)
+        , centerX
+        , centerY
+        , width <| px 800
+        , height <| px 200
+        ]
+    <|
+        row
+            [ padding 5
+            , centerX
+            , centerY
+            , width fill
+            ]
+        <|
+            List.map showMonsterItem (Dict.values availableMonsters)
+
+
+showMonsterItem : Monster -> Element Msg
+showMonsterItem monster =
+    column
+        [ width <| px 130
+        , centerX
+        ]
+        [ image
+            [ width <| px 100
+            , centerX
+            ]
+            { src = monster.imgSource
+            , description = monster.name
+            }
+        , el [ centerX ] <| text monster.name
+        , el [ centerX ] <| text <| String.fromInt monster.killCount ++ " words"
+        , Input.button
+            [ centerX
+            , Background.color <| rgb255 255 255 255
+            , Border.rounded 2
+            , Border.width 1
+            , Border.solid
+            , Border.shadow
+                { offset = ( 1, 1 )
+                , size = 1
+                , blur = 2
+                , color = rgb255 0 0 0
+                }
+            ]
+            { onPress = Just (StartFight monster.name)
+            , label = text "Fight Me!"
+            }
+        ]
