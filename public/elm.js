@@ -4865,7 +4865,7 @@ var author$project$Main$loadText = _Platform_outgoingPort(
 	});
 var author$project$Main$init = function (_n0) {
 	return _Utils_Tuple2(
-		{actualWordsAtLastCheck: 0, countMethod: author$project$Main$Additive, currentMonster: elm$core$Maybe$Nothing, currentText: '', killProgress: 0, writtenCount: 0},
+		{actualWordsAtLastCheck: 0, countMethod: author$project$Main$Additive, currentMonster: elm$core$Maybe$Nothing, currentText: '', killProgress: 0, touched: false, writtenCount: 0},
 		author$project$Main$loadText(_Utils_Tuple0));
 };
 var author$project$Main$LoadLocalComplete = function (a) {
@@ -4874,8 +4874,18 @@ var author$project$Main$LoadLocalComplete = function (a) {
 var author$project$Main$SaveToLocal = function (a) {
 	return {$: 'SaveToLocal', a: a};
 };
+var elm$json$Json$Decode$map = _Json_map1;
+var elm$json$Json$Decode$null = _Json_decodeNull;
+var elm$json$Json$Decode$oneOf = _Json_oneOf;
 var elm$json$Json$Decode$string = _Json_decodeString;
-var author$project$Main$textLoaded = _Platform_incomingPort('textLoaded', elm$json$Json$Decode$string);
+var author$project$Main$textLoaded = _Platform_incomingPort(
+	'textLoaded',
+	elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				elm$json$Json$Decode$null(elm$core$Maybe$Nothing),
+				A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, elm$json$Json$Decode$string)
+			])));
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$time$Time$Every = F2(
 	function (a, b) {
@@ -5402,7 +5412,7 @@ var elm$json$Json$Decode$int = _Json_decodeInt;
 var author$project$Main$actualCountDecoder = A2(elm$json$Json$Decode$field, 'actualCount', elm$json$Json$Decode$int);
 var author$project$Main$availableMonsters = _List_fromArray(
 	[
-		{imgSource: 'images/bezos.png', killCount: 25, name: 'Bezos the Destroyer'}
+		{imgSource: './images/bezos.png', killCount: 25, name: 'Bezos the Destroyer'}
 	]);
 var elm$json$Json$Encode$string = _Json_wrap;
 var author$project$Main$methodEncoder = function (method) {
@@ -5529,6 +5539,7 @@ var author$project$Main$updateCounts = F2(
 						return 0;
 					}
 				}(),
+				touched: true,
 				writtenCount: (dif > 0) ? (model.writtenCount + dif) : (_Utils_eq(model.countMethod, author$project$Main$Additive) ? model.writtenCount : trimmedWordCount)
 			});
 	});
@@ -5574,21 +5585,28 @@ var author$project$Main$update = F2(
 			case 'SaveToLocal':
 				var frequency = msg.a;
 				return _Utils_Tuple2(
-					model,
+					_Utils_update(
+						model,
+						{touched: false}),
 					author$project$Main$saveText(
 						author$project$Main$encodeSaveObject(model)));
 			default:
 				var content = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							actualWordsAtLastCheck: A3(author$project$Main$getValue, author$project$Main$actualCountDecoder, content, 0),
-							countMethod: A3(author$project$Main$getValue, author$project$Main$methodDecoder, content, author$project$Main$Additive),
-							currentText: A3(author$project$Main$getValue, author$project$Main$textDecoder, content, 'Error loading text'),
-							writtenCount: A3(author$project$Main$getValue, author$project$Main$wordCountDecoder, content, -1)
-						}),
-					elm$core$Platform$Cmd$none);
+				if (content.$ === 'Just') {
+					var data = content.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								actualWordsAtLastCheck: A3(author$project$Main$getValue, author$project$Main$actualCountDecoder, data, 0),
+								countMethod: A3(author$project$Main$getValue, author$project$Main$methodDecoder, data, author$project$Main$Additive),
+								currentText: A3(author$project$Main$getValue, author$project$Main$textDecoder, data, 'Error loading text'),
+								writtenCount: A3(author$project$Main$getValue, author$project$Main$wordCountDecoder, data, -1)
+							}),
+						elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var author$project$Main$SetCountMethod = function (a) {
@@ -5742,7 +5760,6 @@ var mdgriffith$elm_ui$Internal$Model$asEl = mdgriffith$elm_ui$Internal$Model$AsE
 var mdgriffith$elm_ui$Internal$Model$AsParagraph = {$: 'AsParagraph'};
 var mdgriffith$elm_ui$Internal$Model$asParagraph = mdgriffith$elm_ui$Internal$Model$AsParagraph;
 var elm$core$Basics$not = _Basics_not;
-var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$map2 = _Json_map2;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
@@ -11008,7 +11025,7 @@ var author$project$Main$showMonster = function (model) {
 									[
 										mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 									]),
-								{description: 'You win!', src: 'images/explosion.gif'}) : mdgriffith$elm_ui$Element$none)
+								{description: 'You win!', src: './images/explosion.gif'}) : mdgriffith$elm_ui$Element$none)
 						]),
 					{description: monster.name, src: monster.imgSource}),
 					A2(
@@ -12701,6 +12718,15 @@ var author$project$Main$view = function (model) {
 												]),
 											mdgriffith$elm_ui$Element$text(
 												'Current count: ' + elm$core$String$fromInt(model.writtenCount))),
+											A2(
+											mdgriffith$elm_ui$Element$el,
+											_List_fromArray(
+												[
+													mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+													mdgriffith$elm_ui$Element$centerX
+												]),
+											mdgriffith$elm_ui$Element$text(
+												model.touched ? 'Saving...' : 'Saved.')),
 											A2(
 											mdgriffith$elm_ui$Element$Input$radioRow,
 											_List_fromArray(
