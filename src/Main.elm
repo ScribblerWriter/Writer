@@ -50,7 +50,7 @@ type alias Monster =
 availableMonsters : List Monster
 availableMonsters =
     [ { name = "Bezos the Destroyer"
-      , imgSource = "images/bezos.png"
+      , imgSource = "./images/bezos.png"
       , killCount = 25
       }
     ]
@@ -67,6 +67,7 @@ type alias Model =
     , currentText : String
     , countMethod : CountMethod
     , currentMonster : Maybe Monster
+    , touched : Bool
     }
 
 
@@ -78,6 +79,7 @@ init _ =
       , currentText = ""
       , countMethod = Additive
       , currentMonster = Nothing
+      , touched = False
       }
     , loadText ()
     )
@@ -92,7 +94,7 @@ type Msg
     | SetCountMethod CountMethod
     | StartFight
     | SaveToLocal Time.Posix
-    | LoadLocalComplete String
+    | LoadLocalComplete (Maybe String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -113,17 +115,24 @@ update msg model =
             )
 
         SaveToLocal frequency ->
-            ( model, saveText <| encodeSaveObject model )
+            ( { model | touched = False }
+            , saveText <| encodeSaveObject model
+            )
 
         LoadLocalComplete content ->
-            ( { model
-                | currentText = getValue textDecoder content "Error loading text"
-                , writtenCount = getValue wordCountDecoder content -1
-                , countMethod = getValue methodDecoder content Additive
-                , actualWordsAtLastCheck = getValue actualCountDecoder content 0
-              }
-            , Cmd.none
-            )
+            case content of
+                Just data ->
+                    ( { model
+                        | currentText = getValue textDecoder data "Error loading text"
+                        , writtenCount = getValue wordCountDecoder data -1
+                        , countMethod = getValue methodDecoder data Additive
+                        , actualWordsAtLastCheck = getValue actualCountDecoder data 0
+                      }
+                    , Cmd.none
+                    )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
 
 updateCounts : String -> Model -> Model
@@ -164,6 +173,7 @@ updateCounts document model =
                 Nothing ->
                     0
         , currentText = document
+        , touched = True
     }
 
 
@@ -264,7 +274,7 @@ port saveText : String -> Cmd msg
 port loadText : () -> Cmd msg
 
 
-port textLoaded : (String -> msg) -> Sub msg
+port textLoaded : (Maybe String -> msg) -> Sub msg
 
 
 
@@ -303,6 +313,18 @@ view model =
                         [ el
                             [ width fill ]
                             (text ("Current count: " ++ String.fromInt model.writtenCount))
+                        , el
+                            [ width fill
+                            , centerX
+                            ]
+                            (text
+                                (if model.touched then
+                                    "Saving..."
+
+                                 else
+                                    "Saved."
+                                )
+                            )
                         , Input.radioRow
                             [ spacing 20 ]
                             { onChange = SetCountMethod
@@ -369,7 +391,7 @@ showMonster model =
                             image
                                 [ width fill
                                 ]
-                                { src = "images/explosion.gif"
+                                { src = "./images/explosion.gif"
                                 , description = "You win!"
                                 }
 
