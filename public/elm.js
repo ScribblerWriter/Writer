@@ -5403,7 +5403,7 @@ var author$project$Main$subscriptions = function (model) {
 	return elm$core$Platform$Sub$batch(
 		_List_fromArray(
 			[
-				A2(elm$time$Time$every, 5000, author$project$Main$SaveToLocal),
+				A2(elm$time$Time$every, 1000, author$project$Main$SaveToLocal),
 				author$project$Main$textLoaded(author$project$Main$LoadLocalComplete)
 			]));
 };

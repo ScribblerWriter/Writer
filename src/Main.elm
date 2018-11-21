@@ -288,7 +288,7 @@ getValue decoder string errorVal =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Time.every 5000 SaveToLocal
+        [ Time.every 1000 SaveToLocal
         , textLoaded LoadLocalComplete
         ]
 
