@@ -5,6 +5,7 @@ import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
@@ -114,6 +115,7 @@ type Msg
     | SaveToLocal Time.Posix
     | LoadLocalComplete (Maybe String)
     | PickMonster
+    | CancelMonsterPick
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -156,6 +158,11 @@ update msg model =
 
         PickMonster ->
             ( { model | showMonsterPicker = True }
+            , Cmd.none
+            )
+
+        CancelMonsterPick ->
+            ( { model | showMonsterPicker = False }
             , Cmd.none
             )
 
@@ -470,18 +477,38 @@ showMonsterPicker =
         , Background.color (rgb255 255 221 130)
         , centerX
         , centerY
-        , width <| px 800
+        , width shrink
         , height <| px 200
         ]
     <|
-        row
-            [ padding 5
-            , centerX
-            , centerY
-            , width fill
+        column
+            []
+            [ row
+                [ width fill ]
+                [ el [ width fill ] none
+                , el
+                    [ width shrink
+                    , alignRight
+                    , padding 5
+                    , Border.rounded 10
+                    , Border.width 2
+                    , Border.solid
+                    , Font.size 20
+                    , Events.onClick CancelMonsterPick
+                    , pointer
+                    ]
+                  <|
+                    text "X"
+                ]
+            , row
+                [ padding 5
+                , centerX
+                , centerY
+                , width fill
+                ]
+              <|
+                List.map showMonsterItem (Dict.values availableMonsters)
             ]
-        <|
-            List.map showMonsterItem (Dict.values availableMonsters)
 
 
 showMonsterItem : Monster -> Element Msg
@@ -493,26 +520,12 @@ showMonsterItem monster =
         [ image
             [ width <| px 100
             , centerX
+            , Events.onClick (StartFight monster.name)
+            , pointer
             ]
             { src = monster.imgSource
             , description = monster.name
             }
         , el [ centerX ] <| text monster.name
         , el [ centerX ] <| text <| String.fromInt monster.killCount ++ " words"
-        , Input.button
-            [ centerX
-            , Background.color <| rgb255 255 255 255
-            , Border.rounded 2
-            , Border.width 1
-            , Border.solid
-            , Border.shadow
-                { offset = ( 1, 1 )
-                , size = 1
-                , blur = 2
-                , color = rgb255 0 0 0
-                }
-            ]
-            { onPress = Just (StartFight monster.name)
-            , label = text "Fight Me!"
-            }
         ]

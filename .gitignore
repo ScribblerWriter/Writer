@@ -4,3 +4,4 @@ elm-stuff
 repl-temp-*
 /working files/
 /.firebase/
+/firebase-debug.log
