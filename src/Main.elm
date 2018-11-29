@@ -363,78 +363,121 @@ port textLoaded : (Maybe String -> msg) -> Sub msg
 
 view : Model -> Html Msg
 view model =
-    Element.layout
+    Element.layoutWith
+        { options =
+            [ Element.focusStyle
+                { borderColor = Nothing
+                , backgroundColor = Nothing
+                , shadow = Nothing
+                }
+            ]
+        }
         [ Font.size 14
-        , Background.color <| rgb255 13 70 113
         ]
     <|
-        showWritingPage model
-
-
-showWritingPage : Model -> Element Msg
-showWritingPage model =
-    column
-        [ width fill
-        , height fill
-        ]
-        [ row
-            [ width fill
-            , height <| px 40
-            , inFront <|
-                Input.button
-                    [ centerX
-                    , height <| px 70
-                    , padding 4
-                    , htmlAttribute <| Html.Attributes.style "z-index" "1"
-                    , htmlAttribute <| Html.Attributes.style "border-radius" "50%"
-                    , Border.width 2
-                    , Background.color <| rgb255 78 222 37
-                    , Font.color <| rgb255 240 240 240
-                    ]
-                    { onPress = Just PickMonster
-                    , label = text "TARGET!"
-                    }
-            ]
-            [ el
-                [ padding 10
-                , alignBottom
-                , Font.color <| rgb255 240 240 240
-                ]
-              <|
-                text <|
-                    "Written today: "
-                        ++ String.fromInt model.writtenCount
-            ]
-        , row
+        column
             [ width fill
             , height fill
+            , inFront <|
+                if model.showMonsterPicker then
+                    showCircleButton "CANCEL" CancelMonsterPick
+
+                else
+                    showCircleButton "TARGET!" PickMonster
             ]
-            [ el
-                [ width <| px 5
-                ]
-                none
-            , Input.multiline
+            [ showTopMenu model
+            , row
                 [ width fill
                 , height fill
-                , padding 25
-                , htmlAttribute <| Html.Attributes.placeholder "Write your words here!"
                 ]
-                { onChange = UpdateCount
-                , text = model.currentText
-                , placeholder = Nothing
-                , label = Input.labelLeft [] <| text ""
-                , spellcheck = False
-                }
+                [ el
+                    [ width <| px 5
+                    , height fill
+                    , Background.color <| rgb255 13 70 113
+                    ]
+                    none
+                , if model.showMonsterPicker then
+                    showTargetSelector model
+
+                  else
+                    showEditor model
+                , el
+                    [ width <| px 5
+                    , height fill
+                    , Background.color <| rgb255 13 70 113
+                    ]
+                    none
+                ]
             , el
-                [ width <| px 5
+                [ width fill
+                , height <| px 5
+                , Background.color <| rgb255 13 70 113
                 ]
                 none
             ]
-        , el
-            [ width fill
-            , height <| px 5
+
+
+showEditor : Model -> Element Msg
+showEditor model =
+    Input.multiline
+        [ width fill
+        , height fill
+        , padding 25
+        , Border.width 0
+        , Border.rounded 0
+        , htmlAttribute <| Html.Attributes.placeholder "Write your words here!"
+        ]
+        { onChange = UpdateCount
+        , text = model.currentText
+        , placeholder = Nothing
+        , label = Input.labelHidden ""
+        , spellcheck = False
+        }
+
+
+showTargetSelector : Model -> Element Msg
+showTargetSelector model =
+    column
+        [ Background.color <| rgb255 108 160 229
+        , width fill
+        , height fill
+        , padding 25
+        ]
+        []
+
+
+showCircleButton : String -> Msg -> Element Msg
+showCircleButton caption msg =
+    Input.button
+        [ centerX
+        , height <| px 70
+        , padding 4
+        , htmlAttribute <| Html.Attributes.style "border-radius" "50%"
+        , Border.width 2
+        , Background.color <| rgb255 78 222 37
+        , Font.color <| rgb255 240 240 240
+        ]
+        { onPress = Just msg
+        , label = text caption
+        }
+
+
+showTopMenu : Model -> Element Msg
+showTopMenu model =
+    row
+        [ width fill
+        , height <| px 40
+        , Background.color <| rgb255 13 70 113
+        ]
+        [ el
+            [ padding 10
+            , alignBottom
+            , Font.color <| rgb255 240 240 240
             ]
-            none
+          <|
+            text <|
+                "Written today: "
+                    ++ String.fromInt model.writtenCount
         ]
 
 
@@ -444,7 +487,7 @@ viewOld model =
         , padding 5
         , inFront
             (if model.showMonsterPicker then
-                showMonsterPicker
+                showMonsterPickerOld
 
              else
                 none
@@ -594,8 +637,8 @@ showMonster model =
                 ]
 
 
-showMonsterPicker : Element Msg
-showMonsterPicker =
+showMonsterPickerOld : Element Msg
+showMonsterPickerOld =
     el
         [ padding 5
         , Background.color (rgb255 255 221 130)
