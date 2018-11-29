@@ -62,7 +62,10 @@
       });
     </script>
     <script>
-      var appElm = Elm.Main.init({ node: document.querySelector('main') })
+      var appElm = Elm.Main.init({ 
+        node: document.querySelector('main'), 
+        flags: { width: window.innerWidth, height: window.innerHeight }
+      });
       // you can use ports and stuff here
       
       appElm.ports.saveText.subscribe(function(text) {

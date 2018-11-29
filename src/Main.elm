@@ -10,6 +10,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Html exposing (Html)
+import Html.Attributes
 import Json.Decode as JsonD
 import Json.Encode as JsonE
 import Task
@@ -86,11 +87,18 @@ type alias Model =
     , currentMonster : Maybe Monster
     , touched : Bool
     , showMonsterPicker : Bool
+    , windowDimensions : Dimensions
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
+type alias Dimensions =
+    { width : Int
+    , height : Int
+    }
+
+
+init : JsonD.Value -> ( Model, Cmd Msg )
+init flags =
     ( { writtenCount = 0
       , killProgress = 0
       , actualWordsAtLastCheck = 0
@@ -99,9 +107,45 @@ init _ =
       , currentMonster = Nothing
       , touched = False
       , showMonsterPicker = False
+      , windowDimensions = getDimensions flags
       }
     , loadText ()
     )
+
+
+
+-- Flag decoding
+
+
+loggingDecoder : JsonD.Decoder a -> JsonD.Decoder a
+loggingDecoder realDecoder =
+    JsonD.value
+        |> JsonD.andThen
+            (\value ->
+                case JsonD.decodeValue realDecoder value of
+                    Ok decoded ->
+                        JsonD.succeed decoded
+
+                    Err error ->
+                        JsonD.fail <| Debug.log "decode error" <| JsonD.errorToString error
+            )
+
+
+getDimensions : JsonD.Value -> Dimensions
+getDimensions value =
+    case JsonD.decodeValue (loggingDecoder dimensionDecoder) value of
+        Ok dimensions ->
+            dimensions
+
+        Err _ ->
+            { width = 0, height = 0 }
+
+
+dimensionDecoder : JsonD.Decoder Dimensions
+dimensionDecoder =
+    JsonD.map2 Dimensions
+        (JsonD.field "width" JsonD.int)
+        (JsonD.field "height" JsonD.int)
 
 
 
@@ -246,6 +290,20 @@ methodEncoder method =
             JsonE.string "subtractive"
 
 
+getValue : JsonD.Decoder a -> String -> a -> a
+getValue decoder string errorVal =
+    case JsonD.decodeString decoder string of
+        Err _ ->
+            errorVal
+
+        Ok value ->
+            value
+
+
+
+-- Monster decoding
+
+
 wordCountDecoder : JsonD.Decoder Int
 wordCountDecoder =
     JsonD.field "count" JsonD.int
@@ -278,16 +336,6 @@ methodDecoder =
             )
 
 
-getValue : JsonD.Decoder a -> String -> a -> a
-getValue decoder string errorVal =
-    case JsonD.decodeString decoder string of
-        Err _ ->
-            errorVal
-
-        Ok value ->
-            value
-
-
 
 -- Subscriptions
 
@@ -315,6 +363,82 @@ port textLoaded : (Maybe String -> msg) -> Sub msg
 
 view : Model -> Html Msg
 view model =
+    Element.layout
+        [ Font.size 14
+        , Background.color <| rgb255 13 70 113
+        ]
+    <|
+        showWritingPage model
+
+
+showWritingPage : Model -> Element Msg
+showWritingPage model =
+    column
+        [ width fill
+        , height fill
+        ]
+        [ row
+            [ width fill
+            , height <| px 40
+            , inFront <|
+                Input.button
+                    [ centerX
+                    , height <| px 70
+                    , padding 4
+                    , htmlAttribute <| Html.Attributes.style "z-index" "1"
+                    , htmlAttribute <| Html.Attributes.style "border-radius" "50%"
+                    , Border.width 2
+                    , Background.color <| rgb255 78 222 37
+                    , Font.color <| rgb255 240 240 240
+                    ]
+                    { onPress = Just PickMonster
+                    , label = text "TARGET!"
+                    }
+            ]
+            [ el
+                [ padding 10
+                , alignBottom
+                , Font.color <| rgb255 240 240 240
+                ]
+              <|
+                text <|
+                    "Written today: "
+                        ++ String.fromInt model.writtenCount
+            ]
+        , row
+            [ width fill
+            , height fill
+            ]
+            [ el
+                [ width <| px 5
+                ]
+                none
+            , Input.multiline
+                [ width fill
+                , height fill
+                , padding 25
+                , htmlAttribute <| Html.Attributes.placeholder "Write your words here!"
+                ]
+                { onChange = UpdateCount
+                , text = model.currentText
+                , placeholder = Nothing
+                , label = Input.labelLeft [] <| text ""
+                , spellcheck = False
+                }
+            , el
+                [ width <| px 5
+                ]
+                none
+            ]
+        , el
+            [ width fill
+            , height <| px 5
+            ]
+            none
+        ]
+
+
+viewOld model =
     Element.layout
         [ Font.size 14
         , padding 5
