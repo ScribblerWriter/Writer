@@ -1,6 +1,7 @@
 port module Main exposing (Model, init, main)
 
 import Browser
+import Browser.Events
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -13,6 +14,7 @@ import Html exposing (Html)
 import Html.Attributes
 import Json.Decode as JsonD
 import Json.Encode as JsonE
+import List.Extra
 import Task
 import Time
 
@@ -43,32 +45,68 @@ type CountMethod
 -- monster data
 
 
-type alias Monster =
+type alias Target =
     { name : String
     , imgSource : String
-    , killCount : Int
+    , winCount : Int
     }
 
 
-availableMonsters : Dict String Monster
-availableMonsters =
+availableTargets : Dict String Target
+availableTargets =
     Dict.fromList
-        [ ( "Bezos the Destroyer"
-          , { name = "Bezos the Destroyer"
-            , imgSource = "./images/bezos.png"
-            , killCount = 25
+        [ ( "Front-Ax Viking"
+          , { name = "Front-Ax Viking"
+            , imgSource = "./images/viking1.png"
+            , winCount = 500
             }
           )
-        , ( "KDP Support"
-          , { name = "KDP Support"
-            , imgSource = "./images/kdpsupport.png"
-            , killCount = 10
+        , ( "Tough-Guy Viking"
+          , { name = "Tough-Guy Viking"
+            , imgSource = "./images/viking2.png"
+            , winCount = 300
             }
           )
-        , ( "Carlos F"
-          , { name = "Carlos F"
-            , imgSource = "./images/carlosf.png"
-            , killCount = 50
+        , ( "Viking Queen"
+          , { name = "Viking Queen"
+            , imgSource = "./images/viking3.png"
+            , winCount = 1000
+            }
+          )
+        , ( "Stoic Viking"
+          , { name = "Stoic Viking"
+            , imgSource = "./images/viking4.png"
+            , winCount = 200
+            }
+          )
+        , ( "Happy Viking"
+          , { name = "Happy Viking"
+            , imgSource = "./images/viking5.png"
+            , winCount = 600
+            }
+          )
+        , ( "Dancing Viking"
+          , { name = "Dancing Viking"
+            , imgSource = "./images/viking6.png"
+            , winCount = 150
+            }
+          )
+        , ( "Staunch Viking"
+          , { name = "Staunch Viking"
+            , imgSource = "./images/viking7.png"
+            , winCount = 700
+            }
+          )
+        , ( "Angry Viking"
+          , { name = "Angry Viking"
+            , imgSource = "./images/viking8.png"
+            , winCount = 900
+            }
+          )
+        , ( "Side-Ax Viking"
+          , { name = "Side-Ax Viking"
+            , imgSource = "./images/viking9.png"
+            , winCount = 350
             }
           )
         ]
@@ -84,7 +122,7 @@ type alias Model =
     , actualWordsAtLastCheck : Int
     , currentText : String
     , countMethod : CountMethod
-    , currentMonster : Maybe Monster
+    , currentMonster : Maybe Target
     , touched : Bool
     , showMonsterPicker : Bool
     , windowDimensions : Dimensions
@@ -160,6 +198,7 @@ type Msg
     | LoadLocalComplete (Maybe String)
     | PickMonster
     | CancelMonsterPick
+    | WindowResized Int Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -173,7 +212,7 @@ update msg model =
 
         StartFight name ->
             ( { model
-                | currentMonster = availableMonsters |> Dict.get name
+                | currentMonster = availableTargets |> Dict.get name
                 , killProgress = 0
                 , showMonsterPicker = False
               }
@@ -210,6 +249,11 @@ update msg model =
             , Cmd.none
             )
 
+        WindowResized width height ->
+            ( { model | windowDimensions = { width = width, height = height } }
+            , Cmd.none
+            )
+
 
 updateCounts : String -> Model -> Model
 updateCounts document model =
@@ -237,8 +281,8 @@ updateCounts document model =
             case model.currentMonster of
                 Just monster ->
                     if dif > 0 then
-                        if model.killProgress + dif >= monster.killCount then
-                            monster.killCount
+                        if model.killProgress + dif >= monster.winCount then
+                            monster.winCount
 
                         else
                             model.killProgress + dif
@@ -345,6 +389,7 @@ subscriptions model =
     Sub.batch
         [ Time.every 1000 SaveToLocal
         , textLoaded LoadLocalComplete
+        , Browser.Events.onResize WindowResized
         ]
 
 
@@ -437,13 +482,65 @@ showEditor model =
 
 showTargetSelector : Model -> Element Msg
 showTargetSelector model =
+    let
+        imageWidth : Int
+        imageWidth =
+            200
+
+        imagesPerRow : Int
+        imagesPerRow =
+            model.windowDimensions.width // (imageWidth + 10)
+    in
     column
         [ Background.color <| rgb255 108 160 229
         , width fill
         , height fill
         , padding 25
         ]
-        []
+    <|
+        buildTargetRows
+            imagesPerRow
+            imageWidth
+            (Dict.values availableTargets)
+
+
+buildTargetRows : Int -> Int -> List Target -> List (Element Msg)
+buildTargetRows imagesPerRow imageWidth targets =
+    let
+        targetRows : List (List Target)
+        targetRows =
+            List.Extra.greedyGroupsOf imagesPerRow targets
+    in
+    List.map (buildSingleTargetRow imageWidth) targetRows
+
+
+buildSingleTargetRow : Int -> List Target -> Element Msg
+buildSingleTargetRow imageWidth targets =
+    row
+        [ padding 5 ]
+    <|
+        List.map
+            (buildSingleTargetSelector imageWidth)
+            targets
+
+
+buildSingleTargetSelector : Int -> Target -> Element Msg
+buildSingleTargetSelector imageWidth target =
+    el
+        [ Events.onClick (StartFight target.name)
+        , pointer
+        ]
+    <|
+        column
+            []
+            [ image
+                [ width <| px imageWidth ]
+                { src = target.imgSource
+                , description = target.name
+                }
+            , el [ centerX ] <| text target.name
+            , el [ centerX ] <| text <| String.fromInt target.winCount ++ " words"
+            ]
 
 
 showCircleButton : String -> Msg -> Element Msg
@@ -476,7 +573,7 @@ showTopMenu model =
             ]
           <|
             text <|
-                "Written today: "
+                "Written so far: "
                     ++ String.fromInt model.writtenCount
         ]
 
@@ -593,7 +690,7 @@ showMonster model =
                 [ image
                     [ width fill
                     , inFront
-                        (if model.killProgress >= monster.killCount then
+                        (if model.killProgress >= monster.winCount then
                             image
                                 [ width fill
                                 ]
@@ -618,7 +715,7 @@ showMonster model =
                             , height shrink
                             , Font.size 20
                             ]
-                            (text (String.fromInt model.killProgress ++ " / " ++ String.fromInt monster.killCount))
+                            (text (String.fromInt model.killProgress ++ " / " ++ String.fromInt monster.winCount))
                         )
                     ]
                     [ el
@@ -628,7 +725,7 @@ showMonster model =
                         ]
                         none
                     , el
-                        [ width (fillPortion (monster.killCount - model.killProgress))
+                        [ width (fillPortion (monster.winCount - model.killProgress))
                         , height (px 30)
                         , Background.color (rgb255 200 200 200)
                         ]
@@ -674,12 +771,12 @@ showMonsterPickerOld =
                 , width fill
                 ]
               <|
-                List.map showMonsterItem (Dict.values availableMonsters)
+                List.map showMonsterItem (Dict.values availableTargets)
             ]
 
 
-showMonsterItem : Monster -> Element Msg
-showMonsterItem monster =
+showMonsterItem : Target -> Element Msg
+showMonsterItem target =
     column
         [ width <| px 130
         , centerX
@@ -687,12 +784,12 @@ showMonsterItem monster =
         [ image
             [ width <| px 100
             , centerX
-            , Events.onClick (StartFight monster.name)
+            , Events.onClick (StartFight target.name)
             , pointer
             ]
-            { src = monster.imgSource
-            , description = monster.name
+            { src = target.imgSource
+            , description = target.name
             }
-        , el [ centerX ] <| text monster.name
-        , el [ centerX ] <| text <| String.fromInt monster.killCount ++ " words"
+        , el [ centerX ] <| text target.name
+        , el [ centerX ] <| text <| String.fromInt target.winCount ++ " words"
         ]
