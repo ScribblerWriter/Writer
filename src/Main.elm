@@ -118,13 +118,13 @@ availableTargets =
 
 type alias Model =
     { writtenCount : Int
-    , killProgress : Int
+    , winProgress : Int
     , actualWordsAtLastCheck : Int
     , currentText : String
     , countMethod : CountMethod
-    , currentMonster : Maybe Target
+    , currentTarget : Maybe Target
     , touched : Bool
-    , showMonsterPicker : Bool
+    , showTargetSelector : Bool
     , windowDimensions : Dimensions
     }
 
@@ -138,13 +138,13 @@ type alias Dimensions =
 init : JsonD.Value -> ( Model, Cmd Msg )
 init flags =
     ( { writtenCount = 0
-      , killProgress = 0
+      , winProgress = 0
       , actualWordsAtLastCheck = 0
       , currentText = ""
       , countMethod = Additive
-      , currentMonster = Nothing
+      , currentTarget = Nothing
       , touched = False
-      , showMonsterPicker = False
+      , showTargetSelector = False
       , windowDimensions = getDimensions flags
       }
     , loadText ()
@@ -212,9 +212,9 @@ update msg model =
 
         StartFight name ->
             ( { model
-                | currentMonster = availableTargets |> Dict.get name
-                , killProgress = 0
-                , showMonsterPicker = False
+                | currentTarget = availableTargets |> Dict.get name
+                , winProgress = 0
+                , showTargetSelector = False
               }
             , Cmd.none
             )
@@ -240,12 +240,12 @@ update msg model =
                     ( model, Cmd.none )
 
         PickMonster ->
-            ( { model | showMonsterPicker = True }
+            ( { model | showTargetSelector = True }
             , Cmd.none
             )
 
         CancelMonsterPick ->
-            ( { model | showMonsterPicker = False }
+            ( { model | showTargetSelector = False }
             , Cmd.none
             )
 
@@ -277,18 +277,18 @@ updateCounts document model =
             else
                 trimmedWordCount
         , actualWordsAtLastCheck = trimmedWordCount
-        , killProgress =
-            case model.currentMonster of
-                Just monster ->
+        , winProgress =
+            case model.currentTarget of
+                Just target ->
                     if dif > 0 then
-                        if model.killProgress + dif >= monster.winCount then
-                            monster.winCount
+                        if model.winProgress + dif >= target.winCount then
+                            target.winCount
 
                         else
-                            model.killProgress + dif
+                            model.winProgress + dif
 
                     else
-                        model.killProgress
+                        model.winProgress
 
                 Nothing ->
                     0
@@ -423,12 +423,6 @@ view model =
         column
             [ width fill
             , height fill
-            , inFront <|
-                if model.showMonsterPicker then
-                    showCircleButton "CANCEL" CancelMonsterPick
-
-                else
-                    showCircleButton "TARGET!" PickMonster
             ]
             [ showTopMenu model
             , row
@@ -441,7 +435,7 @@ view model =
                     , Background.color <| rgb255 13 70 113
                     ]
                     none
-                , if model.showMonsterPicker then
+                , if model.showTargetSelector then
                     showTargetSelector model
 
                   else
@@ -464,20 +458,31 @@ view model =
 
 showEditor : Model -> Element Msg
 showEditor model =
-    Input.multiline
+    column
         [ width fill
         , height fill
-        , padding 25
-        , Border.width 0
-        , Border.rounded 0
-        , htmlAttribute <| Html.Attributes.placeholder "Write your words here!"
         ]
-        { onChange = UpdateCount
-        , text = model.currentText
-        , placeholder = Nothing
-        , label = Input.labelHidden ""
-        , spellcheck = False
-        }
+        [ case model.currentTarget of
+            Nothing ->
+                none
+
+            Just target ->
+                showProgressBar model target
+        , Input.multiline
+            [ width fill
+            , height fill
+            , padding 25
+            , Border.width 0
+            , Border.rounded 0
+            , htmlAttribute <| Html.Attributes.placeholder "Write your words here!"
+            ]
+            { onChange = UpdateCount
+            , text = model.currentText
+            , placeholder = Nothing
+            , label = Input.labelHidden ""
+            , spellcheck = False
+            }
+        ]
 
 
 showTargetSelector : Model -> Element Msg
@@ -547,10 +552,9 @@ showCircleButton : String -> Msg -> Element Msg
 showCircleButton caption msg =
     Input.button
         [ centerX
-        , height <| px 70
         , padding 4
-        , htmlAttribute <| Html.Attributes.style "border-radius" "50%"
         , Border.width 2
+        , Border.rounded 2
         , Background.color <| rgb255 78 222 37
         , Font.color <| rgb255 240 240 240
         ]
@@ -575,6 +579,50 @@ showTopMenu model =
             text <|
                 "Written so far: "
                     ++ String.fromInt model.writtenCount
+        , el [] <|
+            if model.showTargetSelector then
+                showCircleButton "CANCEL" CancelMonsterPick
+
+            else
+                showCircleButton "TARGET!" PickMonster
+        ]
+
+
+showProgressBar : Model -> Target -> Element Msg
+showProgressBar model target =
+    row
+        [ width fill
+        , height <| px 20
+        , centerY
+        , inFront
+            (el
+                [ centerX
+                , centerY
+                , width shrink
+                , height shrink
+                ]
+                (text
+                    (target.name
+                        ++ ":  "
+                        ++ String.fromInt model.winProgress
+                        ++ " / "
+                        ++ String.fromInt target.winCount
+                    )
+                )
+            )
+        ]
+        [ el
+            [ width <| fillPortion model.winProgress
+            , height <| px 20
+            , Background.color <| rgb255 78 222 37
+            ]
+            none
+        , el
+            [ width <| fillPortion <| target.winCount - model.winProgress
+            , height <| px 20
+            , Background.color <| rgb255 200 200 200
+            ]
+            none
         ]
 
 
@@ -583,7 +631,7 @@ viewOld model =
         [ Font.size 14
         , padding 5
         , inFront
-            (if model.showMonsterPicker then
+            (if model.showTargetSelector then
                 showMonsterPickerOld
 
              else
@@ -678,7 +726,7 @@ viewOld model =
 
 showMonster : Model -> Element Msg
 showMonster model =
-    case model.currentMonster of
+    case model.currentTarget of
         Nothing ->
             Element.none
 
@@ -690,7 +738,7 @@ showMonster model =
                 [ image
                     [ width fill
                     , inFront
-                        (if model.killProgress >= monster.winCount then
+                        (if model.winProgress >= monster.winCount then
                             image
                                 [ width fill
                                 ]
@@ -715,17 +763,17 @@ showMonster model =
                             , height shrink
                             , Font.size 20
                             ]
-                            (text (String.fromInt model.killProgress ++ " / " ++ String.fromInt monster.winCount))
+                            (text (String.fromInt model.winProgress ++ " / " ++ String.fromInt monster.winCount))
                         )
                     ]
                     [ el
-                        [ width (fillPortion model.killProgress)
+                        [ width (fillPortion model.winProgress)
                         , Background.color (rgb255 10 240 10)
                         , height (px 30)
                         ]
                         none
                     , el
-                        [ width (fillPortion (monster.winCount - model.killProgress))
+                        [ width (fillPortion (monster.winCount - model.winProgress))
                         , height (px 30)
                         , Background.color (rgb255 200 200 200)
                         ]
