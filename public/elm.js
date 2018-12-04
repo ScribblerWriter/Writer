@@ -5905,31 +5905,31 @@ var author$project$Main$availableTargets = elm$core$Dict$fromList(
 		[
 			_Utils_Tuple2(
 			'Front-Ax Viking',
-			{imgSource: './images/viking1.png', name: 'Front-Ax Viking', winCount: 500}),
+			{imgSource: './images/viking1.png', name: 'Front-Ax Viking', portraitSource: './images/viking1portrait.png', winCount: 500}),
 			_Utils_Tuple2(
 			'Tough-Guy Viking',
-			{imgSource: './images/viking2.png', name: 'Tough-Guy Viking', winCount: 300}),
+			{imgSource: './images/viking2.png', name: 'Tough-Guy Viking', portraitSource: './images/viking2portrait.png', winCount: 300}),
 			_Utils_Tuple2(
 			'Viking Queen',
-			{imgSource: './images/viking3.png', name: 'Viking Queen', winCount: 1000}),
+			{imgSource: './images/viking3.png', name: 'Viking Queen', portraitSource: './images/viking3portrait.png', winCount: 1000}),
 			_Utils_Tuple2(
 			'Stoic Viking',
-			{imgSource: './images/viking4.png', name: 'Stoic Viking', winCount: 200}),
+			{imgSource: './images/viking4.png', name: 'Stoic Viking', portraitSource: './images/viking4portrait.png', winCount: 200}),
 			_Utils_Tuple2(
 			'Happy Viking',
-			{imgSource: './images/viking5.png', name: 'Happy Viking', winCount: 600}),
+			{imgSource: './images/viking5.png', name: 'Happy Viking', portraitSource: './images/viking5portrait.png', winCount: 600}),
 			_Utils_Tuple2(
 			'Dancing Viking',
-			{imgSource: './images/viking6.png', name: 'Dancing Viking', winCount: 150}),
+			{imgSource: './images/viking6.png', name: 'Dancing Viking', portraitSource: './images/viking6portrait.png', winCount: 150}),
 			_Utils_Tuple2(
 			'Staunch Viking',
-			{imgSource: './images/viking7.png', name: 'Staunch Viking', winCount: 700}),
+			{imgSource: './images/viking7.png', name: 'Staunch Viking', portraitSource: './images/viking7portrait.png', winCount: 700}),
 			_Utils_Tuple2(
 			'Angry Viking',
-			{imgSource: './images/viking8.png', name: 'Angry Viking', winCount: 900}),
+			{imgSource: './images/viking8.png', name: 'Angry Viking', portraitSource: './images/viking8portrait.png', winCount: 900}),
 			_Utils_Tuple2(
 			'Side-Ax Viking',
-			{imgSource: './images/viking9.png', name: 'Side-Ax Viking', winCount: 350})
+			{imgSource: './images/viking9.png', name: 'Side-Ax Viking', portraitSource: './images/viking9portrait.png', winCount: 350})
 		]));
 var elm$json$Json$Encode$string = _Json_wrap;
 var author$project$Main$methodEncoder = function (method) {
@@ -11328,6 +11328,64 @@ var mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
 };
 var mdgriffith$elm_ui$Element$fill = mdgriffith$elm_ui$Internal$Model$Fill(1);
 var mdgriffith$elm_ui$Element$fillPortion = mdgriffith$elm_ui$Internal$Model$Fill;
+var elm$html$Html$Attributes$alt = elm$html$Html$Attributes$stringProperty('alt');
+var elm$html$Html$Attributes$src = function (url) {
+	return A2(
+		elm$html$Html$Attributes$stringProperty,
+		'src',
+		_VirtualDom_noJavaScriptOrHtmlUri(url));
+};
+var mdgriffith$elm_ui$Internal$Model$Attr = function (a) {
+	return {$: 'Attr', a: a};
+};
+var mdgriffith$elm_ui$Internal$Model$htmlClass = function (cls) {
+	return mdgriffith$elm_ui$Internal$Model$Attr(
+		elm$html$Html$Attributes$class(cls));
+};
+var mdgriffith$elm_ui$Element$image = F2(
+	function (attrs, _n0) {
+		var src = _n0.src;
+		var description = _n0.description;
+		var imageAttributes = A2(
+			elm$core$List$filter,
+			function (a) {
+				switch (a.$) {
+					case 'Width':
+						return true;
+					case 'Height':
+						return true;
+					default:
+						return false;
+				}
+			},
+			attrs);
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asEl,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.imageContainer),
+				attrs),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[
+						A4(
+						mdgriffith$elm_ui$Internal$Model$element,
+						mdgriffith$elm_ui$Internal$Model$asEl,
+						mdgriffith$elm_ui$Internal$Model$NodeName('img'),
+						_Utils_ap(
+							_List_fromArray(
+								[
+									mdgriffith$elm_ui$Internal$Model$Attr(
+									elm$html$Html$Attributes$src(src)),
+									mdgriffith$elm_ui$Internal$Model$Attr(
+									elm$html$Html$Attributes$alt(description))
+								]),
+							imageAttributes),
+						mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil))
+					])));
+	});
 var mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
 var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
 	function (a, b) {
@@ -11352,13 +11410,6 @@ var mdgriffith$elm_ui$Element$rgb255 = F3(
 	});
 var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
 var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
-var mdgriffith$elm_ui$Internal$Model$Attr = function (a) {
-	return {$: 'Attr', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$htmlClass = function (cls) {
-	return mdgriffith$elm_ui$Internal$Model$Attr(
-		elm$html$Html$Attributes$class(cls));
-};
 var mdgriffith$elm_ui$Element$row = F2(
 	function (attrs, children) {
 		return A4(
@@ -11417,11 +11468,11 @@ var author$project$Main$showProgressBar = F2(
 				[
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$height(
-					mdgriffith$elm_ui$Element$px(20)),
+					mdgriffith$elm_ui$Element$px(38)),
 					mdgriffith$elm_ui$Element$centerY,
 					mdgriffith$elm_ui$Element$inFront(
 					A2(
-						mdgriffith$elm_ui$Element$el,
+						mdgriffith$elm_ui$Element$row,
 						_List_fromArray(
 							[
 								mdgriffith$elm_ui$Element$centerX,
@@ -11429,8 +11480,28 @@ var author$project$Main$showProgressBar = F2(
 								mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
 								mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink)
 							]),
-						mdgriffith$elm_ui$Element$text(
-							target.name + (':  ' + (elm$core$String$fromInt(model.winProgress) + (' / ' + elm$core$String$fromInt(target.winCount)))))))
+						_List_fromArray(
+							[
+								A2(
+								mdgriffith$elm_ui$Element$image,
+								_List_fromArray(
+									[
+										mdgriffith$elm_ui$Element$width(
+										mdgriffith$elm_ui$Element$px(35))
+									]),
+								{description: target.name + ' portrait', src: target.portraitSource}),
+								A2(
+								mdgriffith$elm_ui$Element$el,
+								_List_fromArray(
+									[
+										mdgriffith$elm_ui$Element$centerX,
+										mdgriffith$elm_ui$Element$centerY,
+										mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+										mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink)
+									]),
+								mdgriffith$elm_ui$Element$text(
+									'  ' + (target.name + (':  ' + (elm$core$String$fromInt(model.winProgress) + (' / ' + elm$core$String$fromInt(target.winCount)))))))
+							])))
 				]),
 			_List_fromArray(
 				[
@@ -12380,57 +12451,6 @@ var author$project$Main$showEditor = function (model) {
 var author$project$Main$StartFight = function (a) {
 	return {$: 'StartFight', a: a};
 };
-var elm$html$Html$Attributes$alt = elm$html$Html$Attributes$stringProperty('alt');
-var elm$html$Html$Attributes$src = function (url) {
-	return A2(
-		elm$html$Html$Attributes$stringProperty,
-		'src',
-		_VirtualDom_noJavaScriptOrHtmlUri(url));
-};
-var mdgriffith$elm_ui$Element$image = F2(
-	function (attrs, _n0) {
-		var src = _n0.src;
-		var description = _n0.description;
-		var imageAttributes = A2(
-			elm$core$List$filter,
-			function (a) {
-				switch (a.$) {
-					case 'Width':
-						return true;
-					case 'Height':
-						return true;
-					default:
-						return false;
-				}
-			},
-			attrs);
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asEl,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.imageContainer),
-				attrs),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[
-						A4(
-						mdgriffith$elm_ui$Internal$Model$element,
-						mdgriffith$elm_ui$Internal$Model$asEl,
-						mdgriffith$elm_ui$Internal$Model$NodeName('img'),
-						_Utils_ap(
-							_List_fromArray(
-								[
-									mdgriffith$elm_ui$Internal$Model$Attr(
-									elm$html$Html$Attributes$src(src)),
-									mdgriffith$elm_ui$Internal$Model$Attr(
-									elm$html$Html$Attributes$alt(description))
-								]),
-							imageAttributes),
-						mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil))
-					])));
-	});
 var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
@@ -12678,7 +12698,7 @@ var elm$core$Dict$values = function (dict) {
 		dict);
 };
 var author$project$Main$showTargetSelector = function (model) {
-	var imageWidth = 200;
+	var imageWidth = 100;
 	var imagesPerRow = (model.windowDimensions.width / (imageWidth + 10)) | 0;
 	return A2(
 		mdgriffith$elm_ui$Element$column,
@@ -12792,14 +12812,15 @@ var mdgriffith$elm_ui$Element$Input$button = F2(
 				_List_fromArray(
 					[label])));
 	});
-var author$project$Main$showCircleButton = F2(
+var author$project$Main$showActionButton = F2(
 	function (caption, msg) {
 		return A2(
 			mdgriffith$elm_ui$Element$Input$button,
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$centerX,
-					mdgriffith$elm_ui$Element$padding(4),
+					mdgriffith$elm_ui$Element$centerY,
+					mdgriffith$elm_ui$Element$padding(2),
 					mdgriffith$elm_ui$Element$Border$width(2),
 					mdgriffith$elm_ui$Element$Border$rounded(2),
 					mdgriffith$elm_ui$Element$Background$color(
@@ -12821,9 +12842,11 @@ var author$project$Main$showTopMenu = function (model) {
 			[
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 				mdgriffith$elm_ui$Element$height(
-				mdgriffith$elm_ui$Element$px(40)),
+				mdgriffith$elm_ui$Element$px(30)),
 				mdgriffith$elm_ui$Element$Background$color(
-				A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113))
+				A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113)),
+				mdgriffith$elm_ui$Element$inFront(
+				model.showTargetSelector ? A2(author$project$Main$showActionButton, 'CANCEL', author$project$Main$CancelMonsterPick) : A2(author$project$Main$showActionButton, 'TARGET!', author$project$Main$PickMonster))
 			]),
 		_List_fromArray(
 			[
@@ -12837,11 +12860,7 @@ var author$project$Main$showTopMenu = function (model) {
 						A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240))
 					]),
 				mdgriffith$elm_ui$Element$text(
-					'Written so far: ' + elm$core$String$fromInt(model.writtenCount))),
-				A2(
-				mdgriffith$elm_ui$Element$el,
-				_List_Nil,
-				model.showTargetSelector ? A2(author$project$Main$showCircleButton, 'CANCEL', author$project$Main$CancelMonsterPick) : A2(author$project$Main$showCircleButton, 'TARGET!', author$project$Main$PickMonster))
+					'Written so far: ' + elm$core$String$fromInt(model.writtenCount)))
 			]));
 };
 var mdgriffith$elm_ui$Internal$Model$FocusStyleOption = function (a) {

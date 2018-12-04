@@ -48,7 +48,9 @@ type CountMethod
 type alias Target =
     { name : String
     , imgSource : String
+    , portraitSource : String
     , winCount : Int
+    , minutes : Int
     }
 
 
@@ -58,55 +60,73 @@ availableTargets =
         [ ( "Front-Ax Viking"
           , { name = "Front-Ax Viking"
             , imgSource = "./images/viking1.png"
+            , portraitSource = "./images/viking1portrait.png"
             , winCount = 500
+            , minutes = 50
             }
           )
         , ( "Tough-Guy Viking"
           , { name = "Tough-Guy Viking"
             , imgSource = "./images/viking2.png"
+            , portraitSource = "./images/viking2portrait.png"
             , winCount = 300
+            , minutes = 30
             }
           )
         , ( "Viking Queen"
           , { name = "Viking Queen"
             , imgSource = "./images/viking3.png"
+            , portraitSource = "./images/viking3portrait.png"
             , winCount = 1000
+            , minutes = 100
             }
           )
         , ( "Stoic Viking"
           , { name = "Stoic Viking"
             , imgSource = "./images/viking4.png"
+            , portraitSource = "./images/viking4portrait.png"
             , winCount = 200
+            , minutes = 20
             }
           )
         , ( "Happy Viking"
           , { name = "Happy Viking"
             , imgSource = "./images/viking5.png"
+            , portraitSource = "./images/viking5portrait.png"
             , winCount = 600
+            , minutes = 60
             }
           )
         , ( "Dancing Viking"
           , { name = "Dancing Viking"
             , imgSource = "./images/viking6.png"
+            , portraitSource = "./images/viking6portrait.png"
             , winCount = 150
+            , minutes = 15
             }
           )
         , ( "Staunch Viking"
           , { name = "Staunch Viking"
             , imgSource = "./images/viking7.png"
+            , portraitSource = "./images/viking7portrait.png"
             , winCount = 700
+            , minutes = 70
             }
           )
         , ( "Angry Viking"
           , { name = "Angry Viking"
             , imgSource = "./images/viking8.png"
+            , portraitSource = "./images/viking8portrait.png"
             , winCount = 900
+            , minutes = 90
             }
           )
         , ( "Side-Ax Viking"
           , { name = "Side-Ax Viking"
             , imgSource = "./images/viking9.png"
+            , portraitSource = "./images/viking9portrait.png"
             , winCount = 350
+            , minutes = 35
             }
           )
         ]
@@ -490,7 +510,7 @@ showTargetSelector model =
     let
         imageWidth : Int
         imageWidth =
-            200
+            100
 
         imagesPerRow : Int
         imagesPerRow =
@@ -548,11 +568,12 @@ buildSingleTargetSelector imageWidth target =
             ]
 
 
-showCircleButton : String -> Msg -> Element Msg
-showCircleButton caption msg =
+showActionButton : String -> Msg -> Element Msg
+showActionButton caption msg =
     Input.button
         [ centerX
-        , padding 4
+        , centerY
+        , padding 2
         , Border.width 2
         , Border.rounded 2
         , Background.color <| rgb255 78 222 37
@@ -567,8 +588,14 @@ showTopMenu : Model -> Element Msg
 showTopMenu model =
     row
         [ width fill
-        , height <| px 40
+        , height <| px 30
         , Background.color <| rgb255 13 70 113
+        , inFront <|
+            if model.showTargetSelector then
+                showActionButton "CANCEL" CancelMonsterPick
+
+            else
+                showActionButton "TARGET!" PickMonster
         ]
         [ el
             [ padding 10
@@ -579,12 +606,6 @@ showTopMenu model =
             text <|
                 "Written so far: "
                     ++ String.fromInt model.writtenCount
-        , el [] <|
-            if model.showTargetSelector then
-                showCircleButton "CANCEL" CancelMonsterPick
-
-            else
-                showCircleButton "TARGET!" PickMonster
         ]
 
 
@@ -592,24 +613,34 @@ showProgressBar : Model -> Target -> Element Msg
 showProgressBar model target =
     row
         [ width fill
-        , height <| px 20
+        , height <| px 38
         , centerY
-        , inFront
-            (el
+        , inFront <|
+            row
                 [ centerX
                 , centerY
                 , width shrink
                 , height shrink
                 ]
-                (text
-                    (target.name
-                        ++ ":  "
-                        ++ String.fromInt model.winProgress
-                        ++ " / "
-                        ++ String.fromInt target.winCount
-                    )
-                )
-            )
+                [ image [ width <| px 35 ]
+                    { src = target.portraitSource
+                    , description = target.name ++ " portrait"
+                    }
+                , el
+                    [ centerX
+                    , centerY
+                    , width shrink
+                    , height shrink
+                    ]
+                  <|
+                    text <|
+                        "  "
+                            ++ target.name
+                            ++ ":  "
+                            ++ String.fromInt model.winProgress
+                            ++ " / "
+                            ++ String.fromInt target.winCount
+                ]
         ]
         [ el
             [ width <| fillPortion model.winProgress
