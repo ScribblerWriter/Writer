@@ -5905,31 +5905,31 @@ var author$project$Main$availableTargets = elm$core$Dict$fromList(
 		[
 			_Utils_Tuple2(
 			'Front-Ax Viking',
-			{imgSource: './images/viking1.png', name: 'Front-Ax Viking', portraitSource: './images/viking1portrait.png', winCount: 500}),
+			{imgSource: './images/viking1.png', minutes: 50, name: 'Front-Ax Viking', portraitSource: './images/viking1portrait.png', winCount: 500}),
 			_Utils_Tuple2(
 			'Tough-Guy Viking',
-			{imgSource: './images/viking2.png', name: 'Tough-Guy Viking', portraitSource: './images/viking2portrait.png', winCount: 300}),
+			{imgSource: './images/viking2.png', minutes: 30, name: 'Tough-Guy Viking', portraitSource: './images/viking2portrait.png', winCount: 300}),
 			_Utils_Tuple2(
 			'Viking Queen',
-			{imgSource: './images/viking3.png', name: 'Viking Queen', portraitSource: './images/viking3portrait.png', winCount: 1000}),
+			{imgSource: './images/viking3.png', minutes: 100, name: 'Viking Queen', portraitSource: './images/viking3portrait.png', winCount: 1000}),
 			_Utils_Tuple2(
 			'Stoic Viking',
-			{imgSource: './images/viking4.png', name: 'Stoic Viking', portraitSource: './images/viking4portrait.png', winCount: 200}),
+			{imgSource: './images/viking4.png', minutes: 20, name: 'Stoic Viking', portraitSource: './images/viking4portrait.png', winCount: 200}),
 			_Utils_Tuple2(
 			'Happy Viking',
-			{imgSource: './images/viking5.png', name: 'Happy Viking', portraitSource: './images/viking5portrait.png', winCount: 600}),
+			{imgSource: './images/viking5.png', minutes: 60, name: 'Happy Viking', portraitSource: './images/viking5portrait.png', winCount: 600}),
 			_Utils_Tuple2(
 			'Dancing Viking',
-			{imgSource: './images/viking6.png', name: 'Dancing Viking', portraitSource: './images/viking6portrait.png', winCount: 150}),
+			{imgSource: './images/viking6.png', minutes: 15, name: 'Dancing Viking', portraitSource: './images/viking6portrait.png', winCount: 150}),
 			_Utils_Tuple2(
 			'Staunch Viking',
-			{imgSource: './images/viking7.png', name: 'Staunch Viking', portraitSource: './images/viking7portrait.png', winCount: 700}),
+			{imgSource: './images/viking7.png', minutes: 70, name: 'Staunch Viking', portraitSource: './images/viking7portrait.png', winCount: 700}),
 			_Utils_Tuple2(
 			'Angry Viking',
-			{imgSource: './images/viking8.png', name: 'Angry Viking', portraitSource: './images/viking8portrait.png', winCount: 900}),
+			{imgSource: './images/viking8.png', minutes: 90, name: 'Angry Viking', portraitSource: './images/viking8portrait.png', winCount: 900}),
 			_Utils_Tuple2(
 			'Side-Ax Viking',
-			{imgSource: './images/viking9.png', name: 'Side-Ax Viking', portraitSource: './images/viking9portrait.png', winCount: 350})
+			{imgSource: './images/viking9.png', minutes: 35, name: 'Side-Ax Viking', portraitSource: './images/viking9portrait.png', winCount: 350})
 		]));
 var elm$json$Json$Encode$string = _Json_wrap;
 var author$project$Main$methodEncoder = function (method) {
@@ -11483,6 +11483,10 @@ var author$project$Main$showProgressBar = F2(
 						_List_fromArray(
 							[
 								A2(
+								mdgriffith$elm_ui$Element$el,
+								_List_Nil,
+								mdgriffith$elm_ui$Element$text(target.name + '  ')),
+								A2(
 								mdgriffith$elm_ui$Element$image,
 								_List_fromArray(
 									[
@@ -11492,15 +11496,9 @@ var author$project$Main$showProgressBar = F2(
 								{description: target.name + ' portrait', src: target.portraitSource}),
 								A2(
 								mdgriffith$elm_ui$Element$el,
-								_List_fromArray(
-									[
-										mdgriffith$elm_ui$Element$centerX,
-										mdgriffith$elm_ui$Element$centerY,
-										mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-										mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink)
-									]),
+								_List_Nil,
 								mdgriffith$elm_ui$Element$text(
-									'  ' + (target.name + (':  ' + (elm$core$String$fromInt(model.winProgress) + (' / ' + elm$core$String$fromInt(target.winCount)))))))
+									'  ' + (elm$core$String$fromInt(model.winProgress) + (' / ' + elm$core$String$fromInt(target.winCount)))))
 							])))
 				]),
 			_List_fromArray(
@@ -12698,7 +12696,7 @@ var elm$core$Dict$values = function (dict) {
 		dict);
 };
 var author$project$Main$showTargetSelector = function (model) {
-	var imageWidth = 100;
+	var imageWidth = 150;
 	var imagesPerRow = (model.windowDimensions.width / (imageWidth + 10)) | 0;
 	return A2(
 		mdgriffith$elm_ui$Element$column,

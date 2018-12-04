@@ -510,7 +510,7 @@ showTargetSelector model =
     let
         imageWidth : Int
         imageWidth =
-            100
+            150
 
         imagesPerRow : Int
         imagesPerRow =
@@ -622,21 +622,19 @@ showProgressBar model target =
                 , width shrink
                 , height shrink
                 ]
-                [ image [ width <| px 35 ]
+                [ el [] <|
+                    text <|
+                        target.name
+                            ++ "  "
+                , image [ width <| px 35 ]
                     { src = target.portraitSource
                     , description = target.name ++ " portrait"
                     }
                 , el
-                    [ centerX
-                    , centerY
-                    , width shrink
-                    , height shrink
-                    ]
+                    []
                   <|
                     text <|
                         "  "
-                            ++ target.name
-                            ++ ":  "
                             ++ String.fromInt model.winProgress
                             ++ " / "
                             ++ String.fromInt target.winCount
