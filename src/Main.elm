@@ -61,8 +61,8 @@ availableTargets =
           , { name = "Front-Ax Viking"
             , imgSource = "./images/viking1.png"
             , portraitSource = "./images/viking1portrait.png"
-            , winCount = 500
-            , minutes = 50
+            , winCount = 25
+            , minutes = 1
             }
           )
         , ( "Tough-Guy Viking"
@@ -143,9 +143,11 @@ type alias Model =
     , currentText : String
     , countMethod : CountMethod
     , currentTarget : Maybe Target
+    , currentTargetTimerInSecs : Int
     , touched : Bool
     , showTargetSelector : Bool
     , windowDimensions : Dimensions
+    , endMessage : String
     }
 
 
@@ -163,9 +165,11 @@ init flags =
       , currentText = ""
       , countMethod = Additive
       , currentTarget = Nothing
+      , currentTargetTimerInSecs = 0
       , touched = False
       , showTargetSelector = False
       , windowDimensions = getDimensions flags
+      , endMessage = ""
       }
     , loadText ()
     )
@@ -216,9 +220,10 @@ type Msg
     | StartFight String
     | SaveToLocal Time.Posix
     | LoadLocalComplete (Maybe String)
-    | PickMonster
-    | CancelMonsterPick
+    | PickTarget
+    | CancelTargetPick
     | WindowResized Int Int
+    | TickTargetTimer Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -231,15 +236,27 @@ update msg model =
             ( { model | countMethod = method }, Cmd.none )
 
         StartFight name ->
+            let
+                currentTarget : Maybe Target
+                currentTarget =
+                    availableTargets |> Dict.get name
+            in
             ( { model
-                | currentTarget = availableTargets |> Dict.get name
+                | currentTarget = currentTarget
                 , winProgress = 0
                 , showTargetSelector = False
+                , currentTargetTimerInSecs =
+                    case currentTarget of
+                        Nothing ->
+                            0
+
+                        Just target ->
+                            target.minutes * 60
               }
             , Cmd.none
             )
 
-        SaveToLocal frequency ->
+        SaveToLocal _ ->
             ( { model | touched = False }
             , saveText <| encodeSaveObject model
             )
@@ -259,12 +276,12 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        PickMonster ->
+        PickTarget ->
             ( { model | showTargetSelector = True }
             , Cmd.none
             )
 
-        CancelMonsterPick ->
+        CancelTargetPick ->
             ( { model | showTargetSelector = False }
             , Cmd.none
             )
@@ -273,6 +290,18 @@ update msg model =
             ( { model | windowDimensions = { width = width, height = height } }
             , Cmd.none
             )
+
+        TickTargetTimer _ ->
+            case model.currentTarget of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just target ->
+                    if model.currentTargetTimerInSecs <= 0 then
+                        ( { model | endMessage = endFight model TimeExpired }, Cmd.none )
+
+                    else
+                        ( { model | currentTargetTimerInSecs = model.currentTargetTimerInSecs - 1 }, Cmd.none )
 
 
 updateCounts : String -> Model -> Model
@@ -312,6 +341,21 @@ updateCounts document model =
 
                 Nothing ->
                     0
+        , endMessage =
+            case model.currentTarget of
+                Just target ->
+                    if dif > 0 then
+                        if model.winProgress + dif >= target.winCount then
+                            endFight model WordsReached
+
+                        else
+                            model.endMessage
+
+                    else
+                        model.endMessage
+
+                Nothing ->
+                    ""
         , currentText = document
         , touched = True
     }
@@ -325,6 +369,21 @@ countWords document =
         |> String.words
         |> List.filter (String.any Char.isAlphaNum)
         |> List.length
+
+
+type EndReason
+    = TimeExpired
+    | WordsReached
+
+
+endFight : Model -> EndReason -> String
+endFight model reason =
+    case reason of
+        TimeExpired ->
+            "Time's up!"
+
+        WordsReached ->
+            "You win!"
 
 
 
@@ -410,6 +469,7 @@ subscriptions model =
         [ Time.every 1000 SaveToLocal
         , textLoaded LoadLocalComplete
         , Browser.Events.onResize WindowResized
+        , Time.every 1000 TickTargetTimer
         ]
 
 
@@ -588,14 +648,14 @@ showTopMenu : Model -> Element Msg
 showTopMenu model =
     row
         [ width fill
-        , height <| px 30
+        , height <| px 50
         , Background.color <| rgb255 13 70 113
         , inFront <|
             if model.showTargetSelector then
-                showActionButton "CANCEL" CancelMonsterPick
+                showActionButton "CANCEL" CancelTargetPick
 
             else
-                showActionButton "TARGET!" PickMonster
+                showActionButton "TARGET!" PickTarget
         ]
         [ el
             [ padding 10
@@ -630,14 +690,21 @@ showProgressBar model target =
                     { src = target.portraitSource
                     , description = target.name ++ " portrait"
                     }
-                , el
-                    []
-                  <|
+                , el [] <|
                     text <|
                         "  "
                             ++ String.fromInt model.winProgress
                             ++ " / "
                             ++ String.fromInt target.winCount
+                , el [] <|
+                    text <|
+                        "  "
+                            ++ (if model.endMessage /= "" then
+                                    model.endMessage
+
+                                else
+                                    formatSecondsToString model.currentTargetTimerInSecs
+                               )
                 ]
         ]
         [ el
@@ -653,6 +720,23 @@ showProgressBar model target =
             ]
             none
         ]
+
+
+formatSecondsToString : Int -> String
+formatSecondsToString seconds =
+    if seconds < 60 then
+        String.padLeft 2 '0' <| String.fromInt seconds
+
+    else if seconds < 3600 then
+        String.padLeft 2 '0' <|
+            String.fromInt (seconds // 60)
+                ++ ":"
+                ++ formatSecondsToString (remainderBy 60 seconds)
+
+    else
+        String.fromInt (seconds // 3600)
+            ++ ":"
+            ++ formatSecondsToString (remainderBy 3600 seconds)
 
 
 viewOld model =
@@ -744,7 +828,7 @@ viewOld model =
                             , color = rgb255 0 0 0
                             }
                         ]
-                        { onPress = Just PickMonster
+                        { onPress = Just PickTarget
                         , label = text "Fight Something!"
                         }
                     , showMonster model
@@ -835,7 +919,7 @@ showMonsterPickerOld =
                     , Border.width 2
                     , Border.solid
                     , Font.size 20
-                    , Events.onClick CancelMonsterPick
+                    , Events.onClick CancelTargetPick
                     , pointer
                     ]
                   <|

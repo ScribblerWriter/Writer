@@ -4918,7 +4918,9 @@ var author$project$Main$init = function (flags) {
 			actualWordsAtLastCheck: 0,
 			countMethod: author$project$Main$Additive,
 			currentTarget: elm$core$Maybe$Nothing,
+			currentTargetTimerInSecs: 0,
 			currentText: '',
+			endMessage: '',
 			showTargetSelector: false,
 			touched: false,
 			winProgress: 0,
@@ -4932,6 +4934,9 @@ var author$project$Main$LoadLocalComplete = function (a) {
 };
 var author$project$Main$SaveToLocal = function (a) {
 	return {$: 'SaveToLocal', a: a};
+};
+var author$project$Main$TickTargetTimer = function (a) {
+	return {$: 'TickTargetTimer', a: a};
 };
 var author$project$Main$WindowResized = F2(
 	function (a, b) {
@@ -5896,16 +5901,18 @@ var author$project$Main$subscriptions = function (model) {
 			[
 				A2(elm$time$Time$every, 1000, author$project$Main$SaveToLocal),
 				author$project$Main$textLoaded(author$project$Main$LoadLocalComplete),
-				elm$browser$Browser$Events$onResize(author$project$Main$WindowResized)
+				elm$browser$Browser$Events$onResize(author$project$Main$WindowResized),
+				A2(elm$time$Time$every, 1000, author$project$Main$TickTargetTimer)
 			]));
 };
+var author$project$Main$TimeExpired = {$: 'TimeExpired'};
 var author$project$Main$actualCountDecoder = A2(elm$json$Json$Decode$field, 'actualCount', elm$json$Json$Decode$int);
 var author$project$Main$availableTargets = elm$core$Dict$fromList(
 	_List_fromArray(
 		[
 			_Utils_Tuple2(
 			'Front-Ax Viking',
-			{imgSource: './images/viking1.png', minutes: 50, name: 'Front-Ax Viking', portraitSource: './images/viking1portrait.png', winCount: 500}),
+			{imgSource: './images/viking1.png', minutes: 1, name: 'Front-Ax Viking', portraitSource: './images/viking1portrait.png', winCount: 25}),
 			_Utils_Tuple2(
 			'Tough-Guy Viking',
 			{imgSource: './images/viking2.png', minutes: 30, name: 'Tough-Guy Viking', portraitSource: './images/viking2portrait.png', winCount: 300}),
@@ -5974,6 +5981,14 @@ var author$project$Main$encodeSaveObject = function (model) {
 					elm$json$Json$Encode$int(model.actualWordsAtLastCheck))
 				])));
 };
+var author$project$Main$endFight = F2(
+	function (model, reason) {
+		if (reason.$ === 'TimeExpired') {
+			return 'Time\'s up!';
+		} else {
+			return 'You win!';
+		}
+	});
 var elm$json$Json$Decode$decodeString = _Json_runOnString;
 var author$project$Main$getValue = F3(
 	function (decoder, string, errorVal) {
@@ -6002,6 +6017,7 @@ var author$project$Main$methodDecoder = A2(
 	A2(elm$json$Json$Decode$field, 'method', elm$json$Json$Decode$string));
 var author$project$Main$saveText = _Platform_outgoingPort('saveText', elm$json$Json$Encode$string);
 var author$project$Main$textDecoder = A2(elm$json$Json$Decode$field, 'text', elm$json$Json$Decode$string);
+var author$project$Main$WordsReached = {$: 'WordsReached'};
 var elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -6044,11 +6060,20 @@ var author$project$Main$updateCounts = F2(
 			{
 				actualWordsAtLastCheck: trimmedWordCount,
 				currentText: document,
-				touched: true,
-				winProgress: function () {
+				endMessage: function () {
 					var _n0 = model.currentTarget;
 					if (_n0.$ === 'Just') {
 						var target = _n0.a;
+						return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? A2(author$project$Main$endFight, model, author$project$Main$WordsReached) : model.endMessage) : model.endMessage;
+					} else {
+						return '';
+					}
+				}(),
+				touched: true,
+				winProgress: function () {
+					var _n1 = model.currentTarget;
+					if (_n1.$ === 'Just') {
+						var target = _n1.a;
 						return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? target.winCount : (model.winProgress + dif)) : model.winProgress;
 					} else {
 						return 0;
@@ -6080,17 +6105,25 @@ var author$project$Main$update = F2(
 					elm$core$Platform$Cmd$none);
 			case 'StartFight':
 				var name = msg.a;
+				var currentTarget = A2(elm$core$Dict$get, name, author$project$Main$availableTargets);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							currentTarget: A2(elm$core$Dict$get, name, author$project$Main$availableTargets),
+							currentTarget: currentTarget,
+							currentTargetTimerInSecs: function () {
+								if (currentTarget.$ === 'Nothing') {
+									return 0;
+								} else {
+									var target = currentTarget.a;
+									return target.minutes * 60;
+								}
+							}(),
 							showTargetSelector: false,
 							winProgress: 0
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'SaveToLocal':
-				var frequency = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -6114,19 +6147,19 @@ var author$project$Main$update = F2(
 				} else {
 					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				}
-			case 'PickMonster':
+			case 'PickTarget':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{showTargetSelector: true}),
 					elm$core$Platform$Cmd$none);
-			case 'CancelMonsterPick':
+			case 'CancelTargetPick':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{showTargetSelector: false}),
 					elm$core$Platform$Cmd$none);
-			default:
+			case 'WindowResized':
 				var width = msg.a;
 				var height = msg.b;
 				return _Utils_Tuple2(
@@ -6136,11 +6169,68 @@ var author$project$Main$update = F2(
 							windowDimensions: {height: height, width: width}
 						}),
 					elm$core$Platform$Cmd$none);
+			default:
+				var _n3 = model.currentTarget;
+				if (_n3.$ === 'Nothing') {
+					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				} else {
+					var target = _n3.a;
+					return (model.currentTargetTimerInSecs <= 0) ? _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								endMessage: A2(author$project$Main$endFight, model, author$project$Main$TimeExpired)
+							}),
+						elm$core$Platform$Cmd$none) : _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{currentTargetTimerInSecs: model.currentTargetTimerInSecs - 1}),
+						elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var author$project$Main$UpdateCount = function (a) {
 	return {$: 'UpdateCount', a: a};
 };
+var elm$core$String$cons = _String_cons;
+var elm$core$String$fromChar = function (_char) {
+	return A2(elm$core$String$cons, _char, '');
+};
+var elm$core$Bitwise$and = _Bitwise_and;
+var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var elm$core$String$repeatHelp = F3(
+	function (n, chunk, result) {
+		return (n <= 0) ? result : A3(
+			elm$core$String$repeatHelp,
+			n >> 1,
+			_Utils_ap(chunk, chunk),
+			(!(n & 1)) ? result : _Utils_ap(result, chunk));
+	});
+var elm$core$String$repeat = F2(
+	function (n, chunk) {
+		return A3(elm$core$String$repeatHelp, n, chunk, '');
+	});
+var elm$core$String$padLeft = F3(
+	function (n, _char, string) {
+		return _Utils_ap(
+			A2(
+				elm$core$String$repeat,
+				n - elm$core$String$length(string),
+				elm$core$String$fromChar(_char)),
+			string);
+	});
+var author$project$Main$formatSecondsToString = function (seconds) {
+	return (seconds < 60) ? A3(
+		elm$core$String$padLeft,
+		2,
+		_Utils_chr('0'),
+		elm$core$String$fromInt(seconds)) : ((seconds < 3600) ? A3(
+		elm$core$String$padLeft,
+		2,
+		_Utils_chr('0'),
+		elm$core$String$fromInt((seconds / 60) | 0) + (':' + author$project$Main$formatSecondsToString(seconds % 60))) : (elm$core$String$fromInt((seconds / 3600) | 0) + (':' + author$project$Main$formatSecondsToString(seconds % 3600))));
+};
+var elm$core$Basics$neq = _Utils_notEqual;
 var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 	return {$: 'AlignX', a: a};
 };
@@ -6317,7 +6407,6 @@ var mdgriffith$elm_ui$Internal$Flag$centerX = mdgriffith$elm_ui$Internal$Flag$fl
 var mdgriffith$elm_ui$Internal$Flag$centerY = mdgriffith$elm_ui$Internal$Flag$flag(43);
 var mdgriffith$elm_ui$Internal$Flag$heightBetween = mdgriffith$elm_ui$Internal$Flag$flag(45);
 var mdgriffith$elm_ui$Internal$Flag$heightFill = mdgriffith$elm_ui$Internal$Flag$flag(37);
-var elm$core$Bitwise$and = _Bitwise_and;
 var mdgriffith$elm_ui$Internal$Flag$present = F2(
 	function (myFlag, _n0) {
 		var fieldOne = _n0.a;
@@ -8669,7 +8758,6 @@ var mdgriffith$elm_ui$Internal$Model$renderNullAdjustmentRule = F2(
 						]))
 				]));
 	});
-var elm$core$Basics$neq = _Utils_notEqual;
 var elm$core$List$maximum = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -11498,7 +11586,12 @@ var author$project$Main$showProgressBar = F2(
 								mdgriffith$elm_ui$Element$el,
 								_List_Nil,
 								mdgriffith$elm_ui$Element$text(
-									'  ' + (elm$core$String$fromInt(model.winProgress) + (' / ' + elm$core$String$fromInt(target.winCount)))))
+									'  ' + (elm$core$String$fromInt(model.winProgress) + (' / ' + elm$core$String$fromInt(target.winCount))))),
+								A2(
+								mdgriffith$elm_ui$Element$el,
+								_List_Nil,
+								mdgriffith$elm_ui$Element$text(
+									'  ' + ((model.endMessage !== '') ? model.endMessage : author$project$Main$formatSecondsToString(model.currentTargetTimerInSecs))))
 							])))
 				]),
 			_List_fromArray(
@@ -12714,8 +12807,8 @@ var author$project$Main$showTargetSelector = function (model) {
 			imageWidth,
 			elm$core$Dict$values(author$project$Main$availableTargets)));
 };
-var author$project$Main$CancelMonsterPick = {$: 'CancelMonsterPick'};
-var author$project$Main$PickMonster = {$: 'PickMonster'};
+var author$project$Main$CancelTargetPick = {$: 'CancelTargetPick'};
+var author$project$Main$PickTarget = {$: 'PickTarget'};
 var elm$html$Html$Attributes$disabled = elm$html$Html$Attributes$boolProperty('disabled');
 var elm$html$Html$Attributes$tabindex = function (n) {
 	return A2(
@@ -12840,11 +12933,11 @@ var author$project$Main$showTopMenu = function (model) {
 			[
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 				mdgriffith$elm_ui$Element$height(
-				mdgriffith$elm_ui$Element$px(30)),
+				mdgriffith$elm_ui$Element$px(50)),
 				mdgriffith$elm_ui$Element$Background$color(
 				A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113)),
 				mdgriffith$elm_ui$Element$inFront(
-				model.showTargetSelector ? A2(author$project$Main$showActionButton, 'CANCEL', author$project$Main$CancelMonsterPick) : A2(author$project$Main$showActionButton, 'TARGET!', author$project$Main$PickMonster))
+				model.showTargetSelector ? A2(author$project$Main$showActionButton, 'CANCEL', author$project$Main$CancelTargetPick) : A2(author$project$Main$showActionButton, 'TARGET!', author$project$Main$PickTarget))
 			]),
 		_List_fromArray(
 			[
