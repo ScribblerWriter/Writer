@@ -2,65 +2,13 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>The Amazing Text Combatotron</title>
 
-    <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase.js"></script>
-    <script>
-      // Initialize Firebase
-      var config = {
-        apiKey: "AIzaSyA7yISzO1I4rss7s1mykVmBjMAKGDExRjo",
-        authDomain: "writer-788cf.firebaseapp.com",
-        databaseURL: "https://writer-788cf.firebaseio.com",
-        projectId: "writer-788cf",
-        storageBucket: "writer-788cf.appspot.com",
-        messagingSenderId: "181941734046"
-      };
-      firebase.initializeApp(config);
-    </script>
-
-
-
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/5.5.9/firebase-app.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/5.5.9/firebase-auth.js"></script>
-<!--     <script defer src="/__/firebase/5.5.9/firebase-database.js"></script>
-    <script defer src="/__/firebase/5.5.9/firebase-messaging.js"></script>
-    <script defer src="/__/firebase/5.5.9/firebase-storage.js"></script>
- -->    <!-- initialize the SDK after all desired features are loaded -->
-    <script defer src="/__/firebase/init.js"></script>
-
-    <script src="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.js"></script>
-    <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.css" />
-
+    <script src="https://www.gstatic.com/firebasejs/5.6.0/firebase.js"></script>
     <script src="elm.js"></script>
-
   </head>
   <body>
     <main></main>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-
-        try {
-          let app = firebase.app();
-          let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');
-          document.getElementById('load').innerHTML = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          document.getElementById('load').innerHTML = 'Error loading the Firebase SDK, check the console.';
-        }
-      });
-    </script>
     <script>
       var appElm = Elm.Main.init({ 
         node: document.querySelector('main'), 
@@ -78,6 +26,6 @@
         );
       });
     </script>
-
+    <script src="fb.js"></script>
   </body>
 </html>
