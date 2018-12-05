@@ -215,27 +215,27 @@ dimensionDecoder =
 
 
 type Msg
-    = UpdateCount String
-    | SetCountMethod CountMethod
-    | StartFight String
-    | SaveToLocal Time.Posix
-    | LoadLocalComplete (Maybe String)
-    | PickTarget
-    | CancelTargetPick
+    = WordsWritten String
+    | CountMethodSelected CountMethod
+    | StartButtonClicked String
+    | SaveTimerTicked Time.Posix
+    | LocalStorageLoaded (Maybe String)
+    | TargetClicked
+    | CancelTargetPickButtonClicked
     | WindowResized Int Int
-    | TickTargetTimer Time.Posix
+    | TargetTimerTicked Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        UpdateCount document ->
+        WordsWritten document ->
             ( updateCounts document model, Cmd.none )
 
-        SetCountMethod method ->
+        CountMethodSelected method ->
             ( { model | countMethod = method }, Cmd.none )
 
-        StartFight name ->
+        StartButtonClicked name ->
             let
                 currentTarget : Maybe Target
                 currentTarget =
@@ -256,12 +256,12 @@ update msg model =
             , Cmd.none
             )
 
-        SaveToLocal _ ->
+        SaveTimerTicked _ ->
             ( { model | touched = False }
             , saveText <| encodeSaveObject model
             )
 
-        LoadLocalComplete content ->
+        LocalStorageLoaded content ->
             case content of
                 Just data ->
                     ( { model
@@ -276,12 +276,12 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        PickTarget ->
+        TargetClicked ->
             ( { model | showTargetSelector = True }
             , Cmd.none
             )
 
-        CancelTargetPick ->
+        CancelTargetPickButtonClicked ->
             ( { model | showTargetSelector = False }
             , Cmd.none
             )
@@ -291,7 +291,7 @@ update msg model =
             , Cmd.none
             )
 
-        TickTargetTimer _ ->
+        TargetTimerTicked _ ->
             case model.currentTarget of
                 Nothing ->
                     ( model, Cmd.none )
@@ -466,10 +466,10 @@ methodDecoder =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Time.every 1000 SaveToLocal
-        , textLoaded LoadLocalComplete
+        [ Time.every 1000 SaveTimerTicked
+        , textLoaded LocalStorageLoaded
         , Browser.Events.onResize WindowResized
-        , Time.every 1000 TickTargetTimer
+        , Time.every 1000 TargetTimerTicked
         ]
 
 
@@ -556,7 +556,7 @@ showEditor model =
             , Border.rounded 0
             , htmlAttribute <| Html.Attributes.placeholder "Write your words here!"
             ]
-            { onChange = UpdateCount
+            { onChange = WordsWritten
             , text = model.currentText
             , placeholder = Nothing
             , label = Input.labelHidden ""
@@ -612,7 +612,7 @@ buildSingleTargetRow imageWidth targets =
 buildSingleTargetSelector : Int -> Target -> Element Msg
 buildSingleTargetSelector imageWidth target =
     el
-        [ Events.onClick (StartFight target.name)
+        [ Events.onClick (StartButtonClicked target.name)
         , pointer
         ]
     <|
@@ -652,10 +652,10 @@ showTopMenu model =
         , Background.color <| rgb255 13 70 113
         , inFront <|
             if model.showTargetSelector then
-                showActionButton "CANCEL" CancelTargetPick
+                showActionButton "CANCEL" CancelTargetPickButtonClicked
 
             else
-                showActionButton "TARGET!" PickTarget
+                showActionButton "TARGET!" TargetClicked
         ]
         [ el
             [ padding 10
@@ -791,7 +791,7 @@ viewOld model =
                             )
                         , Input.radioRow
                             [ spacing 20 ]
-                            { onChange = SetCountMethod
+                            { onChange = CountMethodSelected
                             , selected = Just model.countMethod
                             , label = Input.labelLeft [] (text "")
                             , options =
@@ -804,7 +804,7 @@ viewOld model =
                         [ width fill
                         , height fill
                         ]
-                        { onChange = UpdateCount
+                        { onChange = WordsWritten
                         , text = model.currentText
                         , placeholder = Nothing
                         , label = Input.labelLeft [] (text "")
@@ -828,7 +828,7 @@ viewOld model =
                             , color = rgb255 0 0 0
                             }
                         ]
-                        { onPress = Just PickTarget
+                        { onPress = Just TargetClicked
                         , label = text "Fight Something!"
                         }
                     , showMonster model
@@ -919,7 +919,7 @@ showMonsterPickerOld =
                     , Border.width 2
                     , Border.solid
                     , Font.size 20
-                    , Events.onClick CancelTargetPick
+                    , Events.onClick CancelTargetPickButtonClicked
                     , pointer
                     ]
                   <|
@@ -945,7 +945,7 @@ showMonsterItem target =
         [ image
             [ width <| px 100
             , centerX
-            , Events.onClick (StartFight target.name)
+            , Events.onClick (StartButtonClicked target.name)
             , pointer
             ]
             { src = target.imgSource

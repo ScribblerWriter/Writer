@@ -4929,14 +4929,14 @@ var author$project$Main$init = function (flags) {
 		},
 		author$project$Main$loadText(_Utils_Tuple0));
 };
-var author$project$Main$LoadLocalComplete = function (a) {
-	return {$: 'LoadLocalComplete', a: a};
+var author$project$Main$LocalStorageLoaded = function (a) {
+	return {$: 'LocalStorageLoaded', a: a};
 };
-var author$project$Main$SaveToLocal = function (a) {
-	return {$: 'SaveToLocal', a: a};
+var author$project$Main$SaveTimerTicked = function (a) {
+	return {$: 'SaveTimerTicked', a: a};
 };
-var author$project$Main$TickTargetTimer = function (a) {
-	return {$: 'TickTargetTimer', a: a};
+var author$project$Main$TargetTimerTicked = function (a) {
+	return {$: 'TargetTimerTicked', a: a};
 };
 var author$project$Main$WindowResized = F2(
 	function (a, b) {
@@ -5899,10 +5899,10 @@ var author$project$Main$subscriptions = function (model) {
 	return elm$core$Platform$Sub$batch(
 		_List_fromArray(
 			[
-				A2(elm$time$Time$every, 1000, author$project$Main$SaveToLocal),
-				author$project$Main$textLoaded(author$project$Main$LoadLocalComplete),
+				A2(elm$time$Time$every, 1000, author$project$Main$SaveTimerTicked),
+				author$project$Main$textLoaded(author$project$Main$LocalStorageLoaded),
 				elm$browser$Browser$Events$onResize(author$project$Main$WindowResized),
-				A2(elm$time$Time$every, 1000, author$project$Main$TickTargetTimer)
+				A2(elm$time$Time$every, 1000, author$project$Main$TargetTimerTicked)
 			]));
 };
 var author$project$Main$TimeExpired = {$: 'TimeExpired'};
@@ -6091,19 +6091,19 @@ var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'UpdateCount':
+			case 'WordsWritten':
 				var document = msg.a;
 				return _Utils_Tuple2(
 					A2(author$project$Main$updateCounts, document, model),
 					elm$core$Platform$Cmd$none);
-			case 'SetCountMethod':
+			case 'CountMethodSelected':
 				var method = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{countMethod: method}),
 					elm$core$Platform$Cmd$none);
-			case 'StartFight':
+			case 'StartButtonClicked':
 				var name = msg.a;
 				var currentTarget = A2(elm$core$Dict$get, name, author$project$Main$availableTargets);
 				return _Utils_Tuple2(
@@ -6123,14 +6123,14 @@ var author$project$Main$update = F2(
 							winProgress: 0
 						}),
 					elm$core$Platform$Cmd$none);
-			case 'SaveToLocal':
+			case 'SaveTimerTicked':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{touched: false}),
 					author$project$Main$saveText(
 						author$project$Main$encodeSaveObject(model)));
-			case 'LoadLocalComplete':
+			case 'LocalStorageLoaded':
 				var content = msg.a;
 				if (content.$ === 'Just') {
 					var data = content.a;
@@ -6147,13 +6147,13 @@ var author$project$Main$update = F2(
 				} else {
 					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				}
-			case 'PickTarget':
+			case 'TargetClicked':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{showTargetSelector: true}),
 					elm$core$Platform$Cmd$none);
-			case 'CancelTargetPick':
+			case 'CancelTargetPickButtonClicked':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -6189,8 +6189,8 @@ var author$project$Main$update = F2(
 				}
 		}
 	});
-var author$project$Main$UpdateCount = function (a) {
-	return {$: 'UpdateCount', a: a};
+var author$project$Main$WordsWritten = function (a) {
+	return {$: 'WordsWritten', a: a};
 };
 var elm$core$String$cons = _String_cons;
 var elm$core$String$fromChar = function (_char) {
@@ -12532,15 +12532,15 @@ var author$project$Main$showEditor = function (model) {
 					]),
 				{
 					label: mdgriffith$elm_ui$Element$Input$labelHidden(''),
-					onChange: author$project$Main$UpdateCount,
+					onChange: author$project$Main$WordsWritten,
 					placeholder: elm$core$Maybe$Nothing,
 					spellcheck: false,
 					text: model.currentText
 				})
 			]));
 };
-var author$project$Main$StartFight = function (a) {
-	return {$: 'StartFight', a: a};
+var author$project$Main$StartButtonClicked = function (a) {
+	return {$: 'StartButtonClicked', a: a};
 };
 var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -12567,7 +12567,7 @@ var author$project$Main$buildSingleTargetSelector = F2(
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$Events$onClick(
-					author$project$Main$StartFight(target.name)),
+					author$project$Main$StartButtonClicked(target.name)),
 					mdgriffith$elm_ui$Element$pointer
 				]),
 			A2(
@@ -12807,8 +12807,8 @@ var author$project$Main$showTargetSelector = function (model) {
 			imageWidth,
 			elm$core$Dict$values(author$project$Main$availableTargets)));
 };
-var author$project$Main$CancelTargetPick = {$: 'CancelTargetPick'};
-var author$project$Main$PickTarget = {$: 'PickTarget'};
+var author$project$Main$CancelTargetPickButtonClicked = {$: 'CancelTargetPickButtonClicked'};
+var author$project$Main$TargetClicked = {$: 'TargetClicked'};
 var elm$html$Html$Attributes$disabled = elm$html$Html$Attributes$boolProperty('disabled');
 var elm$html$Html$Attributes$tabindex = function (n) {
 	return A2(
@@ -12937,7 +12937,7 @@ var author$project$Main$showTopMenu = function (model) {
 				mdgriffith$elm_ui$Element$Background$color(
 				A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113)),
 				mdgriffith$elm_ui$Element$inFront(
-				model.showTargetSelector ? A2(author$project$Main$showActionButton, 'CANCEL', author$project$Main$CancelTargetPick) : A2(author$project$Main$showActionButton, 'TARGET!', author$project$Main$PickTarget))
+				model.showTargetSelector ? A2(author$project$Main$showActionButton, 'CANCEL', author$project$Main$CancelTargetPickButtonClicked) : A2(author$project$Main$showActionButton, 'TARGET!', author$project$Main$TargetClicked))
 			]),
 		_List_fromArray(
 			[
