@@ -659,7 +659,7 @@ showTopMenu model =
         ]
         [ el
             [ padding 10
-            , alignBottom
+            , centerY
             , Font.color <| rgb255 240 240 240
             ]
           <|
@@ -676,36 +676,45 @@ showProgressBar model target =
         , height <| px 38
         , centerY
         , inFront <|
-            row
-                [ centerX
-                , centerY
-                , width shrink
-                , height shrink
-                ]
-                [ el [] <|
-                    text <|
-                        target.name
-                            ++ "  "
-                , image [ width <| px 35 ]
-                    { src = target.portraitSource
-                    , description = target.name ++ " portrait"
-                    }
-                , el [] <|
-                    text <|
-                        "  "
-                            ++ String.fromInt model.winProgress
-                            ++ " / "
-                            ++ String.fromInt target.winCount
-                , el [] <|
-                    text <|
-                        "  "
-                            ++ (if model.endMessage /= "" then
-                                    model.endMessage
+            image
+                [ width <| px 35
+                , centerX
+                , onLeft <|
+                    el
+                        [ alignRight, centerY ]
+                    <|
+                        text <|
+                            target.name
+                                ++ "  "
+                , onRight <|
+                    row [ centerY ]
+                        [ el
+                            [ alignLeft
+                            , width shrink
+                            ]
+                          <|
+                            text <|
+                                "  "
+                                    ++ String.fromInt model.winProgress
+                                    ++ " / "
+                                    ++ String.fromInt target.winCount
+                        , el
+                            [ alignLeft
+                            ]
+                          <|
+                            text <|
+                                "  "
+                                    ++ (if model.endMessage /= "" then
+                                            model.endMessage
 
-                                else
-                                    formatSecondsToString model.currentTargetTimerInSecs
-                               )
+                                        else
+                                            formatSecondsToString model.currentTargetTimerInSecs
+                                       )
+                        ]
                 ]
+                { src = target.portraitSource
+                , description = target.name ++ " portrait"
+                }
         ]
         [ el
             [ width <| fillPortion model.winProgress

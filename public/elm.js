@@ -6234,6 +6234,10 @@ var elm$core$Basics$neq = _Utils_notEqual;
 var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 	return {$: 'AlignX', a: a};
 };
+var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
+var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
+var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
+var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
 var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
 var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
 var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
@@ -11484,6 +11488,14 @@ var mdgriffith$elm_ui$Element$inFront = function (element) {
 };
 var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
 var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
+var mdgriffith$elm_ui$Internal$Model$OnLeft = {$: 'OnLeft'};
+var mdgriffith$elm_ui$Element$onLeft = function (element) {
+	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnLeft, element);
+};
+var mdgriffith$elm_ui$Internal$Model$OnRight = {$: 'OnRight'};
+var mdgriffith$elm_ui$Element$onRight = function (element) {
+	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnRight, element);
+};
 var mdgriffith$elm_ui$Internal$Model$Px = function (a) {
 	return {$: 'Px', a: a};
 };
@@ -11560,39 +11572,43 @@ var author$project$Main$showProgressBar = F2(
 					mdgriffith$elm_ui$Element$centerY,
 					mdgriffith$elm_ui$Element$inFront(
 					A2(
-						mdgriffith$elm_ui$Element$row,
+						mdgriffith$elm_ui$Element$image,
 						_List_fromArray(
 							[
+								mdgriffith$elm_ui$Element$width(
+								mdgriffith$elm_ui$Element$px(35)),
 								mdgriffith$elm_ui$Element$centerX,
-								mdgriffith$elm_ui$Element$centerY,
-								mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-								mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink)
+								mdgriffith$elm_ui$Element$onLeft(
+								A2(
+									mdgriffith$elm_ui$Element$el,
+									_List_fromArray(
+										[mdgriffith$elm_ui$Element$alignRight, mdgriffith$elm_ui$Element$centerY]),
+									mdgriffith$elm_ui$Element$text(target.name + '  '))),
+								mdgriffith$elm_ui$Element$onRight(
+								A2(
+									mdgriffith$elm_ui$Element$row,
+									_List_fromArray(
+										[mdgriffith$elm_ui$Element$centerY]),
+									_List_fromArray(
+										[
+											A2(
+											mdgriffith$elm_ui$Element$el,
+											_List_fromArray(
+												[
+													mdgriffith$elm_ui$Element$alignLeft,
+													mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
+												]),
+											mdgriffith$elm_ui$Element$text(
+												'  ' + (elm$core$String$fromInt(model.winProgress) + (' / ' + elm$core$String$fromInt(target.winCount))))),
+											A2(
+											mdgriffith$elm_ui$Element$el,
+											_List_fromArray(
+												[mdgriffith$elm_ui$Element$alignLeft]),
+											mdgriffith$elm_ui$Element$text(
+												'  ' + ((model.endMessage !== '') ? model.endMessage : author$project$Main$formatSecondsToString(model.currentTargetTimerInSecs))))
+										])))
 							]),
-						_List_fromArray(
-							[
-								A2(
-								mdgriffith$elm_ui$Element$el,
-								_List_Nil,
-								mdgriffith$elm_ui$Element$text(target.name + '  ')),
-								A2(
-								mdgriffith$elm_ui$Element$image,
-								_List_fromArray(
-									[
-										mdgriffith$elm_ui$Element$width(
-										mdgriffith$elm_ui$Element$px(35))
-									]),
-								{description: target.name + ' portrait', src: target.portraitSource}),
-								A2(
-								mdgriffith$elm_ui$Element$el,
-								_List_Nil,
-								mdgriffith$elm_ui$Element$text(
-									'  ' + (elm$core$String$fromInt(model.winProgress) + (' / ' + elm$core$String$fromInt(target.winCount))))),
-								A2(
-								mdgriffith$elm_ui$Element$el,
-								_List_Nil,
-								mdgriffith$elm_ui$Element$text(
-									'  ' + ((model.endMessage !== '') ? model.endMessage : author$project$Main$formatSecondsToString(model.currentTargetTimerInSecs))))
-							])))
+						{description: target.name + ' portrait', src: target.portraitSource}))
 				]),
 			_List_fromArray(
 				[
@@ -12924,8 +12940,6 @@ var author$project$Main$showActionButton = F2(
 				onPress: elm$core$Maybe$Just(msg)
 			});
 	});
-var mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
-var mdgriffith$elm_ui$Element$alignBottom = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$Bottom);
 var author$project$Main$showTopMenu = function (model) {
 	return A2(
 		mdgriffith$elm_ui$Element$row,
@@ -12946,7 +12960,7 @@ var author$project$Main$showTopMenu = function (model) {
 				_List_fromArray(
 					[
 						mdgriffith$elm_ui$Element$padding(10),
-						mdgriffith$elm_ui$Element$alignBottom,
+						mdgriffith$elm_ui$Element$centerY,
 						mdgriffith$elm_ui$Element$Font$color(
 						A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240))
 					]),
