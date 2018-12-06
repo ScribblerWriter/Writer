@@ -6224,11 +6224,11 @@ var author$project$Main$formatSecondsToString = function (seconds) {
 		elm$core$String$padLeft,
 		2,
 		_Utils_chr('0'),
-		elm$core$String$fromInt(seconds)) : ((seconds < 3600) ? A3(
+		elm$core$String$fromInt(seconds)) : ((seconds < 3600) ? (A3(
 		elm$core$String$padLeft,
 		2,
 		_Utils_chr('0'),
-		elm$core$String$fromInt((seconds / 60) | 0) + (':' + author$project$Main$formatSecondsToString(seconds % 60))) : (elm$core$String$fromInt((seconds / 3600) | 0) + (':' + author$project$Main$formatSecondsToString(seconds % 3600))));
+		elm$core$String$fromInt((seconds / 60) | 0)) + (':' + author$project$Main$formatSecondsToString(seconds % 60))) : (elm$core$String$fromInt((seconds / 3600) | 0) + (':' + author$project$Main$formatSecondsToString(seconds % 3600))));
 };
 var elm$core$Basics$neq = _Utils_notEqual;
 var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {

@@ -734,13 +734,12 @@ showProgressBar model target =
 formatSecondsToString : Int -> String
 formatSecondsToString seconds =
     if seconds < 60 then
-        String.padLeft 2 '0' <| String.fromInt seconds
+        String.padLeft 2 '0' (String.fromInt seconds)
 
     else if seconds < 3600 then
-        String.padLeft 2 '0' <|
-            String.fromInt (seconds // 60)
-                ++ ":"
-                ++ formatSecondsToString (remainderBy 60 seconds)
+        String.padLeft 2 '0' (String.fromInt (seconds // 60))
+            ++ ":"
+            ++ formatSecondsToString (remainderBy 60 seconds)
 
     else
         String.fromInt (seconds // 3600)
