@@ -20,7 +20,13 @@
       // you can use ports and stuff here
 
       appElm.ports.outgoingMessage.subscribe( msg => {
-        fbdb.saveToDB(msg.collection, msg.content.name, msg.content);
+          if (msg.operation == 'SaveToDb') {
+            fbdb.saveToDb(msg.content);
+          } else if (msg.operation == 'SaveBatchToDb') {
+            fbdb.saveBatchToDb(msg.content);
+          } else if (msg.operation == 'QueryDb') {
+            fbdb.queryDb(msg.content);
+          }
       });
       
     </script>
