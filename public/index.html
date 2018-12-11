@@ -19,7 +19,7 @@
         localStorage.setItem("text", text);
       });
       
-      appElm.ports.loadText.subscribe(function() {
+      appElm.ports.loadText.subscribe(() => {
         appElm.ports.textLoaded.send(
           localStorage.getItem("text")
         );
