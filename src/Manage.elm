@@ -60,6 +60,7 @@ type Msg
     = FieldUpdated Int TargetField String
     | AddTargetButtonClicked
     | AddRowButtonClicked
+    | LoadTargetsButtonClicked
 
 
 
@@ -98,6 +99,14 @@ update msg model =
             , outgoingMessage <|
                 { operation = "SaveBatchToDb"
                 , content = encodeTargetBatch <| Dict.values model.currentTargets
+                }
+            )
+
+        LoadTargetsButtonClicked ->
+            ( model
+            , outgoingMessage <|
+                { operation = "QueryDb"
+                , content = encodeGetTargetsQuery
                 }
             )
 
@@ -177,6 +186,12 @@ encodeTarget target =
         ]
 
 
+encodeGetTargetsQuery : JsonE.Value
+encodeGetTargetsQuery =
+    JsonE.object
+        [ ( "collection", JsonE.string "targets" ) ]
+
+
 
 -- view
 
@@ -206,6 +221,10 @@ view model =
                 , Input.button getButtonProperties
                     { onPress = Just AddRowButtonClicked
                     , label = text "Add Row"
+                    }
+                , Input.button getButtonProperties
+                    { onPress = Just LoadTargetsButtonClicked
+                    , label = text "Load Targets"
                     }
                 ]
             ]

@@ -48,15 +48,16 @@ const fbdb = (function() {
 		},
 
 		queryDb: query => {
-			const where = query.hasOwnProperty('where') ? query.where : ''
-
-			db.collection(query.collection)
-				.get()
-				.where(where)
+			return db.collection(query.collection)
+ 				.get()
 				.then(querySnapshot => {
+					const data = [];
+
 					querySnapshot.forEach(doc => {
-						console.log(doc.name + ', ' + doc.minutes + ' minutes.');
+						data.push(doc.data());
 					});
+
+					return data;
 				})
 				.catch(error => {
 					consol.log("Error getting documents: ", error);

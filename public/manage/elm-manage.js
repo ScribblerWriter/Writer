@@ -4836,7 +4836,6 @@ var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
 var author$project$Main$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
-var elm$json$Json$Encode$int = _Json_wrap;
 var elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
@@ -4851,6 +4850,14 @@ var elm$json$Json$Encode$object = function (pairs) {
 			pairs));
 };
 var elm$json$Json$Encode$string = _Json_wrap;
+var author$project$Main$encodeGetTargetsQuery = elm$json$Json$Encode$object(
+	_List_fromArray(
+		[
+			_Utils_Tuple2(
+			'collection',
+			elm$json$Json$Encode$string('targets'))
+		]));
+var elm$json$Json$Encode$int = _Json_wrap;
 var author$project$Main$encodeTarget = function (target) {
 	return elm$json$Json$Encode$object(
 		_List_fromArray(
@@ -5545,7 +5552,7 @@ var author$project$Main$update = F2(
 								model.currentTargets)
 						}),
 					elm$core$Platform$Cmd$none);
-			default:
+			case 'AddTargetButtonClicked':
 				return _Utils_Tuple2(
 					model,
 					author$project$Main$outgoingMessage(
@@ -5554,10 +5561,16 @@ var author$project$Main$update = F2(
 								elm$core$Dict$values(model.currentTargets)),
 							operation: 'SaveBatchToDb'
 						}));
+			default:
+				return _Utils_Tuple2(
+					model,
+					author$project$Main$outgoingMessage(
+						{content: author$project$Main$encodeGetTargetsQuery, operation: 'QueryDb'}));
 		}
 	});
 var author$project$Main$AddRowButtonClicked = {$: 'AddRowButtonClicked'};
 var author$project$Main$AddTargetButtonClicked = {$: 'AddTargetButtonClicked'};
+var author$project$Main$LoadTargetsButtonClicked = {$: 'LoadTargetsButtonClicked'};
 var author$project$Main$Count = {$: 'Count'};
 var author$project$Main$FieldUpdated = F3(
 	function (a, b, c) {
@@ -12382,6 +12395,13 @@ var author$project$Main$view = function (model) {
 							{
 								label: mdgriffith$elm_ui$Element$text('Add Row'),
 								onPress: elm$core$Maybe$Just(author$project$Main$AddRowButtonClicked)
+							}),
+							A2(
+							mdgriffith$elm_ui$Element$Input$button,
+							author$project$Main$getButtonProperties,
+							{
+								label: mdgriffith$elm_ui$Element$text('Load Targets'),
+								onPress: elm$core$Maybe$Just(author$project$Main$LoadTargetsButtonClicked)
 							})
 						]))
 				])));

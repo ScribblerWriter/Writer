@@ -25,7 +25,10 @@
           } else if (msg.operation == 'SaveBatchToDb') {
             fbdb.saveBatchToDb(msg.content);
           } else if (msg.operation == 'QueryDb') {
-            fbdb.queryDb(msg.content);
+            fbdb.queryDb(msg.content)
+              .then(res => {
+                console.log(res);
+              });
           }
       });
       
