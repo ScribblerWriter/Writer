@@ -4831,179 +4831,50 @@ var author$project$Main$init = function (_n0) {
 		},
 		elm$core$Platform$Cmd$none);
 };
+var author$project$Main$MessageReceived = function (a) {
+	return {$: 'MessageReceived', a: a};
+};
+var elm$json$Json$Decode$andThen = _Json_andThen;
+var elm$json$Json$Decode$field = _Json_decodeField;
+var elm$json$Json$Decode$string = _Json_decodeString;
+var elm$json$Json$Decode$succeed = _Json_succeed;
+var elm$json$Json$Decode$value = _Json_decodeValue;
+var author$project$Main$incomingMessage = _Platform_incomingPort(
+	'incomingMessage',
+	A2(
+		elm$json$Json$Decode$andThen,
+		function (operation) {
+			return A2(
+				elm$json$Json$Decode$andThen,
+				function (content) {
+					return elm$json$Json$Decode$succeed(
+						{content: content, operation: operation});
+				},
+				A2(elm$json$Json$Decode$field, 'content', elm$json$Json$Decode$value));
+		},
+		A2(elm$json$Json$Decode$field, 'operation', elm$json$Json$Decode$string)));
 var elm$core$Platform$Sub$batch = _Platform_batch;
-var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
 var author$project$Main$subscriptions = function (model) {
-	return elm$core$Platform$Sub$none;
-};
-var elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			elm$core$List$foldl,
-			F2(
-				function (_n0, obj) {
-					var k = _n0.a;
-					var v = _n0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var elm$json$Json$Encode$string = _Json_wrap;
-var author$project$Main$encodeGetTargetsQuery = elm$json$Json$Encode$object(
-	_List_fromArray(
-		[
-			_Utils_Tuple2(
-			'collection',
-			elm$json$Json$Encode$string('targets'))
-		]));
-var elm$json$Json$Encode$int = _Json_wrap;
-var author$project$Main$encodeTarget = function (target) {
-	return elm$json$Json$Encode$object(
+	return elm$core$Platform$Sub$batch(
 		_List_fromArray(
 			[
-				_Utils_Tuple2(
-				'name',
-				elm$json$Json$Encode$string(target.name)),
-				_Utils_Tuple2(
-				'count',
-				elm$json$Json$Encode$int(target.count)),
-				_Utils_Tuple2(
-				'minutes',
-				elm$json$Json$Encode$int(target.minutes)),
-				_Utils_Tuple2(
-				'imgSource',
-				elm$json$Json$Encode$string(target.imgSource)),
-				_Utils_Tuple2(
-				'portraitSource',
-				elm$json$Json$Encode$string(target.portraitSource))
+				author$project$Main$incomingMessage(author$project$Main$MessageReceived)
 			]));
 };
-var author$project$Main$encodeTargetSaveObject = function (target) {
-	return elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'collection',
-				elm$json$Json$Encode$string('targets')),
-				_Utils_Tuple2(
-				'id',
-				elm$json$Json$Encode$string(target.name)),
-				_Utils_Tuple2(
-				'data',
-				author$project$Main$encodeTarget(target))
-			]));
+var author$project$Main$makeIndexedList = function (targets) {
+	return A3(
+		elm$core$List$map2,
+		F2(
+			function (index, target) {
+				return _Utils_Tuple2(index, target);
+			}),
+		A2(
+			elm$core$List$range,
+			0,
+			elm$core$List$length(targets)),
+		targets);
 };
-var elm$json$Json$Encode$list = F2(
-	function (func, entries) {
-		return _Json_wrap(
-			A3(
-				elm$core$List$foldl,
-				_Json_addEntry(func),
-				_Json_emptyArray(_Utils_Tuple0),
-				entries));
-	});
-var author$project$Main$encodeTargetBatch = function (targets) {
-	return A2(elm$json$Json$Encode$list, author$project$Main$encodeTargetSaveObject, targets);
-};
-var elm$core$Dict$sizeHelp = F2(
-	function (n, dict) {
-		sizeHelp:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return n;
-			} else {
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$n = A2(elm$core$Dict$sizeHelp, n + 1, right),
-					$temp$dict = left;
-				n = $temp$n;
-				dict = $temp$dict;
-				continue sizeHelp;
-			}
-		}
-	});
-var elm$core$Dict$size = function (dict) {
-	return A2(elm$core$Dict$sizeHelp, 0, dict);
-};
-var author$project$Main$firstAvailableId = function (dict) {
-	return elm$core$Dict$size(dict) + 1;
-};
-var elm$core$Basics$identity = function (x) {
-	return x;
-};
-var author$project$Main$outgoingMessage = _Platform_outgoingPort(
-	'outgoingMessage',
-	function ($) {
-		return elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'content',
-					elm$core$Basics$identity($.content)),
-					_Utils_Tuple2(
-					'operation',
-					elm$json$Json$Encode$string($.operation))
-				]));
-	});
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
-var elm$core$String$toInt = _String_toInt;
-var author$project$Main$updateTarget = F3(
-	function (field, value, target) {
-		if (target.$ === 'Nothing') {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var toUpdate = target.a;
-			switch (field.$) {
-				case 'Name':
-					return elm$core$Maybe$Just(
-						_Utils_update(
-							toUpdate,
-							{name: value}));
-				case 'Count':
-					return elm$core$Maybe$Just(
-						_Utils_update(
-							toUpdate,
-							{
-								count: A2(
-									elm$core$Maybe$withDefault,
-									-1,
-									elm$core$String$toInt(value))
-							}));
-				case 'Minutes':
-					return elm$core$Maybe$Just(
-						_Utils_update(
-							toUpdate,
-							{
-								minutes: A2(
-									elm$core$Maybe$withDefault,
-									-1,
-									elm$core$String$toInt(value))
-							}));
-				case 'ImgSource':
-					return elm$core$Maybe$Just(
-						_Utils_update(
-							toUpdate,
-							{imgSource: value}));
-				default:
-					return elm$core$Maybe$Just(
-						_Utils_update(
-							toUpdate,
-							{portraitSource: value}));
-			}
-		}
-	});
+var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var elm$core$Basics$compare = _Utils_compare;
 var elm$core$Dict$Red = {$: 'Red'};
 var elm$core$Dict$balance = F5(
@@ -5106,6 +4977,261 @@ var elm$core$Dict$insert = F3(
 		} else {
 			var x = _n0;
 			return x;
+		}
+	});
+var elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		elm$core$List$foldl,
+		F2(
+			function (_n0, dict) {
+				var key = _n0.a;
+				var value = _n0.b;
+				return A3(elm$core$Dict$insert, key, value, dict);
+			}),
+		elm$core$Dict$empty,
+		assocs);
+};
+var author$project$Main$convertTargetListToDict = function (targets) {
+	return elm$core$Dict$fromList(
+		author$project$Main$makeIndexedList(targets));
+};
+var elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			elm$core$List$foldl,
+			F2(
+				function (_n0, obj) {
+					var k = _n0.a;
+					var v = _n0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var elm$json$Json$Encode$string = _Json_wrap;
+var author$project$Main$encodeGetTargetsQuery = elm$json$Json$Encode$object(
+	_List_fromArray(
+		[
+			_Utils_Tuple2(
+			'collection',
+			elm$json$Json$Encode$string('targets'))
+		]));
+var elm$json$Json$Encode$int = _Json_wrap;
+var author$project$Main$encodeTarget = function (target) {
+	return elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'name',
+				elm$json$Json$Encode$string(target.name)),
+				_Utils_Tuple2(
+				'count',
+				elm$json$Json$Encode$int(target.count)),
+				_Utils_Tuple2(
+				'minutes',
+				elm$json$Json$Encode$int(target.minutes)),
+				_Utils_Tuple2(
+				'imgSource',
+				elm$json$Json$Encode$string(target.imgSource)),
+				_Utils_Tuple2(
+				'portraitSource',
+				elm$json$Json$Encode$string(target.portraitSource))
+			]));
+};
+var author$project$Main$encodeTargetSaveObject = function (target) {
+	return elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'collection',
+				elm$json$Json$Encode$string('targets')),
+				_Utils_Tuple2(
+				'id',
+				elm$json$Json$Encode$string(target.name)),
+				_Utils_Tuple2(
+				'data',
+				author$project$Main$encodeTarget(target))
+			]));
+};
+var elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(_Utils_Tuple0),
+				entries));
+	});
+var author$project$Main$encodeTargetBatch = function (targets) {
+	return A2(elm$json$Json$Encode$list, author$project$Main$encodeTargetSaveObject, targets);
+};
+var elm$core$Dict$sizeHelp = F2(
+	function (n, dict) {
+		sizeHelp:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return n;
+			} else {
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$n = A2(elm$core$Dict$sizeHelp, n + 1, right),
+					$temp$dict = left;
+				n = $temp$n;
+				dict = $temp$dict;
+				continue sizeHelp;
+			}
+		}
+	});
+var elm$core$Dict$size = function (dict) {
+	return A2(elm$core$Dict$sizeHelp, 0, dict);
+};
+var author$project$Main$firstAvailableId = function (dict) {
+	return elm$core$Dict$size(dict) + 1;
+};
+var elm$json$Json$Decode$map2 = _Json_map2;
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
+	function (key, valDecoder, decoder) {
+		return A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			A2(elm$json$Json$Decode$field, key, valDecoder),
+			decoder);
+	});
+var author$project$Main$Target = F5(
+	function (name, count, minutes, imgSource, portraitSource) {
+		return {count: count, imgSource: imgSource, minutes: minutes, name: name, portraitSource: portraitSource};
+	});
+var elm$json$Json$Decode$int = _Json_decodeInt;
+var author$project$Main$targetDecoder = A3(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'portraitSource',
+	elm$json$Json$Decode$string,
+	A3(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'imgSource',
+		elm$json$Json$Decode$string,
+		A3(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'minutes',
+			elm$json$Json$Decode$int,
+			A3(
+				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+				'count',
+				elm$json$Json$Decode$int,
+				A3(
+					NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+					'name',
+					elm$json$Json$Decode$string,
+					elm$json$Json$Decode$succeed(author$project$Main$Target))))));
+var elm$core$Debug$log = _Debug_log;
+var elm$core$Result$mapError = F2(
+	function (f, result) {
+		if (result.$ === 'Ok') {
+			var v = result.a;
+			return elm$core$Result$Ok(v);
+		} else {
+			var e = result.a;
+			return elm$core$Result$Err(
+				f(e));
+		}
+	});
+var elm$core$Result$withDefault = F2(
+	function (def, result) {
+		if (result.$ === 'Ok') {
+			var a = result.a;
+			return a;
+		} else {
+			return def;
+		}
+	});
+var elm$json$Json$Decode$decodeValue = _Json_run;
+var elm$json$Json$Decode$list = _Json_decodeList;
+var author$project$Main$getLoadedTargets = F2(
+	function (targets, defaultValue) {
+		return A2(
+			elm$core$Result$withDefault,
+			defaultValue,
+			A2(
+				elm$core$Result$mapError,
+				elm$core$Debug$log('error: '),
+				A2(
+					elm$json$Json$Decode$decodeValue,
+					elm$json$Json$Decode$list(author$project$Main$targetDecoder),
+					targets)));
+	});
+var elm$core$Basics$identity = function (x) {
+	return x;
+};
+var author$project$Main$outgoingMessage = _Platform_outgoingPort(
+	'outgoingMessage',
+	function ($) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'content',
+					elm$core$Basics$identity($.content)),
+					_Utils_Tuple2(
+					'operation',
+					elm$json$Json$Encode$string($.operation))
+				]));
+	});
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var elm$core$String$toInt = _String_toInt;
+var author$project$Main$updateTarget = F3(
+	function (field, value, target) {
+		if (target.$ === 'Nothing') {
+			return elm$core$Maybe$Nothing;
+		} else {
+			var toUpdate = target.a;
+			switch (field.$) {
+				case 'Name':
+					return elm$core$Maybe$Just(
+						_Utils_update(
+							toUpdate,
+							{name: value}));
+				case 'Count':
+					return elm$core$Maybe$Just(
+						_Utils_update(
+							toUpdate,
+							{
+								count: A2(
+									elm$core$Maybe$withDefault,
+									-1,
+									elm$core$String$toInt(value))
+							}));
+				case 'Minutes':
+					return elm$core$Maybe$Just(
+						_Utils_update(
+							toUpdate,
+							{
+								minutes: A2(
+									elm$core$Maybe$withDefault,
+									-1,
+									elm$core$String$toInt(value))
+							}));
+				case 'ImgSource':
+					return elm$core$Maybe$Just(
+						_Utils_update(
+							toUpdate,
+							{imgSource: value}));
+				default:
+					return elm$core$Maybe$Just(
+						_Utils_update(
+							toUpdate,
+							{portraitSource: value}));
+			}
 		}
 	});
 var elm$core$Dict$get = F2(
@@ -5561,11 +5687,21 @@ var author$project$Main$update = F2(
 								elm$core$Dict$values(model.currentTargets)),
 							operation: 'SaveBatchToDb'
 						}));
-			default:
+			case 'LoadTargetsButtonClicked':
 				return _Utils_Tuple2(
 					model,
 					author$project$Main$outgoingMessage(
 						{content: author$project$Main$encodeGetTargetsQuery, operation: 'QueryDb'}));
+			default:
+				var message = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							currentTargets: author$project$Main$convertTargetListToDict(
+								A2(author$project$Main$getLoadedTargets, message.content, _List_Nil))
+						}),
+					elm$core$Platform$Cmd$none);
 		}
 	});
 var author$project$Main$AddRowButtonClicked = {$: 'AddRowButtonClicked'};
@@ -5787,8 +5923,6 @@ var mdgriffith$elm_ui$Internal$Model$AsParagraph = {$: 'AsParagraph'};
 var mdgriffith$elm_ui$Internal$Model$asParagraph = mdgriffith$elm_ui$Internal$Model$AsParagraph;
 var elm$core$Basics$not = _Basics_not;
 var elm$json$Json$Decode$map = _Json_map1;
-var elm$json$Json$Decode$map2 = _Json_map2;
-var elm$json$Json$Decode$succeed = _Json_succeed;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 'Normal':
@@ -5852,7 +5986,6 @@ var mdgriffith$elm_ui$Internal$Flag$present = F2(
 	});
 var mdgriffith$elm_ui$Internal$Flag$widthBetween = mdgriffith$elm_ui$Internal$Flag$flag(44);
 var mdgriffith$elm_ui$Internal$Flag$widthFill = mdgriffith$elm_ui$Internal$Flag$flag(39);
-var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var elm$core$Set$Set_elm_builtin = function (a) {
 	return {$: 'Set_elm_builtin', a: a};
 };
@@ -10911,12 +11044,10 @@ var elm$html$Html$Events$stopPropagationOn = F2(
 			event,
 			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
 	});
-var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$at = F2(
 	function (fields, decoder) {
 		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
 	});
-var elm$json$Json$Decode$string = _Json_decodeString;
 var elm$html$Html$Events$targetValue = A2(
 	elm$json$Json$Decode$at,
 	_List_fromArray(
@@ -12276,7 +12407,6 @@ var elm$html$Html$Events$preventDefaultOn = F2(
 			event,
 			elm$virtual_dom$VirtualDom$MayPreventDefault(decoder));
 	});
-var elm$json$Json$Decode$andThen = _Json_andThen;
 var elm$json$Json$Decode$fail = _Json_fail;
 var mdgriffith$elm_ui$Element$Input$onKey = F2(
 	function (desiredCode, msg) {

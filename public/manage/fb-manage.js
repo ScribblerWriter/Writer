@@ -22,9 +22,6 @@ const fbdb = (function() {
 	return {
 		saveToDb: data => {
 			db.collection(data.collection).doc(data.id).set(data.content)
-				.then(() => {
-					console.log("Document written");
-				})
 				.catch(error => {
 					console.error("Error adding document: ", error);
 				});
@@ -39,9 +36,6 @@ const fbdb = (function() {
 			});
 			
 			batch.commit()
-				.then(() => {
-					console.log("Batch written");
-				})
 				.catch(error => {
 					console.error("Error writing batch: ", error);
 				});

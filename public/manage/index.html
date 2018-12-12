@@ -27,12 +27,16 @@
           } else if (msg.operation == 'QueryDb') {
             fbdb.queryDb(msg.content)
               .then(res => {
-                console.log(res);
+                const message = { operation:"TargetsLoaded", content:res }
+                appElm.ports.incomingMessage.send(message);
+              })
+              .catch(error => {
+                console.log ("Couldn't send to port: ", error);
               });
           }
       });
       
     </script>
-    <script src="fb.js"></script>
+    <script src="fb-manage.js"></script>
   </body>
 </html>

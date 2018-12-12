@@ -11,6 +11,7 @@ import Element.Input as Input
 import Element.Region as Region
 import Html exposing (Html)
 import Json.Decode as JsonD
+import Json.Decode.Pipeline exposing (required)
 import Json.Encode as JsonE
 
 
@@ -61,6 +62,7 @@ type Msg
     | AddTargetButtonClicked
     | AddRowButtonClicked
     | LoadTargetsButtonClicked
+    | MessageReceived Message
 
 
 
@@ -110,6 +112,11 @@ update msg model =
                 }
             )
 
+        MessageReceived message ->
+            ( { model | currentTargets = convertTargetListToDict (getLoadedTargets message.content []) }
+            , Cmd.none
+            )
+
 
 firstAvailableId : Dict k v -> Int
 firstAvailableId dict =
@@ -140,13 +147,35 @@ updateTarget field value target =
                     Just { toUpdate | portraitSource = value }
 
 
+getLoadedTargets : JsonD.Value -> List Target -> List Target
+getLoadedTargets targets defaultValue =
+    JsonD.decodeValue (JsonD.list targetDecoder) targets
+        |> Result.withDefault defaultValue
+
+
+convertTargetListToDict : List Target -> Dict Int Target
+convertTargetListToDict targets =
+    Dict.fromList (makeIndexedList targets)
+
+
+makeIndexedList : List Target -> List ( Int, Target )
+makeIndexedList targets =
+    List.map2
+        (\index target ->
+            ( index, target )
+        )
+        (List.range 0 (List.length targets))
+        targets
+
+
 
 -- subscriptions
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ incomingMessage MessageReceived ]
 
 
 type alias Message =
@@ -190,6 +219,16 @@ encodeGetTargetsQuery : JsonE.Value
 encodeGetTargetsQuery =
     JsonE.object
         [ ( "collection", JsonE.string "targets" ) ]
+
+
+targetDecoder : JsonD.Decoder Target
+targetDecoder =
+    JsonD.succeed Target
+        |> required "name" JsonD.string
+        |> required "count" JsonD.int
+        |> required "minutes" JsonD.int
+        |> required "imgSource" JsonD.string
+        |> required "portraitSource" JsonD.string
 
 
 
