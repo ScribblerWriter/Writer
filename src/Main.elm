@@ -13,6 +13,7 @@ import Element.Region as Region
 import Html exposing (Html)
 import Html.Attributes
 import Json.Decode as JsonD
+import Json.Decode.Pipeline exposing (optional, required)
 import Json.Encode as JsonE
 import List.Extra
 import Task
@@ -148,12 +149,22 @@ type alias Model =
     , showTargetSelector : Bool
     , windowDimensions : Dimensions
     , endMessage : String
+    , username : String
+    , password : String
+    , currentUser : Maybe User
     }
 
 
 type alias Dimensions =
     { width : Int
     , height : Int
+    }
+
+
+type alias User =
+    { email : String
+    , uid : String
+    , displayName : String
     }
 
 
@@ -170,6 +181,9 @@ init flags =
       , showTargetSelector = False
       , windowDimensions = getDimensions flags
       , endMessage = ""
+      , username = ""
+      , password = ""
+      , currentUser = Nothing
       }
     , loadText ()
     )
@@ -224,6 +238,11 @@ type Msg
     | CancelTargetPickButtonClicked
     | WindowResized Int Int
     | TargetTimerTicked Time.Posix
+    | LoginButtonClicked
+    | SignUpButtonClicked
+    | SignOutButtonClicked
+    | MessageReceived Message
+    | LoginInputReceived LoginType String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -302,6 +321,55 @@ update msg model =
 
                     else
                         ( { model | currentTargetTimerInSecs = model.currentTargetTimerInSecs - 1 }, Cmd.none )
+
+        LoginButtonClicked ->
+            ( model
+            , outgoingMessage <|
+                { operation = "Login", content = Just <| emailPassEncoder model.username model.password }
+            )
+
+        SignUpButtonClicked ->
+            ( model
+            , outgoingMessage <|
+                { operation = "SignUp", content = Just <| emailPassEncoder model.username model.password }
+            )
+
+        SignOutButtonClicked ->
+            ( model
+            , outgoingMessage <|
+                { operation = "SignOut", content = Nothing }
+            )
+
+        MessageReceived message ->
+            case message.operation of
+                "AuthStateChanged" ->
+                    case message.content of
+                        Nothing ->
+                            ( { model | currentUser = Nothing }, Cmd.none )
+
+                        Just user ->
+                            ( { model
+                                | currentUser =
+                                    case JsonD.decodeValue userDecoder user of
+                                        Err _ ->
+                                            Nothing
+
+                                        Ok decodedUser ->
+                                            Just decodedUser
+                              }
+                            , Cmd.none
+                            )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        LoginInputReceived inputType content ->
+            case inputType of
+                UserName ->
+                    ( { model | username = content }, Cmd.none )
+
+                Password ->
+                    ( { model | password = content }, Cmd.none )
 
 
 updateCounts : String -> Model -> Model
@@ -413,6 +481,14 @@ methodEncoder method =
             JsonE.string "subtractive"
 
 
+emailPassEncoder : String -> String -> JsonE.Value
+emailPassEncoder email pass =
+    JsonE.object
+        [ ( "email", JsonE.string email )
+        , ( "pass", JsonE.string pass )
+        ]
+
+
 getValue : JsonD.Decoder a -> String -> a -> a
 getValue decoder string errorVal =
     case JsonD.decodeString decoder string of
@@ -459,6 +535,14 @@ methodDecoder =
             )
 
 
+userDecoder : JsonD.Decoder User
+userDecoder =
+    JsonD.succeed User
+        |> required "email" JsonD.string
+        |> required "uid" JsonD.string
+        |> optional "displayName" JsonD.string ""
+
+
 
 -- Subscriptions
 
@@ -470,7 +554,14 @@ subscriptions model =
         , textLoaded LocalStorageLoaded
         , Browser.Events.onResize WindowResized
         , Time.every 1000 TargetTimerTicked
+        , incomingMessage MessageReceived
         ]
+
+
+type alias Message =
+    { operation : String
+    , content : Maybe JsonE.Value
+    }
 
 
 port saveText : String -> Cmd msg
@@ -480,6 +571,12 @@ port loadText : () -> Cmd msg
 
 
 port textLoaded : (Maybe String -> msg) -> Sub msg
+
+
+port outgoingMessage : Message -> Cmd msg
+
+
+port incomingMessage : (Message -> msg) -> Sub msg
 
 
 
@@ -504,7 +601,17 @@ view model =
             [ width fill
             , height fill
             ]
-            [ showTopMenu model
+            [ row
+                [ width fill
+                , height <| px 5
+                , Background.color siteBackgroundBlue
+                ]
+                [ none ]
+            , if model.currentUser == Nothing then
+                none
+
+              else
+                showTopMenu model
             , row
                 [ width fill
                 , height fill
@@ -512,25 +619,28 @@ view model =
                 [ el
                     [ width <| px 5
                     , height fill
-                    , Background.color <| rgb255 13 70 113
+                    , Background.color siteBackgroundBlue
                     ]
                     none
                 , if model.showTargetSelector then
                     showTargetSelector model
+
+                  else if model.currentUser == Nothing then
+                    showLoginPanel model
 
                   else
                     showEditor model
                 , el
                     [ width <| px 5
                     , height fill
-                    , Background.color <| rgb255 13 70 113
+                    , Background.color siteBackgroundBlue
                     ]
                     none
                 ]
             , el
                 [ width fill
                 , height <| px 5
-                , Background.color <| rgb255 13 70 113
+                , Background.color siteBackgroundBlue
                 ]
                 none
             ]
@@ -554,7 +664,7 @@ showEditor model =
             , padding 25
             , Border.width 0
             , Border.rounded 0
-            , htmlAttribute <| Html.Attributes.placeholder "Write your words here!"
+            , htmlAttribute <| Html.Attributes.placeholder "Tap target to select one, then write your words here!"
             ]
             { onChange = WordsWritten
             , text = model.currentText
@@ -637,7 +747,7 @@ showActionButton caption msg =
         , Border.width 2
         , Border.rounded 2
         , Background.color <| rgb255 78 222 37
-        , Font.color <| rgb255 240 240 240
+        , Font.color siteLightFontColor
         ]
         { onPress = Just msg
         , label = text caption
@@ -649,7 +759,7 @@ showTopMenu model =
     row
         [ width fill
         , height <| px 50
-        , Background.color <| rgb255 13 70 113
+        , Background.color siteBackgroundBlue
         , inFront <|
             if model.showTargetSelector then
                 showActionButton "CANCEL" CancelTargetPickButtonClicked
@@ -660,12 +770,23 @@ showTopMenu model =
         [ el
             [ padding 10
             , centerY
-            , Font.color <| rgb255 240 240 240
+            , Font.color siteLightFontColor
             ]
           <|
             text <|
                 "Written so far: "
                     ++ String.fromInt model.writtenCount
+        , el
+            [ padding 10
+            , centerY
+            , alignRight
+            , Font.color siteLightFontColor
+            ]
+          <|
+            Input.button []
+                { onPress = Just SignOutButtonClicked
+                , label = text "Sign Out"
+                }
         ]
 
 
@@ -747,218 +868,77 @@ formatSecondsToString seconds =
             ++ formatSecondsToString (remainderBy 3600 seconds)
 
 
-viewOld model =
-    Element.layout
-        [ Font.size 14
-        , padding 5
-        , inFront
-            (if model.showTargetSelector then
-                showMonsterPickerOld
-
-             else
-                none
-            )
-        ]
-    <|
-        column
-            [ width fill
-            , height fill
-            ]
-            [ el
-                [ Region.heading 1
-                , centerX
-                , Font.size 24
-                ]
-                (text "The Amazing Text Combatotron")
-            , row
-                [ width fill
-                , height fill
-                ]
-                [ column
-                    [ width fill
-                    , height fill
-                    ]
-                    [ row
-                        [ width fill
-                        , padding 5
-                        ]
-                        [ el
-                            [ width fill ]
-                            (text ("Current count: " ++ String.fromInt model.writtenCount))
-                        , el
-                            [ width fill
-                            , centerX
-                            ]
-                            (text
-                                (if model.touched then
-                                    "Saving..."
-
-                                 else
-                                    "Saved."
-                                )
-                            )
-                        , Input.radioRow
-                            [ spacing 20 ]
-                            { onChange = CountMethodSelected
-                            , selected = Just model.countMethod
-                            , label = Input.labelLeft [] (text "")
-                            , options =
-                                [ Input.option Additive (el [ alignRight ] (text "Additive"))
-                                , Input.option Subtractive (el [ alignRight ] (text "Subtractive"))
-                                ]
-                            }
-                        ]
-                    , Input.multiline
-                        [ width fill
-                        , height fill
-                        ]
-                        { onChange = WordsWritten
-                        , text = model.currentText
-                        , placeholder = Nothing
-                        , label = Input.labelLeft [] (text "")
-                        , spellcheck = False
-                        }
-                    ]
-                , column
-                    [ width (px 300)
-                    , alignTop
-                    ]
-                    [ Input.button
-                        [ centerX
-                        , padding 4
-                        , Border.rounded 2
-                        , Border.width 1
-                        , Border.solid
-                        , Border.shadow
-                            { offset = ( 1, 1 )
-                            , size = 1
-                            , blur = 5
-                            , color = rgb255 0 0 0
-                            }
-                        ]
-                        { onPress = Just TargetClicked
-                        , label = text "Fight Something!"
-                        }
-                    , showMonster model
-                    ]
-                ]
-            ]
+type LoginType
+    = UserName
+    | Password
 
 
-showMonster : Model -> Element Msg
-showMonster model =
-    case model.currentTarget of
-        Nothing ->
-            Element.none
-
-        Just monster ->
-            column
-                [ width fill
-                , alignTop
-                ]
-                [ image
-                    [ width fill
-                    , inFront
-                        (if model.winProgress >= monster.winCount then
-                            image
-                                [ width fill
-                                ]
-                                { src = "./images/explosion.gif"
-                                , description = "You win!"
-                                }
-
-                         else
-                            none
-                        )
-                    ]
-                    { src = monster.imgSource
-                    , description = monster.name
-                    }
-                , row
-                    [ width fill
-                    , inFront
-                        (el
-                            [ centerX
-                            , centerY
-                            , width shrink
-                            , height shrink
-                            , Font.size 20
-                            ]
-                            (text (String.fromInt model.winProgress ++ " / " ++ String.fromInt monster.winCount))
-                        )
-                    ]
-                    [ el
-                        [ width (fillPortion model.winProgress)
-                        , Background.color (rgb255 10 240 10)
-                        , height (px 30)
-                        ]
-                        none
-                    , el
-                        [ width (fillPortion (monster.winCount - model.winProgress))
-                        , height (px 30)
-                        , Background.color (rgb255 200 200 200)
-                        ]
-                        none
-                    ]
-                ]
-
-
-showMonsterPickerOld : Element Msg
-showMonsterPickerOld =
-    el
-        [ padding 5
-        , Background.color (rgb255 255 221 130)
+showLoginPanel : Model -> Element Msg
+showLoginPanel model =
+    row
+        [ width shrink
+        , height shrink
         , centerX
         , centerY
-        , width shrink
-        , height <| px 200
         ]
-    <|
-        column
-            []
-            [ row
-                [ width fill ]
-                [ el [ width fill ] none
-                , el
-                    [ width shrink
-                    , alignRight
-                    , padding 5
-                    , Border.rounded 10
-                    , Border.width 2
-                    , Border.solid
-                    , Font.size 20
-                    , Events.onClick CancelTargetPickButtonClicked
-                    , pointer
-                    ]
-                  <|
-                    text "X"
-                ]
-            , row
-                [ padding 5
-                , centerX
-                , centerY
-                , width fill
-                ]
-              <|
-                List.map showMonsterItem (Dict.values availableTargets)
+        [ column
+            [ width fill
+            , padding 10
             ]
+            [ Input.email
+                [ Input.focusedOnLoad ]
+                { onChange = LoginInputReceived UserName
+                , text = model.username
+                , placeholder = Just <| Input.placeholder [] (text "Email address")
+                , label = Input.labelHidden "Email address"
+                }
+            , Input.button
+                loginPageButtonAttributes
+                { onPress = Just LoginButtonClicked
+                , label = text "Log in"
+                }
+            ]
+        , column
+            [ width fill
+            , padding 10
+            ]
+            [ Input.newPassword []
+                { onChange = LoginInputReceived Password
+                , text = model.password
+                , placeholder = Just <| Input.placeholder [] (text "Password")
+                , label = Input.labelHidden "Password"
+                , show = False
+                }
+            , Input.button
+                loginPageButtonAttributes
+                { onPress = Just SignUpButtonClicked
+                , label = text "Sign up"
+                }
+            ]
+        ]
 
 
-showMonsterItem : Target -> Element Msg
-showMonsterItem target =
-    column
-        [ width <| px 130
-        , centerX
-        ]
-        [ image
-            [ width <| px 100
-            , centerX
-            , Events.onClick (StartButtonClicked target.name)
-            , pointer
-            ]
-            { src = target.imgSource
-            , description = target.name
-            }
-        , el [ centerX ] <| text target.name
-        , el [ centerX ] <| text <| String.fromInt target.winCount ++ " words"
-        ]
+loginPageButtonAttributes : List (Attribute msg)
+loginPageButtonAttributes =
+    [ centerX
+    , height shrink
+    , padding 5
+    , Border.width 2
+    , Border.rounded 5
+    , Background.color siteBackgroundBlue
+    , Font.color siteLightFontColor
+    ]
+
+
+
+-- Site default colors
+
+
+siteBackgroundBlue : Color
+siteBackgroundBlue =
+    rgb255 13 70 113
+
+
+siteLightFontColor : Color
+siteLightFontColor =
+    rgb255 240 240 240

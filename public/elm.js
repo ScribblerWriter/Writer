@@ -4920,9 +4920,12 @@ var author$project$Main$init = function (flags) {
 			currentTarget: elm$core$Maybe$Nothing,
 			currentTargetTimerInSecs: 0,
 			currentText: '',
+			currentUser: elm$core$Maybe$Nothing,
 			endMessage: '',
+			password: '',
 			showTargetSelector: false,
 			touched: false,
+			username: '',
 			winProgress: 0,
 			windowDimensions: author$project$Main$getDimensions(flags),
 			writtenCount: 0
@@ -4931,6 +4934,9 @@ var author$project$Main$init = function (flags) {
 };
 var author$project$Main$LocalStorageLoaded = function (a) {
 	return {$: 'LocalStorageLoaded', a: a};
+};
+var author$project$Main$MessageReceived = function (a) {
+	return {$: 'MessageReceived', a: a};
 };
 var author$project$Main$SaveTimerTicked = function (a) {
 	return {$: 'SaveTimerTicked', a: a};
@@ -4946,6 +4952,28 @@ var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$null = _Json_decodeNull;
 var elm$json$Json$Decode$oneOf = _Json_oneOf;
 var elm$json$Json$Decode$string = _Json_decodeString;
+var author$project$Main$incomingMessage = _Platform_incomingPort(
+	'incomingMessage',
+	A2(
+		elm$json$Json$Decode$andThen,
+		function (operation) {
+			return A2(
+				elm$json$Json$Decode$andThen,
+				function (content) {
+					return elm$json$Json$Decode$succeed(
+						{content: content, operation: operation});
+				},
+				A2(
+					elm$json$Json$Decode$field,
+					'content',
+					elm$json$Json$Decode$oneOf(
+						_List_fromArray(
+							[
+								elm$json$Json$Decode$null(elm$core$Maybe$Nothing),
+								A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, elm$json$Json$Decode$value)
+							]))));
+		},
+		A2(elm$json$Json$Decode$field, 'operation', elm$json$Json$Decode$string)));
 var author$project$Main$textLoaded = _Platform_incomingPort(
 	'textLoaded',
 	elm$json$Json$Decode$oneOf(
@@ -5902,7 +5930,8 @@ var author$project$Main$subscriptions = function (model) {
 				A2(elm$time$Time$every, 1000, author$project$Main$SaveTimerTicked),
 				author$project$Main$textLoaded(author$project$Main$LocalStorageLoaded),
 				elm$browser$Browser$Events$onResize(author$project$Main$WindowResized),
-				A2(elm$time$Time$every, 1000, author$project$Main$TargetTimerTicked)
+				A2(elm$time$Time$every, 1000, author$project$Main$TargetTimerTicked),
+				author$project$Main$incomingMessage(author$project$Main$MessageReceived)
 			]));
 };
 var author$project$Main$TimeExpired = {$: 'TimeExpired'};
@@ -5938,15 +5967,6 @@ var author$project$Main$availableTargets = elm$core$Dict$fromList(
 			'Side-Ax Viking',
 			{imgSource: './images/viking9.png', minutes: 35, name: 'Side-Ax Viking', portraitSource: './images/viking9portrait.png', winCount: 350})
 		]));
-var elm$json$Json$Encode$string = _Json_wrap;
-var author$project$Main$methodEncoder = function (method) {
-	if (method.$ === 'Additive') {
-		return elm$json$Json$Encode$string('additive');
-	} else {
-		return elm$json$Json$Encode$string('subtractive');
-	}
-};
-var elm$json$Json$Encode$int = _Json_wrap;
 var elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
@@ -5960,6 +5980,28 @@ var elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(_Utils_Tuple0),
 			pairs));
 };
+var elm$json$Json$Encode$string = _Json_wrap;
+var author$project$Main$emailPassEncoder = F2(
+	function (email, pass) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'email',
+					elm$json$Json$Encode$string(email)),
+					_Utils_Tuple2(
+					'pass',
+					elm$json$Json$Encode$string(pass))
+				]));
+	});
+var author$project$Main$methodEncoder = function (method) {
+	if (method.$ === 'Additive') {
+		return elm$json$Json$Encode$string('additive');
+	} else {
+		return elm$json$Json$Encode$string('subtractive');
+	}
+};
+var elm$json$Json$Encode$int = _Json_wrap;
 var author$project$Main$encodeSaveObject = function (model) {
 	return A2(
 		elm$json$Json$Encode$encode,
@@ -6015,6 +6057,31 @@ var author$project$Main$methodDecoder = A2(
 		}
 	},
 	A2(elm$json$Json$Decode$field, 'method', elm$json$Json$Decode$string));
+var elm$core$Maybe$destruct = F3(
+	function (_default, func, maybe) {
+		if (maybe.$ === 'Just') {
+			var a = maybe.a;
+			return func(a);
+		} else {
+			return _default;
+		}
+	});
+var author$project$Main$outgoingMessage = _Platform_outgoingPort(
+	'outgoingMessage',
+	function ($) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'content',
+					function ($) {
+						return A3(elm$core$Maybe$destruct, elm$json$Json$Encode$null, elm$core$Basics$identity, $);
+					}($.content)),
+					_Utils_Tuple2(
+					'operation',
+					elm$json$Json$Encode$string($.operation))
+				]));
+	});
 var author$project$Main$saveText = _Platform_outgoingPort('saveText', elm$json$Json$Encode$string);
 var author$project$Main$textDecoder = A2(elm$json$Json$Decode$field, 'text', elm$json$Json$Decode$string);
 var author$project$Main$WordsReached = {$: 'WordsReached'};
@@ -6082,6 +6149,75 @@ var author$project$Main$updateCounts = F2(
 				writtenCount: (dif > 0) ? (model.writtenCount + dif) : (_Utils_eq(model.countMethod, author$project$Main$Additive) ? model.writtenCount : trimmedWordCount)
 			});
 	});
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder = F3(
+	function (pathDecoder, valDecoder, fallback) {
+		var nullOr = function (decoder) {
+			return elm$json$Json$Decode$oneOf(
+				_List_fromArray(
+					[
+						decoder,
+						elm$json$Json$Decode$null(fallback)
+					]));
+		};
+		var handleResult = function (input) {
+			var _n0 = A2(elm$json$Json$Decode$decodeValue, pathDecoder, input);
+			if (_n0.$ === 'Ok') {
+				var rawValue = _n0.a;
+				var _n1 = A2(
+					elm$json$Json$Decode$decodeValue,
+					nullOr(valDecoder),
+					rawValue);
+				if (_n1.$ === 'Ok') {
+					var finalResult = _n1.a;
+					return elm$json$Json$Decode$succeed(finalResult);
+				} else {
+					var finalErr = _n1.a;
+					return elm$json$Json$Decode$fail(
+						elm$json$Json$Decode$errorToString(finalErr));
+				}
+			} else {
+				return elm$json$Json$Decode$succeed(fallback);
+			}
+		};
+		return A2(elm$json$Json$Decode$andThen, handleResult, elm$json$Json$Decode$value);
+	});
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional = F4(
+	function (key, valDecoder, fallback, decoder) {
+		return A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			A3(
+				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder,
+				A2(elm$json$Json$Decode$field, key, elm$json$Json$Decode$value),
+				valDecoder,
+				fallback),
+			decoder);
+	});
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
+	function (key, valDecoder, decoder) {
+		return A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			A2(elm$json$Json$Decode$field, key, valDecoder),
+			decoder);
+	});
+var author$project$Main$User = F3(
+	function (email, uid, displayName) {
+		return {displayName: displayName, email: email, uid: uid};
+	});
+var author$project$Main$userDecoder = A4(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+	'displayName',
+	elm$json$Json$Decode$string,
+	'',
+	A3(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'uid',
+		elm$json$Json$Decode$string,
+		A3(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'email',
+			elm$json$Json$Decode$string,
+			elm$json$Json$Decode$succeed(author$project$Main$User))));
 var author$project$Main$wordCountDecoder = A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int);
 var elm$core$Basics$negate = function (n) {
 	return -n;
@@ -6169,7 +6305,7 @@ var author$project$Main$update = F2(
 							windowDimensions: {height: height, width: width}
 						}),
 					elm$core$Platform$Cmd$none);
-			default:
+			case 'TargetTimerTicked':
 				var _n3 = model.currentTarget;
 				if (_n3.$ === 'Nothing') {
 					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
@@ -6185,6 +6321,77 @@ var author$project$Main$update = F2(
 						_Utils_update(
 							model,
 							{currentTargetTimerInSecs: model.currentTargetTimerInSecs - 1}),
+						elm$core$Platform$Cmd$none);
+				}
+			case 'LoginButtonClicked':
+				return _Utils_Tuple2(
+					model,
+					author$project$Main$outgoingMessage(
+						{
+							content: elm$core$Maybe$Just(
+								A2(author$project$Main$emailPassEncoder, model.username, model.password)),
+							operation: 'Login'
+						}));
+			case 'SignUpButtonClicked':
+				return _Utils_Tuple2(
+					model,
+					author$project$Main$outgoingMessage(
+						{
+							content: elm$core$Maybe$Just(
+								A2(author$project$Main$emailPassEncoder, model.username, model.password)),
+							operation: 'SignUp'
+						}));
+			case 'SignOutButtonClicked':
+				return _Utils_Tuple2(
+					model,
+					author$project$Main$outgoingMessage(
+						{content: elm$core$Maybe$Nothing, operation: 'SignOut'}));
+			case 'MessageReceived':
+				var message = msg.a;
+				var _n4 = message.operation;
+				if (_n4 === 'AuthStateChanged') {
+					var _n5 = message.content;
+					if (_n5.$ === 'Nothing') {
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{currentUser: elm$core$Maybe$Nothing}),
+							elm$core$Platform$Cmd$none);
+					} else {
+						var user = _n5.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									currentUser: function () {
+										var _n6 = A2(elm$json$Json$Decode$decodeValue, author$project$Main$userDecoder, user);
+										if (_n6.$ === 'Err') {
+											return elm$core$Maybe$Nothing;
+										} else {
+											var decodedUser = _n6.a;
+											return elm$core$Maybe$Just(decodedUser);
+										}
+									}()
+								}),
+							elm$core$Platform$Cmd$none);
+					}
+				} else {
+					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				}
+			default:
+				var inputType = msg.a;
+				var content = msg.b;
+				if (inputType.$ === 'UserName') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{username: content}),
+						elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{password: content}),
 						elm$core$Platform$Cmd$none);
 				}
 		}
@@ -12544,7 +12751,7 @@ var author$project$Main$showEditor = function (model) {
 						mdgriffith$elm_ui$Element$Border$width(0),
 						mdgriffith$elm_ui$Element$Border$rounded(0),
 						mdgriffith$elm_ui$Element$htmlAttribute(
-						elm$html$Html$Attributes$placeholder('Write your words here!'))
+						elm$html$Html$Attributes$placeholder('Tap target to select one, then write your words here!'))
 					]),
 				{
 					label: mdgriffith$elm_ui$Element$Input$labelHidden(''),
@@ -12555,8 +12762,32 @@ var author$project$Main$showEditor = function (model) {
 				})
 			]));
 };
-var author$project$Main$StartButtonClicked = function (a) {
-	return {$: 'StartButtonClicked', a: a};
+var author$project$Main$LoginButtonClicked = {$: 'LoginButtonClicked'};
+var author$project$Main$LoginInputReceived = F2(
+	function (a, b) {
+		return {$: 'LoginInputReceived', a: a, b: b};
+	});
+var author$project$Main$Password = {$: 'Password'};
+var author$project$Main$SignUpButtonClicked = {$: 'SignUpButtonClicked'};
+var author$project$Main$UserName = {$: 'UserName'};
+var author$project$Main$siteBackgroundBlue = A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113);
+var author$project$Main$siteLightFontColor = A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240);
+var author$project$Main$loginPageButtonAttributes = _List_fromArray(
+	[
+		mdgriffith$elm_ui$Element$centerX,
+		mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+		mdgriffith$elm_ui$Element$padding(5),
+		mdgriffith$elm_ui$Element$Border$width(2),
+		mdgriffith$elm_ui$Element$Border$rounded(5),
+		mdgriffith$elm_ui$Element$Background$color(author$project$Main$siteBackgroundBlue),
+		mdgriffith$elm_ui$Element$Font$color(author$project$Main$siteLightFontColor)
+	]);
+var elm$html$Html$Attributes$disabled = elm$html$Html$Attributes$boolProperty('disabled');
+var elm$html$Html$Attributes$tabindex = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'tabIndex',
+		elm$core$String$fromInt(n));
 };
 var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -12576,6 +12807,202 @@ var elm$html$Html$Events$onClick = function (msg) {
 		elm$json$Json$Decode$succeed(msg));
 };
 var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
+var mdgriffith$elm_ui$Element$Input$enter = 'Enter';
+var elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
+	return {$: 'MayPreventDefault', a: a};
+};
+var elm$html$Html$Events$preventDefaultOn = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayPreventDefault(decoder));
+	});
+var mdgriffith$elm_ui$Element$Input$onKey = F2(
+	function (desiredCode, msg) {
+		var decode = function (code) {
+			return _Utils_eq(code, desiredCode) ? elm$json$Json$Decode$succeed(msg) : elm$json$Json$Decode$fail('Not the enter key');
+		};
+		var isKey = A2(
+			elm$json$Json$Decode$andThen,
+			decode,
+			A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+		return mdgriffith$elm_ui$Internal$Model$Attr(
+			A2(
+				elm$html$Html$Events$preventDefaultOn,
+				'keyup',
+				A2(
+					elm$json$Json$Decode$map,
+					function (fired) {
+						return _Utils_Tuple2(fired, true);
+					},
+					isKey)));
+	});
+var mdgriffith$elm_ui$Element$Input$onEnter = function (msg) {
+	return A2(mdgriffith$elm_ui$Element$Input$onKey, mdgriffith$elm_ui$Element$Input$enter, msg);
+};
+var mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
+var mdgriffith$elm_ui$Element$Input$button = F2(
+	function (attrs, _n0) {
+		var onPress = _n0.onPress;
+		var label = _n0.label;
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asEl,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentCenterX + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.contentCenterY + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.seButton + (' ' + mdgriffith$elm_ui$Internal$Style$classes.noTextSelection)))))),
+						A2(
+							elm$core$List$cons,
+							mdgriffith$elm_ui$Element$pointer,
+							A2(
+								elm$core$List$cons,
+								mdgriffith$elm_ui$Element$Input$focusDefault(attrs),
+								A2(
+									elm$core$List$cons,
+									mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$Button),
+									A2(
+										elm$core$List$cons,
+										mdgriffith$elm_ui$Internal$Model$Attr(
+											elm$html$Html$Attributes$tabindex(0)),
+										function () {
+											if (onPress.$ === 'Nothing') {
+												return A2(
+													elm$core$List$cons,
+													mdgriffith$elm_ui$Internal$Model$Attr(
+														elm$html$Html$Attributes$disabled(true)),
+													attrs);
+											} else {
+												var msg = onPress.a;
+												return A2(
+													elm$core$List$cons,
+													mdgriffith$elm_ui$Element$Events$onClick(msg),
+													A2(
+														elm$core$List$cons,
+														mdgriffith$elm_ui$Element$Input$onEnter(msg),
+														attrs));
+											}
+										}()))))))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[label])));
+	});
+var mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
+	return {$: 'TextInputNode', a: a};
+};
+var mdgriffith$elm_ui$Element$Input$email = mdgriffith$elm_ui$Element$Input$textHelper(
+	{
+		autofill: elm$core$Maybe$Just('email'),
+		spellchecked: false,
+		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('email')
+	});
+var elm$html$Html$Attributes$autofocus = elm$html$Html$Attributes$boolProperty('autofocus');
+var mdgriffith$elm_ui$Element$Input$focusedOnLoad = mdgriffith$elm_ui$Internal$Model$Attr(
+	elm$html$Html$Attributes$autofocus(true));
+var mdgriffith$elm_ui$Element$Input$newPassword = F2(
+	function (attrs, pass) {
+		return A3(
+			mdgriffith$elm_ui$Element$Input$textHelper,
+			{
+				autofill: elm$core$Maybe$Just('new-password'),
+				spellchecked: false,
+				type_: mdgriffith$elm_ui$Element$Input$TextInputNode(
+					pass.show ? 'text' : 'password')
+			},
+			attrs,
+			{label: pass.label, onChange: pass.onChange, placeholder: pass.placeholder, text: pass.text});
+	});
+var mdgriffith$elm_ui$Element$Input$Placeholder = F2(
+	function (a, b) {
+		return {$: 'Placeholder', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$Input$placeholder = mdgriffith$elm_ui$Element$Input$Placeholder;
+var author$project$Main$showLoginPanel = function (model) {
+	return A2(
+		mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+				mdgriffith$elm_ui$Element$centerX,
+				mdgriffith$elm_ui$Element$centerY
+			]),
+		_List_fromArray(
+			[
+				A2(
+				mdgriffith$elm_ui$Element$column,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+						mdgriffith$elm_ui$Element$padding(10)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						mdgriffith$elm_ui$Element$Input$email,
+						_List_fromArray(
+							[mdgriffith$elm_ui$Element$Input$focusedOnLoad]),
+						{
+							label: mdgriffith$elm_ui$Element$Input$labelHidden('Email address'),
+							onChange: author$project$Main$LoginInputReceived(author$project$Main$UserName),
+							placeholder: elm$core$Maybe$Just(
+								A2(
+									mdgriffith$elm_ui$Element$Input$placeholder,
+									_List_Nil,
+									mdgriffith$elm_ui$Element$text('Email address'))),
+							text: model.username
+						}),
+						A2(
+						mdgriffith$elm_ui$Element$Input$button,
+						author$project$Main$loginPageButtonAttributes,
+						{
+							label: mdgriffith$elm_ui$Element$text('Log in'),
+							onPress: elm$core$Maybe$Just(author$project$Main$LoginButtonClicked)
+						})
+					])),
+				A2(
+				mdgriffith$elm_ui$Element$column,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+						mdgriffith$elm_ui$Element$padding(10)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						mdgriffith$elm_ui$Element$Input$newPassword,
+						_List_Nil,
+						{
+							label: mdgriffith$elm_ui$Element$Input$labelHidden('Password'),
+							onChange: author$project$Main$LoginInputReceived(author$project$Main$Password),
+							placeholder: elm$core$Maybe$Just(
+								A2(
+									mdgriffith$elm_ui$Element$Input$placeholder,
+									_List_Nil,
+									mdgriffith$elm_ui$Element$text('Password'))),
+							show: false,
+							text: model.password
+						}),
+						A2(
+						mdgriffith$elm_ui$Element$Input$button,
+						author$project$Main$loginPageButtonAttributes,
+						{
+							label: mdgriffith$elm_ui$Element$text('Sign up'),
+							onPress: elm$core$Maybe$Just(author$project$Main$SignUpButtonClicked)
+						})
+					]))
+			]));
+};
+var author$project$Main$StartButtonClicked = function (a) {
+	return {$: 'StartButtonClicked', a: a};
+};
 var author$project$Main$buildSingleTargetSelector = F2(
 	function (imageWidth, target) {
 		return A2(
@@ -12824,101 +13251,8 @@ var author$project$Main$showTargetSelector = function (model) {
 			elm$core$Dict$values(author$project$Main$availableTargets)));
 };
 var author$project$Main$CancelTargetPickButtonClicked = {$: 'CancelTargetPickButtonClicked'};
+var author$project$Main$SignOutButtonClicked = {$: 'SignOutButtonClicked'};
 var author$project$Main$TargetClicked = {$: 'TargetClicked'};
-var elm$html$Html$Attributes$disabled = elm$html$Html$Attributes$boolProperty('disabled');
-var elm$html$Html$Attributes$tabindex = function (n) {
-	return A2(
-		_VirtualDom_attribute,
-		'tabIndex',
-		elm$core$String$fromInt(n));
-};
-var mdgriffith$elm_ui$Element$Input$enter = 'Enter';
-var elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
-	return {$: 'MayPreventDefault', a: a};
-};
-var elm$html$Html$Events$preventDefaultOn = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$MayPreventDefault(decoder));
-	});
-var mdgriffith$elm_ui$Element$Input$onKey = F2(
-	function (desiredCode, msg) {
-		var decode = function (code) {
-			return _Utils_eq(code, desiredCode) ? elm$json$Json$Decode$succeed(msg) : elm$json$Json$Decode$fail('Not the enter key');
-		};
-		var isKey = A2(
-			elm$json$Json$Decode$andThen,
-			decode,
-			A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
-		return mdgriffith$elm_ui$Internal$Model$Attr(
-			A2(
-				elm$html$Html$Events$preventDefaultOn,
-				'keyup',
-				A2(
-					elm$json$Json$Decode$map,
-					function (fired) {
-						return _Utils_Tuple2(fired, true);
-					},
-					isKey)));
-	});
-var mdgriffith$elm_ui$Element$Input$onEnter = function (msg) {
-	return A2(mdgriffith$elm_ui$Element$Input$onKey, mdgriffith$elm_ui$Element$Input$enter, msg);
-};
-var mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
-var mdgriffith$elm_ui$Element$Input$button = F2(
-	function (attrs, _n0) {
-		var onPress = _n0.onPress;
-		var label = _n0.label;
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asEl,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentCenterX + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.contentCenterY + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.seButton + (' ' + mdgriffith$elm_ui$Internal$Style$classes.noTextSelection)))))),
-						A2(
-							elm$core$List$cons,
-							mdgriffith$elm_ui$Element$pointer,
-							A2(
-								elm$core$List$cons,
-								mdgriffith$elm_ui$Element$Input$focusDefault(attrs),
-								A2(
-									elm$core$List$cons,
-									mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$Button),
-									A2(
-										elm$core$List$cons,
-										mdgriffith$elm_ui$Internal$Model$Attr(
-											elm$html$Html$Attributes$tabindex(0)),
-										function () {
-											if (onPress.$ === 'Nothing') {
-												return A2(
-													elm$core$List$cons,
-													mdgriffith$elm_ui$Internal$Model$Attr(
-														elm$html$Html$Attributes$disabled(true)),
-													attrs);
-											} else {
-												var msg = onPress.a;
-												return A2(
-													elm$core$List$cons,
-													mdgriffith$elm_ui$Element$Events$onClick(msg),
-													A2(
-														elm$core$List$cons,
-														mdgriffith$elm_ui$Element$Input$onEnter(msg),
-														attrs));
-											}
-										}()))))))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[label])));
-	});
 var author$project$Main$showActionButton = F2(
 	function (caption, msg) {
 		return A2(
@@ -12932,8 +13266,7 @@ var author$project$Main$showActionButton = F2(
 					mdgriffith$elm_ui$Element$Border$rounded(2),
 					mdgriffith$elm_ui$Element$Background$color(
 					A3(mdgriffith$elm_ui$Element$rgb255, 78, 222, 37)),
-					mdgriffith$elm_ui$Element$Font$color(
-					A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240))
+					mdgriffith$elm_ui$Element$Font$color(author$project$Main$siteLightFontColor)
 				]),
 			{
 				label: mdgriffith$elm_ui$Element$text(caption),
@@ -12948,8 +13281,7 @@ var author$project$Main$showTopMenu = function (model) {
 				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 				mdgriffith$elm_ui$Element$height(
 				mdgriffith$elm_ui$Element$px(50)),
-				mdgriffith$elm_ui$Element$Background$color(
-				A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113)),
+				mdgriffith$elm_ui$Element$Background$color(author$project$Main$siteBackgroundBlue),
 				mdgriffith$elm_ui$Element$inFront(
 				model.showTargetSelector ? A2(author$project$Main$showActionButton, 'CANCEL', author$project$Main$CancelTargetPickButtonClicked) : A2(author$project$Main$showActionButton, 'TARGET!', author$project$Main$TargetClicked))
 			]),
@@ -12961,11 +13293,26 @@ var author$project$Main$showTopMenu = function (model) {
 					[
 						mdgriffith$elm_ui$Element$padding(10),
 						mdgriffith$elm_ui$Element$centerY,
-						mdgriffith$elm_ui$Element$Font$color(
-						A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240))
+						mdgriffith$elm_ui$Element$Font$color(author$project$Main$siteLightFontColor)
 					]),
 				mdgriffith$elm_ui$Element$text(
-					'Written so far: ' + elm$core$String$fromInt(model.writtenCount)))
+					'Written so far: ' + elm$core$String$fromInt(model.writtenCount))),
+				A2(
+				mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$padding(10),
+						mdgriffith$elm_ui$Element$centerY,
+						mdgriffith$elm_ui$Element$alignRight,
+						mdgriffith$elm_ui$Element$Font$color(author$project$Main$siteLightFontColor)
+					]),
+				A2(
+					mdgriffith$elm_ui$Element$Input$button,
+					_List_Nil,
+					{
+						label: mdgriffith$elm_ui$Element$text('Sign Out'),
+						onPress: elm$core$Maybe$Just(author$project$Main$SignOutButtonClicked)
+					}))
 			]));
 };
 var mdgriffith$elm_ui$Internal$Model$FocusStyleOption = function (a) {
@@ -13254,7 +13601,18 @@ var author$project$Main$view = function (model) {
 				]),
 			_List_fromArray(
 				[
-					author$project$Main$showTopMenu(model),
+					A2(
+					mdgriffith$elm_ui$Element$row,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+							mdgriffith$elm_ui$Element$height(
+							mdgriffith$elm_ui$Element$px(5)),
+							mdgriffith$elm_ui$Element$Background$color(author$project$Main$siteBackgroundBlue)
+						]),
+					_List_fromArray(
+						[mdgriffith$elm_ui$Element$none])),
+					_Utils_eq(model.currentUser, elm$core$Maybe$Nothing) ? mdgriffith$elm_ui$Element$none : author$project$Main$showTopMenu(model),
 					A2(
 					mdgriffith$elm_ui$Element$row,
 					_List_fromArray(
@@ -13271,11 +13629,10 @@ var author$project$Main$view = function (model) {
 									mdgriffith$elm_ui$Element$width(
 									mdgriffith$elm_ui$Element$px(5)),
 									mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-									mdgriffith$elm_ui$Element$Background$color(
-									A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113))
+									mdgriffith$elm_ui$Element$Background$color(author$project$Main$siteBackgroundBlue)
 								]),
 							mdgriffith$elm_ui$Element$none),
-							model.showTargetSelector ? author$project$Main$showTargetSelector(model) : author$project$Main$showEditor(model),
+							model.showTargetSelector ? author$project$Main$showTargetSelector(model) : (_Utils_eq(model.currentUser, elm$core$Maybe$Nothing) ? author$project$Main$showLoginPanel(model) : author$project$Main$showEditor(model)),
 							A2(
 							mdgriffith$elm_ui$Element$el,
 							_List_fromArray(
@@ -13283,8 +13640,7 @@ var author$project$Main$view = function (model) {
 									mdgriffith$elm_ui$Element$width(
 									mdgriffith$elm_ui$Element$px(5)),
 									mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-									mdgriffith$elm_ui$Element$Background$color(
-									A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113))
+									mdgriffith$elm_ui$Element$Background$color(author$project$Main$siteBackgroundBlue)
 								]),
 							mdgriffith$elm_ui$Element$none)
 						])),
@@ -13295,8 +13651,7 @@ var author$project$Main$view = function (model) {
 							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 							mdgriffith$elm_ui$Element$height(
 							mdgriffith$elm_ui$Element$px(5)),
-							mdgriffith$elm_ui$Element$Background$color(
-							A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113))
+							mdgriffith$elm_ui$Element$Background$color(author$project$Main$siteBackgroundBlue)
 						]),
 					mdgriffith$elm_ui$Element$none)
 				])));

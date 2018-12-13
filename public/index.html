@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <title>The Amazing Text Combatotron</title>
 
+    <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase.js"></script> 
     <script src="elm.js"></script>
   </head>
   <body>
@@ -13,8 +14,30 @@
         node: document.querySelector('main'), 
         flags: { width: window.innerWidth, height: window.innerHeight }
       });
-      // you can use ports and stuff here
-      
+
+      appElm.ports.outgoingMessage.subscribe( msg => {
+        console.log(msg);
+        if (msg.operation == 'Login') {
+          fbauth.login(msg.content);
+        } else if (msg.operation == 'SignUp') {
+          fbauth.signup(msg.content);
+        } else if (msg.operation == 'SignOut') {
+          fbauth.signout();
+        } else {
+          console.error("Unrecognized outgoing message.");
+        }
+      });
+
+      function messageCallback(message) {
+        try {
+          console.log(message);
+          appElm.ports.incomingMessage.send(message);
+        }
+        catch (error) {
+          console.error ("Error in incoming message: ", error.message);
+        }
+      }
+
       appElm.ports.saveText.subscribe( text => {
         localStorage.setItem("text", text);
       });
@@ -24,6 +47,8 @@
           localStorage.getItem("text")
         );
       });
+
     </script>
+    <script src="fb-auth.js"></script>
   </body>
 </html>
