@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import Html exposing (text)
 import Page.Writer as Writer
 import Skeleton
+import State exposing (State)
 import Url
 import Url.Parser as Parser exposing ((</>), Parser, custom, fragment, map, oneOf, s, top)
 
@@ -24,6 +25,7 @@ main =
 type alias Model =
     { key : Nav.Key
     , page : Page
+    , state : State
     }
 
 
@@ -37,6 +39,9 @@ init _ url key =
     stepUrl url
         { key = key
         , page = NotFound
+        , state =
+            { writtenCount = 0
+            }
         }
 
 
@@ -48,10 +53,10 @@ view : Model -> Browser.Document Msg
 view model =
     case model.page of
         NotFound ->
-            Skeleton.view never Skeleton.noPageFound
+            Skeleton.view model.state never Skeleton.noPageFound
 
         Writer writerModel ->
-            Skeleton.view GotWriterMsg (Writer.view writerModel)
+            Skeleton.view model.state GotWriterMsg (Writer.view model.state writerModel)
 
 
 
@@ -65,8 +70,8 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
+update message model =
+    case message of
         LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
@@ -82,8 +87,14 @@ update msg model =
         UrlChanged url ->
             stepUrl url model
 
-        GotWriterMsg writer ->
-            ( model, Cmd.none )
+        GotWriterMsg msg ->
+            case model.page of
+                Writer writerModel ->
+                    Writer.update msg writerModel model.state
+                        |> (\( state, data ) -> stepWriter { model | state = state } data)
+
+                _ ->
+                    ( model, Cmd.none )
 
 
 
@@ -93,7 +104,7 @@ update msg model =
 stepWriter : Model -> ( Writer.Model, Cmd Writer.Msg ) -> ( Model, Cmd Msg )
 stepWriter model ( writerModel, writerCmds ) =
     ( { model | page = Writer writerModel }
-    , Cmd.none
+    , Cmd.map GotWriterMsg writerCmds
     )
 
 

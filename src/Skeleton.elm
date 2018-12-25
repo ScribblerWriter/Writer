@@ -1,4 +1,4 @@
-module Skeleton exposing (Msg, PageData, noPageFound, view)
+module Skeleton exposing (HeaderSettings, LinkSettings, PageData, noPageFound, view)
 
 -- This module has the skeleton/framework of the basic site structure,
 -- handling things like standard headers, borders and so on. All pages
@@ -16,24 +16,13 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import State exposing (State)
 
 
 type alias PageData msg =
     { title : String
     , body : Element msg
-    }
-
-
-type Msg
-    = NoOp
-    | TargetClicked
-    | CancelTargetClicked
-    | SignOutButtonClicked
-
-
-type alias LinkSettings =
-    { action : String
-    , label : String
+    , headerSettings : Maybe HeaderSettings
     }
 
 
@@ -44,28 +33,51 @@ type alias HeaderSettings =
     }
 
 
+type alias LinkSettings =
+    { action : String
+    , label : String
+    }
+
+
 noPageFound : PageData msg
 noPageFound =
     { title = "No page found!"
-    , body = el [] <| text "No page found!"
+    , headerSettings = Nothing
+    , body =
+        el
+            [ height fill
+            , width fill
+            , Background.color Appearance.siteLightFontColor
+            ]
+        <|
+            el
+                [ height shrink
+                , width shrink
+                , centerX
+                , centerY
+                ]
+            <|
+                text "No page found here!"
     }
 
 
-testHeaderSettings =
-    { writtenCount = 543543
-    , actionButtonSettings =
-        Just { action = "/target", label = "TARGET" }
-    , signOutButtonSettings =
-        Just { action = "/signout", label = "Sign Out" }
-    }
+
+{- testHeaderSettings =
+   { writtenCount = 543543
+   , actionButtonSettings =
+       Just { action = "/target", label = "TARGET" }
+   , signOutButtonSettings =
+       Just { action = "/signout", label = "Sign Out" }
+   }
+-}
 
 
-view : (a -> msg) -> PageData a -> Browser.Document msg
-view pageMapper pageData =
+view : State -> (a -> msg) -> PageData a -> Browser.Document msg
+view state pageMapper pageData =
     { title = pageData.title
     , body =
         [ composePage
-            (buildHeader <| Just testHeaderSettings)
+            (buildHeader pageData.headerSettings)
             (Element.map pageMapper pageData.body)
         ]
     }
@@ -185,24 +197,3 @@ buildSignOutButton settings =
         { url = settings.action
         , label = text settings.label
         }
-
-
-
-{-
-   buildContent : Element msg
-   buildContent =
-       el
-           [ height fill
-           , width fill
-           , Background.color Appearance.siteLightFontColor
-           ]
-       <|
-           el
-               [ height shrink
-               , width shrink
-               , centerX
-               , centerY
-               ]
-           <|
-               text "And here's the middle!"
--}

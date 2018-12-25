@@ -1,5 +1,7 @@
 module Appearance exposing
-    ( siteActionButtonColor
+    ( progressBarBackground
+    , progressBarForeground
+    , siteActionButtonColor
     , siteBackgroundBlue
     , siteFocusStyle
     , siteFontSize
@@ -36,4 +38,14 @@ siteFontSize =
 
 siteActionButtonColor : Color
 siteActionButtonColor =
+    rgb255 78 185 37
+
+
+progressBarBackground : Color
+progressBarBackground =
+    rgb255 200 200 200
+
+
+progressBarForeground : Color
+progressBarForeground =
     rgb255 78 185 37
