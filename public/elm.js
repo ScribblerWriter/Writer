@@ -2319,6 +2319,52 @@ function _Url_percentDecode(string)
 }
 
 
+function _Time_now(millisToPosix)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
+	});
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
+});
+
+function _Time_here()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2(elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
+
+
+function _Time_getZoneName()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
+}
+
+
+
 
 // HELPERS
 
@@ -4969,11 +5015,56 @@ var author$project$Main$stepWriter = F2(
 			A2(elm$core$Platform$Cmd$map, author$project$Main$GotWriterMsg, writerCmds));
 	});
 var author$project$Page$Writer$Additive = {$: 'Additive'};
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var elm$core$Maybe$destruct = F3(
+	function (_default, func, maybe) {
+		if (maybe.$ === 'Just') {
+			var a = maybe.a;
+			return func(a);
+		} else {
+			return _default;
+		}
+	});
+var elm$json$Json$Encode$null = _Json_encodeNull;
+var elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			elm$core$List$foldl,
+			F2(
+				function (_n0, obj) {
+					var k = _n0.a;
+					var v = _n0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var elm$json$Json$Encode$string = _Json_wrap;
+var author$project$Ports$outgoingMessage = _Platform_outgoingPort(
+	'outgoingMessage',
+	function ($) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'content',
+					function ($) {
+						return A3(elm$core$Maybe$destruct, elm$json$Json$Encode$null, elm$core$Basics$identity, $);
+					}($.content)),
+					_Utils_Tuple2(
+					'operation',
+					elm$json$Json$Encode$string($.operation))
+				]));
+	});
+var author$project$Ports$sendMessage = F2(
+	function (operation, content) {
+		return author$project$Ports$outgoingMessage(
+			{content: content, operation: operation});
+	});
 var author$project$Page$Writer$init = _Utils_Tuple2(
 	{actualWordsAtLastCheck: 0, countMethod: author$project$Page$Writer$Additive, currentTarget: elm$core$Maybe$Nothing, currentTargetTimerInSecs: 0, currentText: '', endMessage: '', touched: false, winProgress: 0},
-	elm$core$Platform$Cmd$none);
+	A2(author$project$Ports$sendMessage, 'LoadContent', elm$core$Maybe$Nothing));
+var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -5670,12 +5761,460 @@ var author$project$Main$init = F3(
 				state: {writtenCount: 0}
 			});
 	});
-var elm$core$Platform$Sub$batch = _Platform_batch;
-var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
-var author$project$Main$subscriptions = function (_n0) {
-	return elm$core$Platform$Sub$none;
+var author$project$Page$Writer$MessageReceived = function (a) {
+	return {$: 'MessageReceived', a: a};
 };
-var author$project$Page$Writer$WordsReached = {$: 'WordsReached'};
+var author$project$Page$Writer$SaveTimerTicked = function (a) {
+	return {$: 'SaveTimerTicked', a: a};
+};
+var elm$json$Json$Decode$andThen = _Json_andThen;
+var elm$json$Json$Decode$field = _Json_decodeField;
+var elm$json$Json$Decode$map = _Json_map1;
+var elm$json$Json$Decode$null = _Json_decodeNull;
+var elm$json$Json$Decode$oneOf = _Json_oneOf;
+var elm$json$Json$Decode$string = _Json_decodeString;
+var elm$json$Json$Decode$succeed = _Json_succeed;
+var elm$json$Json$Decode$value = _Json_decodeValue;
+var author$project$Ports$incomingMessage = _Platform_incomingPort(
+	'incomingMessage',
+	A2(
+		elm$json$Json$Decode$andThen,
+		function (operation) {
+			return A2(
+				elm$json$Json$Decode$andThen,
+				function (content) {
+					return elm$json$Json$Decode$succeed(
+						{content: content, operation: operation});
+				},
+				A2(
+					elm$json$Json$Decode$field,
+					'content',
+					elm$json$Json$Decode$oneOf(
+						_List_fromArray(
+							[
+								elm$json$Json$Decode$null(elm$core$Maybe$Nothing),
+								A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, elm$json$Json$Decode$value)
+							]))));
+		},
+		A2(elm$json$Json$Decode$field, 'operation', elm$json$Json$Decode$string)));
+var elm$core$Platform$Sub$batch = _Platform_batch;
+var elm$time$Time$Every = F2(
+	function (a, b) {
+		return {$: 'Every', a: a, b: b};
+	});
+var elm$core$Task$succeed = _Scheduler_succeed;
+var elm$time$Time$State = F2(
+	function (taggers, processes) {
+		return {processes: processes, taggers: taggers};
+	});
+var elm$time$Time$init = elm$core$Task$succeed(
+	A2(elm$time$Time$State, elm$core$Dict$empty, elm$core$Dict$empty));
+var elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return acc;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3(elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
+			}
+		}
+	});
+var elm$core$Dict$merge = F6(
+	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
+		var stepState = F3(
+			function (rKey, rValue, _n0) {
+				stepState:
+				while (true) {
+					var list = _n0.a;
+					var result = _n0.b;
+					if (!list.b) {
+						return _Utils_Tuple2(
+							list,
+							A3(rightStep, rKey, rValue, result));
+					} else {
+						var _n2 = list.a;
+						var lKey = _n2.a;
+						var lValue = _n2.b;
+						var rest = list.b;
+						if (_Utils_cmp(lKey, rKey) < 0) {
+							var $temp$rKey = rKey,
+								$temp$rValue = rValue,
+								$temp$_n0 = _Utils_Tuple2(
+								rest,
+								A3(leftStep, lKey, lValue, result));
+							rKey = $temp$rKey;
+							rValue = $temp$rValue;
+							_n0 = $temp$_n0;
+							continue stepState;
+						} else {
+							if (_Utils_cmp(lKey, rKey) > 0) {
+								return _Utils_Tuple2(
+									list,
+									A3(rightStep, rKey, rValue, result));
+							} else {
+								return _Utils_Tuple2(
+									rest,
+									A4(bothStep, lKey, lValue, rValue, result));
+							}
+						}
+					}
+				}
+			});
+		var _n3 = A3(
+			elm$core$Dict$foldl,
+			stepState,
+			_Utils_Tuple2(
+				elm$core$Dict$toList(leftDict),
+				initialResult),
+			rightDict);
+		var leftovers = _n3.a;
+		var intermediateResult = _n3.b;
+		return A3(
+			elm$core$List$foldl,
+			F2(
+				function (_n4, result) {
+					var k = _n4.a;
+					var v = _n4.b;
+					return A3(leftStep, k, v, result);
+				}),
+			intermediateResult,
+			leftovers);
+	});
+var elm$core$Process$kill = _Scheduler_kill;
+var elm$core$Task$andThen = _Scheduler_andThen;
+var elm$time$Time$addMySub = F2(
+	function (_n0, state) {
+		var interval = _n0.a;
+		var tagger = _n0.b;
+		var _n1 = A2(elm$core$Dict$get, interval, state);
+		if (_n1.$ === 'Nothing') {
+			return A3(
+				elm$core$Dict$insert,
+				interval,
+				_List_fromArray(
+					[tagger]),
+				state);
+		} else {
+			var taggers = _n1.a;
+			return A3(
+				elm$core$Dict$insert,
+				interval,
+				A2(elm$core$List$cons, tagger, taggers),
+				state);
+		}
+	});
+var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
+var elm$core$Process$spawn = _Scheduler_spawn;
+var elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
+};
+var elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
+};
+var elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var elm$time$Time$customZone = elm$time$Time$Zone;
+var elm$time$Time$setInterval = _Time_setInterval;
+var elm$time$Time$spawnHelp = F3(
+	function (router, intervals, processes) {
+		if (!intervals.b) {
+			return elm$core$Task$succeed(processes);
+		} else {
+			var interval = intervals.a;
+			var rest = intervals.b;
+			var spawnTimer = elm$core$Process$spawn(
+				A2(
+					elm$time$Time$setInterval,
+					interval,
+					A2(elm$core$Platform$sendToSelf, router, interval)));
+			var spawnRest = function (id) {
+				return A3(
+					elm$time$Time$spawnHelp,
+					router,
+					rest,
+					A3(elm$core$Dict$insert, interval, id, processes));
+			};
+			return A2(elm$core$Task$andThen, spawnRest, spawnTimer);
+		}
+	});
+var elm$time$Time$onEffects = F3(
+	function (router, subs, _n0) {
+		var processes = _n0.processes;
+		var rightStep = F3(
+			function (_n6, id, _n7) {
+				var spawns = _n7.a;
+				var existing = _n7.b;
+				var kills = _n7.c;
+				return _Utils_Tuple3(
+					spawns,
+					existing,
+					A2(
+						elm$core$Task$andThen,
+						function (_n5) {
+							return kills;
+						},
+						elm$core$Process$kill(id)));
+			});
+		var newTaggers = A3(elm$core$List$foldl, elm$time$Time$addMySub, elm$core$Dict$empty, subs);
+		var leftStep = F3(
+			function (interval, taggers, _n4) {
+				var spawns = _n4.a;
+				var existing = _n4.b;
+				var kills = _n4.c;
+				return _Utils_Tuple3(
+					A2(elm$core$List$cons, interval, spawns),
+					existing,
+					kills);
+			});
+		var bothStep = F4(
+			function (interval, taggers, id, _n3) {
+				var spawns = _n3.a;
+				var existing = _n3.b;
+				var kills = _n3.c;
+				return _Utils_Tuple3(
+					spawns,
+					A3(elm$core$Dict$insert, interval, id, existing),
+					kills);
+			});
+		var _n1 = A6(
+			elm$core$Dict$merge,
+			leftStep,
+			bothStep,
+			rightStep,
+			newTaggers,
+			processes,
+			_Utils_Tuple3(
+				_List_Nil,
+				elm$core$Dict$empty,
+				elm$core$Task$succeed(_Utils_Tuple0)));
+		var spawnList = _n1.a;
+		var existingDict = _n1.b;
+		var killTask = _n1.c;
+		return A2(
+			elm$core$Task$andThen,
+			function (newProcesses) {
+				return elm$core$Task$succeed(
+					A2(elm$time$Time$State, newTaggers, newProcesses));
+			},
+			A2(
+				elm$core$Task$andThen,
+				function (_n2) {
+					return A3(elm$time$Time$spawnHelp, router, spawnList, existingDict);
+				},
+				killTask));
+	});
+var elm$core$Platform$sendToApp = _Platform_sendToApp;
+var elm$core$Task$map2 = F3(
+	function (func, taskA, taskB) {
+		return A2(
+			elm$core$Task$andThen,
+			function (a) {
+				return A2(
+					elm$core$Task$andThen,
+					function (b) {
+						return elm$core$Task$succeed(
+							A2(func, a, b));
+					},
+					taskB);
+			},
+			taskA);
+	});
+var elm$core$Task$sequence = function (tasks) {
+	return A3(
+		elm$core$List$foldr,
+		elm$core$Task$map2(elm$core$List$cons),
+		elm$core$Task$succeed(_List_Nil),
+		tasks);
+};
+var elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var elm$time$Time$millisToPosix = elm$time$Time$Posix;
+var elm$time$Time$now = _Time_now(elm$time$Time$millisToPosix);
+var elm$time$Time$onSelfMsg = F3(
+	function (router, interval, state) {
+		var _n0 = A2(elm$core$Dict$get, interval, state.taggers);
+		if (_n0.$ === 'Nothing') {
+			return elm$core$Task$succeed(state);
+		} else {
+			var taggers = _n0.a;
+			var tellTaggers = function (time) {
+				return elm$core$Task$sequence(
+					A2(
+						elm$core$List$map,
+						function (tagger) {
+							return A2(
+								elm$core$Platform$sendToApp,
+								router,
+								tagger(time));
+						},
+						taggers));
+			};
+			return A2(
+				elm$core$Task$andThen,
+				function (_n1) {
+					return elm$core$Task$succeed(state);
+				},
+				A2(elm$core$Task$andThen, tellTaggers, elm$time$Time$now));
+		}
+	});
+var elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var elm$time$Time$subMap = F2(
+	function (f, _n0) {
+		var interval = _n0.a;
+		var tagger = _n0.b;
+		return A2(
+			elm$time$Time$Every,
+			interval,
+			A2(elm$core$Basics$composeL, f, tagger));
+	});
+_Platform_effectManagers['Time'] = _Platform_createManager(elm$time$Time$init, elm$time$Time$onEffects, elm$time$Time$onSelfMsg, 0, elm$time$Time$subMap);
+var elm$time$Time$subscription = _Platform_leaf('Time');
+var elm$time$Time$every = F2(
+	function (interval, tagger) {
+		return elm$time$Time$subscription(
+			A2(elm$time$Time$Every, interval, tagger));
+	});
+var author$project$Page$Writer$subscriptions = function (_n0) {
+	return elm$core$Platform$Sub$batch(
+		_List_fromArray(
+			[
+				author$project$Ports$incomingMessage(author$project$Page$Writer$MessageReceived),
+				A2(elm$time$Time$every, 1000, author$project$Page$Writer$SaveTimerTicked)
+			]));
+};
+var elm$core$Platform$Sub$map = _Platform_map;
+var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
+var author$project$Main$subscriptions = function (model) {
+	var _n0 = model.page;
+	if (_n0.$ === 'NotFound') {
+		return elm$core$Platform$Sub$none;
+	} else {
+		var writerModel = _n0.a;
+		return A2(
+			elm$core$Platform$Sub$map,
+			author$project$Main$GotWriterMsg,
+			author$project$Page$Writer$subscriptions(writerModel));
+	}
+};
+var author$project$Page$Writer$methodEncoder = function (method) {
+	if (method.$ === 'Additive') {
+		return elm$json$Json$Encode$string('additive');
+	} else {
+		return elm$json$Json$Encode$string('subtractive');
+	}
+};
+var elm$json$Json$Encode$int = _Json_wrap;
+var author$project$Page$Writer$encodeSaveObject = F2(
+	function (state, model) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'count',
+					elm$json$Json$Encode$int(state.writtenCount)),
+					_Utils_Tuple2(
+					'text',
+					elm$json$Json$Encode$string(model.currentText)),
+					_Utils_Tuple2(
+					'method',
+					author$project$Page$Writer$methodEncoder(model.countMethod)),
+					_Utils_Tuple2(
+					'actualCount',
+					elm$json$Json$Encode$int(model.actualWordsAtLastCheck))
+				]));
+	});
+var elm$json$Json$Decode$int = _Json_decodeInt;
+var author$project$Page$Writer$actualCountDecoder = A2(elm$json$Json$Decode$field, 'actualCount', elm$json$Json$Decode$int);
+var elm$json$Json$Decode$decodeValue = _Json_run;
+var author$project$Page$Writer$getValue = F3(
+	function (decoder, string, errorVal) {
+		var _n0 = A2(elm$json$Json$Decode$decodeValue, decoder, string);
+		if (_n0.$ === 'Err') {
+			return errorVal;
+		} else {
+			var value = _n0.a;
+			return value;
+		}
+	});
+var author$project$Page$Writer$Subtractive = {$: 'Subtractive'};
+var elm$json$Json$Decode$fail = _Json_fail;
+var author$project$Page$Writer$methodDecoder = A2(
+	elm$json$Json$Decode$andThen,
+	function (str) {
+		switch (str) {
+			case 'additive':
+				return elm$json$Json$Decode$succeed(author$project$Page$Writer$Additive);
+			case 'subtractive':
+				return elm$json$Json$Decode$succeed(author$project$Page$Writer$Subtractive);
+			default:
+				var wrongValue = str;
+				return elm$json$Json$Decode$fail('Count method decoding failed. Value: ' + wrongValue);
+		}
+	},
+	A2(elm$json$Json$Decode$field, 'method', elm$json$Json$Decode$string));
+var author$project$Page$Writer$textDecoder = A2(elm$json$Json$Decode$field, 'text', elm$json$Json$Decode$string);
+var author$project$Page$Writer$wordCountDecoder = A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int);
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var author$project$Page$Writer$updateContent = F3(
+	function (state, model, content) {
+		if (content.$ === 'Just') {
+			var data = content.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					state,
+					{
+						writtenCount: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$wordCountDecoder, data, -1)
+					}),
+				_Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							actualWordsAtLastCheck: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$actualCountDecoder, data, 0),
+							countMethod: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$methodDecoder, data, author$project$Page$Writer$Additive),
+							currentText: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$textDecoder, data, 'Error loading text')
+						}),
+					elm$core$Platform$Cmd$none));
+		} else {
+			return _Utils_Tuple2(
+				state,
+				_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+		}
+	});
+var elm$core$Basics$ge = _Utils_ge;
+var author$project$Page$Writer$calculateProgress = F2(
+	function (model, dif) {
+		var _n0 = model.currentTarget;
+		if (_n0.$ === 'Just') {
+			var target = _n0.a;
+			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? target.winCount : (model.winProgress + dif)) : model.winProgress;
+		} else {
+			return 0;
+		}
+	});
 var elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -5708,6 +6247,7 @@ var author$project$Page$Writer$countWords = function (document) {
 					' ',
 					A3(elm$core$String$replace, '—', ' ', document)))));
 };
+var author$project$Page$Writer$WordsReached = {$: 'WordsReached'};
 var author$project$Page$Writer$endFight = F2(
 	function (model, reason) {
 		if (reason.$ === 'TimeExpired') {
@@ -5716,50 +6256,94 @@ var author$project$Page$Writer$endFight = F2(
 			return 'You win!';
 		}
 	});
-var elm$core$Basics$ge = _Utils_ge;
+var author$project$Page$Writer$generateEndMessage = F2(
+	function (model, dif) {
+		var _n0 = model.currentTarget;
+		if (_n0.$ === 'Just') {
+			var target = _n0.a;
+			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? A2(author$project$Page$Writer$endFight, model, author$project$Page$Writer$WordsReached) : model.endMessage) : model.endMessage;
+		} else {
+			return '';
+		}
+	});
+var author$project$Page$Writer$updateWrittenCount = F4(
+	function (writtenCount, trimmedWordCount, model, dif) {
+		return (dif > 0) ? (writtenCount + dif) : (_Utils_eq(model.countMethod, author$project$Page$Writer$Additive) ? writtenCount : trimmedWordCount);
+	});
 var author$project$Page$Writer$updateCounts = F3(
 	function (writtenCount, document, model) {
 		var trimmedWordCount = author$project$Page$Writer$countWords(document);
 		var dif = trimmedWordCount - model.actualWordsAtLastCheck;
 		return _Utils_Tuple2(
-			(dif > 0) ? (writtenCount + dif) : (_Utils_eq(model.countMethod, author$project$Page$Writer$Additive) ? writtenCount : trimmedWordCount),
+			A4(author$project$Page$Writer$updateWrittenCount, writtenCount, trimmedWordCount, model, dif),
 			_Utils_update(
 				model,
 				{
 					actualWordsAtLastCheck: trimmedWordCount,
 					currentText: document,
-					endMessage: function () {
-						var _n0 = model.currentTarget;
-						if (_n0.$ === 'Just') {
-							var target = _n0.a;
-							return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? A2(author$project$Page$Writer$endFight, model, author$project$Page$Writer$WordsReached) : model.endMessage) : model.endMessage;
-						} else {
-							return '';
-						}
-					}(),
+					endMessage: A2(author$project$Page$Writer$generateEndMessage, model, dif),
 					touched: true,
-					winProgress: function () {
-						var _n1 = model.currentTarget;
-						if (_n1.$ === 'Just') {
-							var target = _n1.a;
-							return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? target.winCount : (model.winProgress + dif)) : model.winProgress;
-						} else {
-							return 0;
-						}
-					}()
+					winProgress: A2(author$project$Page$Writer$calculateProgress, model, dif)
 				}));
 	});
 var author$project$Page$Writer$update = F3(
 	function (msg, model, state) {
-		var document = msg.a;
-		var _n1 = A3(author$project$Page$Writer$updateCounts, state.writtenCount, document, model);
-		var writtenCount = _n1.a;
-		var updatedModel = _n1.b;
-		return _Utils_Tuple2(
-			_Utils_update(
-				state,
-				{writtenCount: writtenCount}),
-			_Utils_Tuple2(updatedModel, elm$core$Platform$Cmd$none));
+		switch (msg.$) {
+			case 'WordsWritten':
+				var document = msg.a;
+				return function (_n1) {
+					var count = _n1.a;
+					var updatedModel = _n1.b;
+					return _Utils_Tuple2(
+						_Utils_update(
+							state,
+							{writtenCount: count}),
+						_Utils_Tuple2(updatedModel, elm$core$Platform$Cmd$none));
+				}(
+					A3(author$project$Page$Writer$updateCounts, state.writtenCount, document, model));
+			case 'SaveTimerTicked':
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(
+						_Utils_update(
+							model,
+							{touched: false}),
+						A2(
+							author$project$Ports$sendMessage,
+							'SaveContent',
+							elm$core$Maybe$Just(
+								A2(author$project$Page$Writer$encodeSaveObject, state, model)))));
+			default:
+				var message = msg.a;
+				var _n2 = message.operation;
+				if (_n2 === 'ContentLoaded') {
+					return A3(author$project$Page$Writer$updateContent, state, model, message.content);
+				} else {
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+				}
+		}
+	});
+var author$project$Main$updateWriter = F2(
+	function (msg, model) {
+		var _n0 = model.page;
+		if (_n0.$ === 'Writer') {
+			var writerModel = _n0.a;
+			return function (_n1) {
+				var state = _n1.a;
+				var data = _n1.b;
+				return A2(
+					author$project$Main$stepWriter,
+					_Utils_update(
+						model,
+						{state: state}),
+					data);
+			}(
+				A3(author$project$Page$Writer$update, msg, writerModel, model.state));
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
 	});
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
@@ -5782,9 +6366,7 @@ var elm$core$Basics$never = function (_n0) {
 var elm$core$Task$Perform = function (a) {
 	return {$: 'Perform', a: a};
 };
-var elm$core$Task$succeed = _Scheduler_succeed;
 var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
-var elm$core$Task$andThen = _Scheduler_andThen;
 var elm$core$Task$map = F2(
 	function (func, taskA) {
 		return A2(
@@ -5795,29 +6377,6 @@ var elm$core$Task$map = F2(
 			},
 			taskA);
 	});
-var elm$core$Task$map2 = F3(
-	function (func, taskA, taskB) {
-		return A2(
-			elm$core$Task$andThen,
-			function (a) {
-				return A2(
-					elm$core$Task$andThen,
-					function (b) {
-						return elm$core$Task$succeed(
-							A2(func, a, b));
-					},
-					taskB);
-			},
-			taskA);
-	});
-var elm$core$Task$sequence = function (tasks) {
-	return A3(
-		elm$core$List$foldr,
-		elm$core$Task$map2(elm$core$List$cons),
-		elm$core$Task$succeed(_List_Nil),
-		tasks);
-};
-var elm$core$Platform$sendToApp = _Platform_sendToApp;
 var elm$core$Task$spawnCmd = F2(
 	function (router, _n0) {
 		var task = _n0.a;
@@ -5858,9 +6417,7 @@ var elm$core$Task$perform = F2(
 			elm$core$Task$Perform(
 				A2(elm$core$Task$map, toMessage, task)));
 	});
-var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$map2 = _Json_map2;
-var elm$json$Json$Decode$succeed = _Json_succeed;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 'Normal':
@@ -6072,23 +6629,7 @@ var author$project$Main$update = F2(
 				return A2(author$project$Main$stepUrl, url, model);
 			default:
 				var msg = message.a;
-				var _n2 = model.page;
-				if (_n2.$ === 'Writer') {
-					var writerModel = _n2.a;
-					return function (_n3) {
-						var state = _n3.a;
-						var data = _n3.b;
-						return A2(
-							author$project$Main$stepWriter,
-							_Utils_update(
-								model,
-								{state: state}),
-							data);
-					}(
-						A3(author$project$Page$Writer$update, msg, writerModel, model.state));
-				} else {
-					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-				}
+				return A2(author$project$Main$updateWriter, msg, model);
 		}
 	});
 var author$project$Page$Writer$WordsWritten = function (a) {
@@ -6301,7 +6842,6 @@ var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$p = _VirtualDom_node('p');
 var elm$html$Html$s = _VirtualDom_node('s');
 var elm$html$Html$u = _VirtualDom_node('u');
-var elm$json$Json$Encode$string = _Json_wrap;
 var elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -8559,9 +9099,6 @@ var elm$core$Basics$min = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) < 0) ? x : y;
 	});
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
 var elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -11628,11 +12165,6 @@ var mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
 };
 var mdgriffith$elm_ui$Element$Input$labelHidden = mdgriffith$elm_ui$Element$Input$HiddenLabel;
 var mdgriffith$elm_ui$Element$Input$TextArea = {$: 'TextArea'};
-var elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
 var elm$html$Html$Attributes$type_ = elm$html$Html$Attributes$stringProperty('type');
 var elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
@@ -11648,12 +12180,10 @@ var elm$html$Html$Events$stopPropagationOn = F2(
 			event,
 			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
 	});
-var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$at = F2(
 	function (fields, decoder) {
 		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
 	});
-var elm$json$Json$Decode$string = _Json_decodeString;
 var elm$html$Html$Events$targetValue = A2(
 	elm$json$Json$Decode$at,
 	_List_fromArray(

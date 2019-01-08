@@ -1,4 +1,4 @@
-module Page.Writer exposing (Model, Msg, init, update, view)
+module Page.Writer exposing (Model, Msg(..), init, subscriptions, update, view)
 
 import Appearance
 import Data.Target exposing (Target)
@@ -7,8 +7,12 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Input as Input
 import Html.Attributes
+import Json.Decode as Decode
+import Json.Encode as Encode
+import Ports
 import Skeleton
 import State exposing (State)
+import Time
 
 
 type alias Model =
@@ -23,6 +27,11 @@ type alias Model =
     }
 
 
+type EndReason
+    = TimeExpired
+    | WordsReached
+
+
 init : ( Model, Cmd Msg )
 init =
     ( { currentTarget = Nothing
@@ -34,7 +43,7 @@ init =
       , touched = False
       , countMethod = Additive
       }
-    , Cmd.none
+    , Ports.sendMessage "LoadContent" Nothing
     )
 
 
@@ -43,8 +52,14 @@ type CountMethod
     | Subtractive
 
 
+
+-- Update
+
+
 type Msg
     = WordsWritten String
+    | SaveTimerTicked Time.Posix
+    | MessageReceived Ports.Message
 
 
 update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
@@ -53,10 +68,45 @@ update msg model state =
         WordsWritten document ->
             updateCounts state.writtenCount document model
                 |> (\( count, updatedModel ) ->
-                        ( { state | writtenCount = count }
-                        , ( updatedModel, Cmd.none )
-                        )
+                        ( { state | writtenCount = count }, ( updatedModel, Cmd.none ) )
                    )
+
+        SaveTimerTicked _ ->
+            ( state
+            , ( { model | touched = False }
+              , Ports.sendMessage "SaveContent" <| Just (encodeSaveObject state model)
+              )
+            )
+
+        MessageReceived message ->
+            case message.operation of
+                "ContentLoaded" ->
+                    updateContent state model message.content
+
+                _ ->
+                    ( state, ( model, Cmd.none ) )
+
+
+updateContent : State -> Model -> Maybe Encode.Value -> ( State, ( Model, Cmd msg ) )
+updateContent state model content =
+    case content of
+        Just data ->
+            ( { state | writtenCount = getValue wordCountDecoder data -1 }
+            , ( { model
+                    | currentText = getValue textDecoder data "Error loading text"
+                    , countMethod = getValue methodDecoder data Additive
+                    , actualWordsAtLastCheck = getValue actualCountDecoder data 0
+                }
+              , Cmd.none
+              )
+            )
+
+        Nothing ->
+            ( state, ( model, Cmd.none ) )
+
+
+
+-- counting
 
 
 updateCounts : Int -> String -> Model -> ( Int, Model )
@@ -70,55 +120,63 @@ updateCounts writtenCount document model =
         dif =
             trimmedWordCount - model.actualWordsAtLastCheck
     in
-    ( if dif > 0 then
-        writtenCount + dif
-
-      else if model.countMethod == Additive then
-        writtenCount
-
-      else
-        trimmedWordCount
+    ( updateWrittenCount writtenCount trimmedWordCount model dif
     , { model
         | actualWordsAtLastCheck = trimmedWordCount
-        , winProgress =
-            case model.currentTarget of
-                Just target ->
-                    if dif > 0 then
-                        if model.winProgress + dif >= target.winCount then
-                            target.winCount
-
-                        else
-                            model.winProgress + dif
-
-                    else
-                        model.winProgress
-
-                Nothing ->
-                    0
-        , endMessage =
-            case model.currentTarget of
-                Just target ->
-                    if dif > 0 then
-                        if model.winProgress + dif >= target.winCount then
-                            endFight model WordsReached
-
-                        else
-                            model.endMessage
-
-                    else
-                        model.endMessage
-
-                Nothing ->
-                    ""
+        , winProgress = calculateProgress model dif
+        , endMessage = generateEndMessage model dif
         , currentText = document
         , touched = True
       }
     )
 
 
-type EndReason
-    = TimeExpired
-    | WordsReached
+updateWrittenCount : Int -> Int -> Model -> Int -> Int
+updateWrittenCount writtenCount trimmedWordCount model dif =
+    if dif > 0 then
+        writtenCount + dif
+
+    else if model.countMethod == Additive then
+        writtenCount
+
+    else
+        trimmedWordCount
+
+
+calculateProgress : Model -> Int -> Int
+calculateProgress model dif =
+    case model.currentTarget of
+        Just target ->
+            if dif > 0 then
+                if model.winProgress + dif >= target.winCount then
+                    target.winCount
+
+                else
+                    model.winProgress + dif
+
+            else
+                model.winProgress
+
+        Nothing ->
+            0
+
+
+generateEndMessage : Model -> Int -> String
+generateEndMessage model dif =
+    case model.currentTarget of
+        Just target ->
+            if dif > 0 then
+                if model.winProgress + dif >= target.winCount then
+                    endFight model WordsReached
+
+                else
+                    model.endMessage
+
+            else
+                model.endMessage
+
+        Nothing ->
+            ""
 
 
 endFight : Model -> EndReason -> String
@@ -139,6 +197,10 @@ countWords document =
         |> String.words
         |> List.filter (String.any Char.isAlphaNum)
         |> List.length
+
+
+
+-- view
 
 
 view : State -> Model -> Skeleton.PageData Msg
@@ -268,3 +330,89 @@ formatSecondsToString seconds =
         String.fromInt (seconds // 3600)
             ++ ":"
             ++ formatSecondsToString (remainderBy 3600 seconds)
+
+
+
+-- Encoding / Decoding
+--{ count : Int
+--, text : String
+--, actualCount : Int
+--, method : CountMethod } -- "additive"/"subtractive"
+
+
+getValue : Decode.Decoder a -> Encode.Value -> a -> a
+getValue decoder string errorVal =
+    case Decode.decodeValue decoder string of
+        Err _ ->
+            errorVal
+
+        Ok value ->
+            value
+
+
+wordCountDecoder : Decode.Decoder Int
+wordCountDecoder =
+    Decode.field "count" Decode.int
+
+
+textDecoder : Decode.Decoder String
+textDecoder =
+    Decode.field "text" Decode.string
+
+
+actualCountDecoder : Decode.Decoder Int
+actualCountDecoder =
+    Decode.field "actualCount" Decode.int
+
+
+methodDecoder : Decode.Decoder CountMethod
+methodDecoder =
+    Decode.field "method" Decode.string
+        |> Decode.andThen
+            (\str ->
+                case str of
+                    "additive" ->
+                        Decode.succeed Additive
+
+                    "subtractive" ->
+                        Decode.succeed Subtractive
+
+                    wrongValue ->
+                        Decode.fail ("Count method decoding failed. Value: " ++ wrongValue)
+            )
+
+
+
+-- Encoding
+
+
+encodeSaveObject : State -> Model -> Encode.Value
+encodeSaveObject state model =
+    Encode.object
+        [ ( "count", Encode.int state.writtenCount )
+        , ( "text", Encode.string model.currentText )
+        , ( "method", methodEncoder model.countMethod )
+        , ( "actualCount", Encode.int model.actualWordsAtLastCheck )
+        ]
+
+
+methodEncoder : CountMethod -> Encode.Value
+methodEncoder method =
+    case method of
+        Additive ->
+            Encode.string "additive"
+
+        Subtractive ->
+            Encode.string "subtractive"
+
+
+
+-- Subscriptions
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.batch
+        [ Ports.incomingMessage MessageReceived
+        , Time.every 1000 SaveTimerTicked
+        ]

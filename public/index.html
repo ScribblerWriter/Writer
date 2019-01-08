@@ -15,6 +15,24 @@
         flags: { width: window.innerWidth, height: window.innerHeight }
       });
 
+      appElm.ports.outgoingMessage.subscribe( msg => {
+        if (msg.operation == 'LoadContent') {
+          loadFromStorage();
+        } else if (msg.operation == 'SaveContent') {
+          saveToStorage(msg.content);
+        }
+      });
+
+      function loadFromStorage() {
+          const content = JSON.parse(localStorage.getItem('text'));
+          const message = { operation: 'ContentLoaded', content: content}
+          appElm.ports.incomingMessage.send( message );
+      }
+
+      function saveToStorage(content) {
+          localStorage.setItem('text', JSON.stringify(content));
+      }
+
       // appElm.ports.outgoingMessage.subscribe( msg => {
       //   console.log(msg);
       //   if (msg.operation == 'Login') {

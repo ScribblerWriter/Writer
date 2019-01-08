@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (text)
+import Json.Encode as Encode
 import Page.Writer as Writer
 import Skeleton
 import State exposing (State)
@@ -88,13 +89,18 @@ update message model =
             stepUrl url model
 
         GotWriterMsg msg ->
-            case model.page of
-                Writer writerModel ->
-                    Writer.update msg writerModel model.state
-                        |> (\( state, data ) -> stepWriter { model | state = state } data)
+            updateWriter msg model
 
-                _ ->
-                    ( model, Cmd.none )
+
+updateWriter : Writer.Msg -> Model -> ( Model, Cmd Msg )
+updateWriter msg model =
+    case model.page of
+        Writer writerModel ->
+            Writer.update msg writerModel model.state
+                |> (\( state, data ) -> stepWriter { model | state = state } data)
+
+        _ ->
+            ( model, Cmd.none )
 
 
 
@@ -137,5 +143,10 @@ route parser handler =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
+subscriptions model =
+    case model.page of
+        NotFound ->
+            Sub.none
+
+        Writer writerModel ->
+            Sub.map GotWriterMsg (Writer.subscriptions writerModel)
