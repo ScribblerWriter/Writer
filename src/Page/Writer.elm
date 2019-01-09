@@ -43,7 +43,7 @@ init =
       , touched = False
       , countMethod = Additive
       }
-    , Ports.sendMessage "LoadContent" Nothing
+    , Ports.sendMessage Ports.LoadContent Nothing
     )
 
 
@@ -74,13 +74,13 @@ update msg model state =
         SaveTimerTicked _ ->
             ( state
             , ( { model | touched = False }
-              , Ports.sendMessage "SaveContent" <| Just (encodeSaveObject state model)
+              , Ports.sendMessage Ports.SaveContent (Just (encodeSaveObject state model))
               )
             )
 
         MessageReceived message ->
-            case message.operation of
-                "ContentLoaded" ->
+            case Ports.stringToOperation message.operation of
+                Ports.ContentLoaded ->
                     updateContent state model message.content
 
                 _ ->

@@ -1,4 +1,4 @@
-port module Ports exposing (Message, incomingMessage, sendMessage)
+port module Ports exposing (Message, Operation(..), incomingMessage, sendMessage, stringToOperation)
 
 import Json.Encode as Encode
 
@@ -15,10 +15,47 @@ port outgoingMessage : Message -> Cmd msg
 port incomingMessage : (Message -> msg) -> Sub msg
 
 
+type Operation
+    = Unknown
+    | SaveContent
+    | LoadContent
+    | ContentLoaded
+
+
 
 -- Port operations
 
 
-sendMessage : String -> Maybe Encode.Value -> Cmd msg
+sendMessage : Operation -> Maybe Encode.Value -> Cmd msg
 sendMessage operation content =
-    outgoingMessage { operation = operation, content = content }
+    outgoingMessage
+        { operation = operationToString operation
+        , content = content
+        }
+
+
+
+-- Operations
+
+
+operationToString : Operation -> String
+operationToString operation =
+    case operation of
+        SaveContent ->
+            "SaveContent"
+
+        LoadContent ->
+            "LoadContent"
+
+        _ ->
+            "Unknown"
+
+
+stringToOperation : String -> Operation
+stringToOperation operation =
+    case operation of
+        "ContentLoaded" ->
+            ContentLoaded
+
+        _ ->
+            Unknown

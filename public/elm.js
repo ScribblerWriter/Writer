@@ -5015,6 +5015,17 @@ var author$project$Main$stepWriter = F2(
 			A2(elm$core$Platform$Cmd$map, author$project$Main$GotWriterMsg, writerCmds));
 	});
 var author$project$Page$Writer$Additive = {$: 'Additive'};
+var author$project$Ports$LoadContent = {$: 'LoadContent'};
+var author$project$Ports$operationToString = function (operation) {
+	switch (operation.$) {
+		case 'SaveContent':
+			return 'SaveContent';
+		case 'LoadContent':
+			return 'LoadContent';
+		default:
+			return 'Unknown';
+	}
+};
 var elm$core$Maybe$destruct = F3(
 	function (_default, func, maybe) {
 		if (maybe.$ === 'Just') {
@@ -5058,11 +5069,14 @@ var author$project$Ports$outgoingMessage = _Platform_outgoingPort(
 var author$project$Ports$sendMessage = F2(
 	function (operation, content) {
 		return author$project$Ports$outgoingMessage(
-			{content: content, operation: operation});
+			{
+				content: content,
+				operation: author$project$Ports$operationToString(operation)
+			});
 	});
 var author$project$Page$Writer$init = _Utils_Tuple2(
 	{actualWordsAtLastCheck: 0, countMethod: author$project$Page$Writer$Additive, currentTarget: elm$core$Maybe$Nothing, currentTargetTimerInSecs: 0, currentText: '', endMessage: '', touched: false, winProgress: 0},
-	A2(author$project$Ports$sendMessage, 'LoadContent', elm$core$Maybe$Nothing));
+	A2(author$project$Ports$sendMessage, author$project$Ports$LoadContent, elm$core$Maybe$Nothing));
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var elm$core$List$append = F2(
@@ -6286,6 +6300,16 @@ var author$project$Page$Writer$updateCounts = F3(
 					winProgress: A2(author$project$Page$Writer$calculateProgress, model, dif)
 				}));
 	});
+var author$project$Ports$SaveContent = {$: 'SaveContent'};
+var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
+var author$project$Ports$Unknown = {$: 'Unknown'};
+var author$project$Ports$stringToOperation = function (operation) {
+	if (operation === 'ContentLoaded') {
+		return author$project$Ports$ContentLoaded;
+	} else {
+		return author$project$Ports$Unknown;
+	}
+};
 var author$project$Page$Writer$update = F3(
 	function (msg, model, state) {
 		switch (msg.$) {
@@ -6310,13 +6334,13 @@ var author$project$Page$Writer$update = F3(
 							{touched: false}),
 						A2(
 							author$project$Ports$sendMessage,
-							'SaveContent',
+							author$project$Ports$SaveContent,
 							elm$core$Maybe$Just(
 								A2(author$project$Page$Writer$encodeSaveObject, state, model)))));
 			default:
 				var message = msg.a;
-				var _n2 = message.operation;
-				if (_n2 === 'ContentLoaded') {
+				var _n2 = author$project$Ports$stringToOperation(message.operation);
+				if (_n2.$ === 'ContentLoaded') {
 					return A3(author$project$Page$Writer$updateContent, state, model, message.content);
 				} else {
 					return _Utils_Tuple2(
