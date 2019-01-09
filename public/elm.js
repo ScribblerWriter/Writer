@@ -6190,9 +6190,6 @@ var author$project$Page$Writer$methodDecoder = A2(
 	A2(elm$json$Json$Decode$field, 'method', elm$json$Json$Decode$string));
 var author$project$Page$Writer$textDecoder = A2(elm$json$Json$Decode$field, 'text', elm$json$Json$Decode$string);
 var author$project$Page$Writer$wordCountDecoder = A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int);
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
 var author$project$Page$Writer$updateContent = F3(
 	function (state, model, content) {
 		if (content.$ === 'Just') {
@@ -6201,7 +6198,7 @@ var author$project$Page$Writer$updateContent = F3(
 				_Utils_update(
 					state,
 					{
-						writtenCount: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$wordCountDecoder, data, -1)
+						writtenCount: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$wordCountDecoder, data, 0)
 					}),
 				_Utils_Tuple2(
 					_Utils_update(
@@ -6209,7 +6206,7 @@ var author$project$Page$Writer$updateContent = F3(
 						{
 							actualWordsAtLastCheck: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$actualCountDecoder, data, 0),
 							countMethod: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$methodDecoder, data, author$project$Page$Writer$Additive),
-							currentText: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$textDecoder, data, 'Error loading text')
+							currentText: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$textDecoder, data, '')
 						}),
 					elm$core$Platform$Cmd$none));
 		} else {
@@ -9123,6 +9120,9 @@ var elm$core$Basics$min = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) < 0) ? x : y;
 	});
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
 var elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:

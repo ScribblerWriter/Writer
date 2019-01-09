@@ -91,9 +91,9 @@ updateContent : State -> Model -> Maybe Encode.Value -> ( State, ( Model, Cmd ms
 updateContent state model content =
     case content of
         Just data ->
-            ( { state | writtenCount = getValue wordCountDecoder data -1 }
+            ( { state | writtenCount = getValue wordCountDecoder data 0 }
             , ( { model
-                    | currentText = getValue textDecoder data "Error loading text"
+                    | currentText = getValue textDecoder data ""
                     , countMethod = getValue methodDecoder data Additive
                     , actualWordsAtLastCheck = getValue actualCountDecoder data 0
                 }
