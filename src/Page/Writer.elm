@@ -1,4 +1,4 @@
-module Page.Writer exposing (Model, Msg(..), init, subscriptions, update, view)
+module Page.Writer exposing (Model, Msg(..), init, subscriptions, update, updatePageLinkClick, view)
 
 import Appearance
 import Data.Target exposing (Target)
@@ -74,21 +74,21 @@ update msg model state =
         SaveTimerTicked _ ->
             ( state
             , ( { model | touched = False }
-              , Ports.sendMessage Ports.SaveContent (Just (encodeSaveObject state model))
+              , Ports.sendMessage Ports.SaveContent (Just (encodeSaveObject model state))
               )
             )
 
         MessageReceived message ->
             case Ports.stringToOperation message.operation of
                 Ports.ContentLoaded ->
-                    updateContent state model message.content
+                    updateContent model state message.content
 
                 _ ->
                     ( state, ( model, Cmd.none ) )
 
 
-updateContent : State -> Model -> Maybe Encode.Value -> ( State, ( Model, Cmd msg ) )
-updateContent state model content =
+updateContent : Model -> State -> Maybe Encode.Value -> ( State, ( Model, Cmd msg ) )
+updateContent model state content =
     case content of
         Just data ->
             ( { state | writtenCount = getValue wordCountDecoder data 0 }
@@ -103,6 +103,11 @@ updateContent state model content =
 
         Nothing ->
             ( state, ( model, Cmd.none ) )
+
+
+updatePageLinkClick : Model -> State -> Cmd msg
+updatePageLinkClick model state =
+    Ports.sendMessage Ports.SaveContent (Just (encodeSaveObject model state))
 
 
 
@@ -206,41 +211,48 @@ countWords document =
 view : State -> Model -> Skeleton.PageData Msg
 view state model =
     { title = "Writing page"
-    , headerSettings =
-        Just
-            { writtenCount = state.writtenCount
-            , actionButtonSettings =
-                Just { action = "/target", label = "TARGET" }
-            , signOutButtonSettings =
-                Just { action = "/signout", label = "Sign Out" }
-            }
-    , body =
-        column
+    , headerSettings = Just (getHeaderSettings state)
+    , body = showBody model
+    }
+
+
+getHeaderSettings : State -> Skeleton.HeaderSettings
+getHeaderSettings state =
+    { writtenCount = state.writtenCount
+    , actionButtonSettings =
+        Just { action = "/target", label = "TARGET" }
+    , signOutButtonSettings =
+        Just { action = "/signout", label = "Sign Out" }
+    }
+
+
+showBody : Model -> Element Msg
+showBody model =
+    column
+        [ width fill
+        , height fill
+        ]
+        [ case model.currentTarget of
+            Nothing ->
+                none
+
+            Just target ->
+                showProgressBar model target
+        , Input.multiline
             [ width fill
             , height fill
+            , padding 25
+            , Border.width 0
+            , Border.rounded 0
+            , htmlAttribute <| Html.Attributes.placeholder "Tap target to select one, then write your words here!"
             ]
-            [ case model.currentTarget of
-                Nothing ->
-                    none
-
-                Just target ->
-                    showProgressBar model target
-            , Input.multiline
-                [ width fill
-                , height fill
-                , padding 25
-                , Border.width 0
-                , Border.rounded 0
-                , htmlAttribute <| Html.Attributes.placeholder "Tap target to select one, then write your words here!"
-                ]
-                { onChange = WordsWritten
-                , text = model.currentText
-                , placeholder = Nothing
-                , label = Input.labelHidden ""
-                , spellcheck = True
-                }
-            ]
-    }
+            { onChange = WordsWritten
+            , text = model.currentText
+            , placeholder = Nothing
+            , label = Input.labelHidden ""
+            , spellcheck = True
+            }
+        ]
 
 
 showProgressBar : Model -> Target -> Element Msg
@@ -386,8 +398,8 @@ methodDecoder =
 -- Encoding
 
 
-encodeSaveObject : State -> Model -> Encode.Value
-encodeSaveObject state model =
+encodeSaveObject : Model -> State -> Encode.Value
+encodeSaveObject model state =
     Encode.object
         [ ( "count", Encode.int state.writtenCount )
         , ( "text", Encode.string model.currentText )

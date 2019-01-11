@@ -3,7 +3,9 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (text)
+import Json.Decode as Decode
 import Json.Encode as Encode
+import Page.TargetSelector as TargetSelector
 import Page.Writer as Writer
 import Skeleton
 import State exposing (State)
@@ -11,7 +13,7 @@ import Url
 import Url.Parser as Parser exposing ((</>), Parser, custom, fragment, map, oneOf, s, top)
 
 
-main : Program () Model Msg
+main : Program Decode.Value Model Msg
 main =
     Browser.application
         { init = init
@@ -33,15 +35,17 @@ type alias Model =
 type Page
     = NotFound
     | Writer Writer.Model
+    | TargetSelector TargetSelector.Model
 
 
-init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url key =
+init : Decode.Value -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url key =
     stepUrl url
         { key = key
         , page = NotFound
         , state =
             { writtenCount = 0
+            , windowDimensions = State.decodeDimensions flags
             }
         }
 
@@ -59,6 +63,9 @@ view model =
         Writer writerModel ->
             Skeleton.view model.state GotWriterMsg (Writer.view model.state writerModel)
 
+        TargetSelector targetSelectorModel ->
+            Skeleton.view model.state GotTargetSelectorMsg (TargetSelector.view model.state targetSelectorModel)
+
 
 
 -- Update
@@ -68,28 +75,53 @@ type Msg
     = UrlChanged Url.Url
     | LinkClicked Browser.UrlRequest
     | GotWriterMsg Writer.Msg
+    | GotTargetSelectorMsg TargetSelector.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
         LinkClicked urlRequest ->
-            case urlRequest of
-                Browser.Internal url ->
-                    ( model
-                    , Nav.pushUrl model.key (Url.toString url)
-                    )
-
-                Browser.External href ->
-                    ( model
-                    , Nav.load href
-                    )
+            updateLinkClick urlRequest model
 
         UrlChanged url ->
             stepUrl url model
 
         GotWriterMsg msg ->
             updateWriter msg model
+
+        GotTargetSelectorMsg msg ->
+            updateTargetSelector msg model
+
+
+updateLinkClick : Browser.UrlRequest -> Model -> ( Model, Cmd Msg )
+updateLinkClick urlRequest model =
+    case urlRequest of
+        Browser.Internal url ->
+            ( model
+            , Cmd.batch
+                [ Nav.pushUrl model.key (Url.toString url)
+                , updatePageLinkClick model
+                ]
+            )
+
+        Browser.External href ->
+            ( model
+            , Nav.load href
+            )
+
+
+updatePageLinkClick : Model -> Cmd Msg
+updatePageLinkClick model =
+    case model.page of
+        Writer writerModel ->
+            Writer.updatePageLinkClick writerModel model.state
+
+        TargetSelector targetSelectorModel ->
+            Cmd.none
+
+        NotFound ->
+            Cmd.none
 
 
 updateWriter : Writer.Msg -> Model -> ( Model, Cmd Msg )
@@ -98,6 +130,17 @@ updateWriter msg model =
         Writer writerModel ->
             Writer.update msg writerModel model.state
                 |> (\( state, data ) -> stepWriter { model | state = state } data)
+
+        _ ->
+            ( model, Cmd.none )
+
+
+updateTargetSelector : TargetSelector.Msg -> Model -> ( Model, Cmd Msg )
+updateTargetSelector msg model =
+    case model.page of
+        TargetSelector targetSelectorModel ->
+            TargetSelector.update msg targetSelectorModel model.state
+                |> (\( state, data ) -> stepTargetSelector { model | state = state } data)
 
         _ ->
             ( model, Cmd.none )
@@ -114,13 +157,20 @@ stepWriter model ( writerModel, writerCmds ) =
     )
 
 
+stepTargetSelector : Model -> ( TargetSelector.Model, Cmd TargetSelector.Msg ) -> ( Model, Cmd Msg )
+stepTargetSelector model ( targetSelectorModel, targetSelectorCmds ) =
+    ( { model | page = TargetSelector targetSelectorModel }
+    , Cmd.map GotTargetSelectorMsg targetSelectorCmds
+    )
+
+
 stepUrl : Url.Url -> Model -> ( Model, Cmd Msg )
 stepUrl url model =
     let
         parser =
             oneOf
-                [ route top
-                    (stepWriter model Writer.init)
+                [ route top (stepWriter model Writer.init)
+                , route (s "target") (stepTargetSelector model TargetSelector.init)
                 ]
     in
     case Parser.parse parser url of
@@ -150,3 +200,6 @@ subscriptions model =
 
         Writer writerModel ->
             Sub.map GotWriterMsg (Writer.subscriptions writerModel)
+
+        TargetSelector targetSelectorModel ->
+            Sub.none

@@ -4628,11 +4628,11 @@ var author$project$Main$route = F2(
 	function (parser, handler) {
 		return A2(elm$url$Url$Parser$map, handler, parser);
 	});
-var author$project$Main$GotWriterMsg = function (a) {
-	return {$: 'GotWriterMsg', a: a};
+var author$project$Main$GotTargetSelectorMsg = function (a) {
+	return {$: 'GotTargetSelectorMsg', a: a};
 };
-var author$project$Main$Writer = function (a) {
-	return {$: 'Writer', a: a};
+var author$project$Main$TargetSelector = function (a) {
+	return {$: 'TargetSelector', a: a};
 };
 var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$True = {$: 'True'};
@@ -5002,6 +5002,24 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 		}
 	});
 var elm$core$Platform$Cmd$map = _Platform_map;
+var author$project$Main$stepTargetSelector = F2(
+	function (model, _n0) {
+		var targetSelectorModel = _n0.a;
+		var targetSelectorCmds = _n0.b;
+		return _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{
+					page: author$project$Main$TargetSelector(targetSelectorModel)
+				}),
+			A2(elm$core$Platform$Cmd$map, author$project$Main$GotTargetSelectorMsg, targetSelectorCmds));
+	});
+var author$project$Main$GotWriterMsg = function (a) {
+	return {$: 'GotWriterMsg', a: a};
+};
+var author$project$Main$Writer = function (a) {
+	return {$: 'Writer', a: a};
+};
 var author$project$Main$stepWriter = F2(
 	function (model, _n0) {
 		var writerModel = _n0.a;
@@ -5014,6 +5032,13 @@ var author$project$Main$stepWriter = F2(
 				}),
 			A2(elm$core$Platform$Cmd$map, author$project$Main$GotWriterMsg, writerCmds));
 	});
+var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
+var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var author$project$Page$TargetSelector$init = _Utils_Tuple2(
+	{targets: elm$core$Dict$empty},
+	elm$core$Platform$Cmd$none);
 var author$project$Page$Writer$Additive = {$: 'Additive'};
 var author$project$Ports$LoadContent = {$: 'LoadContent'};
 var author$project$Ports$operationToString = function (operation) {
@@ -5077,8 +5102,6 @@ var author$project$Ports$sendMessage = F2(
 var author$project$Page$Writer$init = _Utils_Tuple2(
 	{actualWordsAtLastCheck: 0, countMethod: author$project$Page$Writer$Additive, currentTarget: elm$core$Maybe$Nothing, currentTargetTimerInSecs: 0, currentText: '', endMessage: '', touched: false, winProgress: 0},
 	A2(author$project$Ports$sendMessage, author$project$Ports$LoadContent, elm$core$Maybe$Nothing));
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -5156,8 +5179,6 @@ var elm$url$Url$Parser$preparePath = function (path) {
 		return elm$url$Url$Parser$removeFinalEmpty(segments);
 	}
 };
-var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var elm$core$Basics$compare = _Utils_compare;
 var elm$core$Dict$get = F2(
 	function (targetKey, dict) {
@@ -5737,6 +5758,32 @@ var elm$url$Url$Parser$parse = F2(
 					url.fragment,
 					elm$core$Basics$identity)));
 	});
+var elm$url$Url$Parser$s = function (str) {
+	return elm$url$Url$Parser$Parser(
+		function (_n0) {
+			var visited = _n0.visited;
+			var unvisited = _n0.unvisited;
+			var params = _n0.params;
+			var frag = _n0.frag;
+			var value = _n0.value;
+			if (!unvisited.b) {
+				return _List_Nil;
+			} else {
+				var next = unvisited.a;
+				var rest = unvisited.b;
+				return _Utils_eq(next, str) ? _List_fromArray(
+					[
+						A5(
+						elm$url$Url$Parser$State,
+						A2(elm$core$List$cons, next, visited),
+						rest,
+						params,
+						frag,
+						value)
+					]) : _List_Nil;
+			}
+		});
+};
 var elm$url$Url$Parser$top = elm$url$Url$Parser$Parser(
 	function (state) {
 		return _List_fromArray(
@@ -5750,7 +5797,11 @@ var author$project$Main$stepUrl = F2(
 					A2(
 					author$project$Main$route,
 					elm$url$Url$Parser$top,
-					A2(author$project$Main$stepWriter, model, author$project$Page$Writer$init))
+					A2(author$project$Main$stepWriter, model, author$project$Page$Writer$init)),
+					A2(
+					author$project$Main$route,
+					elm$url$Url$Parser$s('target'),
+					A2(author$project$Main$stepTargetSelector, model, author$project$Page$TargetSelector$init))
 				]));
 		var _n0 = A2(elm$url$Url$Parser$parse, parser, url);
 		if (_n0.$ === 'Just') {
@@ -5764,15 +5815,40 @@ var author$project$Main$stepUrl = F2(
 				elm$core$Platform$Cmd$none);
 		}
 	});
+var author$project$State$Dimensions = F2(
+	function (width, height) {
+		return {height: height, width: width};
+	});
+var elm$json$Json$Decode$field = _Json_decodeField;
+var elm$json$Json$Decode$int = _Json_decodeInt;
+var elm$json$Json$Decode$map2 = _Json_map2;
+var author$project$State$dimensionDecoder = A3(
+	elm$json$Json$Decode$map2,
+	author$project$State$Dimensions,
+	A2(elm$json$Json$Decode$field, 'width', elm$json$Json$Decode$int),
+	A2(elm$json$Json$Decode$field, 'height', elm$json$Json$Decode$int));
+var elm$json$Json$Decode$decodeValue = _Json_run;
+var author$project$State$decodeDimensions = function (value) {
+	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$dimensionDecoder, value);
+	if (_n0.$ === 'Ok') {
+		var dimensions = _n0.a;
+		return dimensions;
+	} else {
+		return {height: 600, width: 800};
+	}
+};
 var author$project$Main$init = F3(
-	function (_n0, url, key) {
+	function (flags, url, key) {
 		return A2(
 			author$project$Main$stepUrl,
 			url,
 			{
 				key: key,
 				page: author$project$Main$NotFound,
-				state: {writtenCount: 0}
+				state: {
+					windowDimensions: author$project$State$decodeDimensions(flags),
+					writtenCount: 0
+				}
 			});
 	});
 var author$project$Page$Writer$MessageReceived = function (a) {
@@ -5782,7 +5858,6 @@ var author$project$Page$Writer$SaveTimerTicked = function (a) {
 	return {$: 'SaveTimerTicked', a: a};
 };
 var elm$json$Json$Decode$andThen = _Json_andThen;
-var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$null = _Json_decodeNull;
 var elm$json$Json$Decode$oneOf = _Json_oneOf;
@@ -6122,14 +6197,18 @@ var elm$core$Platform$Sub$map = _Platform_map;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
 var author$project$Main$subscriptions = function (model) {
 	var _n0 = model.page;
-	if (_n0.$ === 'NotFound') {
-		return elm$core$Platform$Sub$none;
-	} else {
-		var writerModel = _n0.a;
-		return A2(
-			elm$core$Platform$Sub$map,
-			author$project$Main$GotWriterMsg,
-			author$project$Page$Writer$subscriptions(writerModel));
+	switch (_n0.$) {
+		case 'NotFound':
+			return elm$core$Platform$Sub$none;
+		case 'Writer':
+			var writerModel = _n0.a;
+			return A2(
+				elm$core$Platform$Sub$map,
+				author$project$Main$GotWriterMsg,
+				author$project$Page$Writer$subscriptions(writerModel));
+		default:
+			var targetSelectorModel = _n0.a;
+			return elm$core$Platform$Sub$none;
 	}
 };
 var author$project$Page$Writer$methodEncoder = function (method) {
@@ -6141,7 +6220,7 @@ var author$project$Page$Writer$methodEncoder = function (method) {
 };
 var elm$json$Json$Encode$int = _Json_wrap;
 var author$project$Page$Writer$encodeSaveObject = F2(
-	function (state, model) {
+	function (model, state) {
 		return elm$json$Json$Encode$object(
 			_List_fromArray(
 				[
@@ -6159,213 +6238,28 @@ var author$project$Page$Writer$encodeSaveObject = F2(
 					elm$json$Json$Encode$int(model.actualWordsAtLastCheck))
 				]));
 	});
-var elm$json$Json$Decode$int = _Json_decodeInt;
-var author$project$Page$Writer$actualCountDecoder = A2(elm$json$Json$Decode$field, 'actualCount', elm$json$Json$Decode$int);
-var elm$json$Json$Decode$decodeValue = _Json_run;
-var author$project$Page$Writer$getValue = F3(
-	function (decoder, string, errorVal) {
-		var _n0 = A2(elm$json$Json$Decode$decodeValue, decoder, string);
-		if (_n0.$ === 'Err') {
-			return errorVal;
-		} else {
-			var value = _n0.a;
-			return value;
-		}
-	});
-var author$project$Page$Writer$Subtractive = {$: 'Subtractive'};
-var elm$json$Json$Decode$fail = _Json_fail;
-var author$project$Page$Writer$methodDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (str) {
-		switch (str) {
-			case 'additive':
-				return elm$json$Json$Decode$succeed(author$project$Page$Writer$Additive);
-			case 'subtractive':
-				return elm$json$Json$Decode$succeed(author$project$Page$Writer$Subtractive);
-			default:
-				var wrongValue = str;
-				return elm$json$Json$Decode$fail('Count method decoding failed. Value: ' + wrongValue);
-		}
-	},
-	A2(elm$json$Json$Decode$field, 'method', elm$json$Json$Decode$string));
-var author$project$Page$Writer$textDecoder = A2(elm$json$Json$Decode$field, 'text', elm$json$Json$Decode$string);
-var author$project$Page$Writer$wordCountDecoder = A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int);
-var author$project$Page$Writer$updateContent = F3(
-	function (state, model, content) {
-		if (content.$ === 'Just') {
-			var data = content.a;
-			return _Utils_Tuple2(
-				_Utils_update(
-					state,
-					{
-						writtenCount: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$wordCountDecoder, data, 0)
-					}),
-				_Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							actualWordsAtLastCheck: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$actualCountDecoder, data, 0),
-							countMethod: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$methodDecoder, data, author$project$Page$Writer$Additive),
-							currentText: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$textDecoder, data, '')
-						}),
-					elm$core$Platform$Cmd$none));
-		} else {
-			return _Utils_Tuple2(
-				state,
-				_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-		}
-	});
-var elm$core$Basics$ge = _Utils_ge;
-var author$project$Page$Writer$calculateProgress = F2(
-	function (model, dif) {
-		var _n0 = model.currentTarget;
-		if (_n0.$ === 'Just') {
-			var target = _n0.a;
-			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? target.winCount : (model.winProgress + dif)) : model.winProgress;
-		} else {
-			return 0;
-		}
-	});
-var elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var elm$core$String$any = _String_any;
-var elm$core$String$replace = F3(
-	function (before, after, string) {
-		return A2(
-			elm$core$String$join,
-			after,
-			A2(elm$core$String$split, before, string));
-	});
-var elm$core$String$words = _String_words;
-var author$project$Page$Writer$countWords = function (document) {
-	return elm$core$List$length(
-		A2(
-			elm$core$List$filter,
-			elm$core$String$any(elm$core$Char$isAlphaNum),
-			elm$core$String$words(
-				A3(
-					elm$core$String$replace,
-					'–',
-					' ',
-					A3(elm$core$String$replace, '—', ' ', document)))));
-};
-var author$project$Page$Writer$WordsReached = {$: 'WordsReached'};
-var author$project$Page$Writer$endFight = F2(
-	function (model, reason) {
-		if (reason.$ === 'TimeExpired') {
-			return 'Time\'s up!';
-		} else {
-			return 'You win!';
-		}
-	});
-var author$project$Page$Writer$generateEndMessage = F2(
-	function (model, dif) {
-		var _n0 = model.currentTarget;
-		if (_n0.$ === 'Just') {
-			var target = _n0.a;
-			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? A2(author$project$Page$Writer$endFight, model, author$project$Page$Writer$WordsReached) : model.endMessage) : model.endMessage;
-		} else {
-			return '';
-		}
-	});
-var author$project$Page$Writer$updateWrittenCount = F4(
-	function (writtenCount, trimmedWordCount, model, dif) {
-		return (dif > 0) ? (writtenCount + dif) : (_Utils_eq(model.countMethod, author$project$Page$Writer$Additive) ? writtenCount : trimmedWordCount);
-	});
-var author$project$Page$Writer$updateCounts = F3(
-	function (writtenCount, document, model) {
-		var trimmedWordCount = author$project$Page$Writer$countWords(document);
-		var dif = trimmedWordCount - model.actualWordsAtLastCheck;
-		return _Utils_Tuple2(
-			A4(author$project$Page$Writer$updateWrittenCount, writtenCount, trimmedWordCount, model, dif),
-			_Utils_update(
-				model,
-				{
-					actualWordsAtLastCheck: trimmedWordCount,
-					currentText: document,
-					endMessage: A2(author$project$Page$Writer$generateEndMessage, model, dif),
-					touched: true,
-					winProgress: A2(author$project$Page$Writer$calculateProgress, model, dif)
-				}));
-	});
 var author$project$Ports$SaveContent = {$: 'SaveContent'};
-var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
-var author$project$Ports$Unknown = {$: 'Unknown'};
-var author$project$Ports$stringToOperation = function (operation) {
-	if (operation === 'ContentLoaded') {
-		return author$project$Ports$ContentLoaded;
-	} else {
-		return author$project$Ports$Unknown;
+var author$project$Page$Writer$updatePageLinkClick = F2(
+	function (model, state) {
+		return A2(
+			author$project$Ports$sendMessage,
+			author$project$Ports$SaveContent,
+			elm$core$Maybe$Just(
+				A2(author$project$Page$Writer$encodeSaveObject, model, state)));
+	});
+var author$project$Main$updatePageLinkClick = function (model) {
+	var _n0 = model.page;
+	switch (_n0.$) {
+		case 'Writer':
+			var writerModel = _n0.a;
+			return A2(author$project$Page$Writer$updatePageLinkClick, writerModel, model.state);
+		case 'TargetSelector':
+			var targetSelectorModel = _n0.a;
+			return elm$core$Platform$Cmd$none;
+		default:
+			return elm$core$Platform$Cmd$none;
 	}
 };
-var author$project$Page$Writer$update = F3(
-	function (msg, model, state) {
-		switch (msg.$) {
-			case 'WordsWritten':
-				var document = msg.a;
-				return function (_n1) {
-					var count = _n1.a;
-					var updatedModel = _n1.b;
-					return _Utils_Tuple2(
-						_Utils_update(
-							state,
-							{writtenCount: count}),
-						_Utils_Tuple2(updatedModel, elm$core$Platform$Cmd$none));
-				}(
-					A3(author$project$Page$Writer$updateCounts, state.writtenCount, document, model));
-			case 'SaveTimerTicked':
-				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(
-						_Utils_update(
-							model,
-							{touched: false}),
-						A2(
-							author$project$Ports$sendMessage,
-							author$project$Ports$SaveContent,
-							elm$core$Maybe$Just(
-								A2(author$project$Page$Writer$encodeSaveObject, state, model)))));
-			default:
-				var message = msg.a;
-				var _n2 = author$project$Ports$stringToOperation(message.operation);
-				if (_n2.$ === 'ContentLoaded') {
-					return A3(author$project$Page$Writer$updateContent, state, model, message.content);
-				} else {
-					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-				}
-		}
-	});
-var author$project$Main$updateWriter = F2(
-	function (msg, model) {
-		var _n0 = model.page;
-		if (_n0.$ === 'Writer') {
-			var writerModel = _n0.a;
-			return function (_n1) {
-				var state = _n1.a;
-				var data = _n1.b;
-				return A2(
-					author$project$Main$stepWriter,
-					_Utils_update(
-						model,
-						{state: state}),
-					data);
-			}(
-				A3(author$project$Page$Writer$update, msg, writerModel, model.state));
-		} else {
-			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-		}
-	});
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
 };
@@ -6438,7 +6332,6 @@ var elm$core$Task$perform = F2(
 			elm$core$Task$Perform(
 				A2(elm$core$Task$map, toMessage, task)));
 	});
-var elm$json$Json$Decode$map2 = _Json_map2;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 'Normal':
@@ -6626,33 +6519,307 @@ var elm$url$Url$toString = function (url) {
 					_Utils_ap(http, url.host)),
 				url.path)));
 };
+var author$project$Main$updateLinkClick = F2(
+	function (urlRequest, model) {
+		if (urlRequest.$ === 'Internal') {
+			var url = urlRequest.a;
+			return _Utils_Tuple2(
+				model,
+				elm$core$Platform$Cmd$batch(
+					_List_fromArray(
+						[
+							A2(
+							elm$browser$Browser$Navigation$pushUrl,
+							model.key,
+							elm$url$Url$toString(url)),
+							author$project$Main$updatePageLinkClick(model)
+						])));
+		} else {
+			var href = urlRequest.a;
+			return _Utils_Tuple2(
+				model,
+				elm$browser$Browser$Navigation$load(href));
+		}
+	});
+var author$project$Page$TargetSelector$update = F3(
+	function (msg, model, state) {
+		return _Utils_Tuple2(
+			state,
+			_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+	});
+var author$project$Main$updateTargetSelector = F2(
+	function (msg, model) {
+		var _n0 = model.page;
+		if (_n0.$ === 'TargetSelector') {
+			var targetSelectorModel = _n0.a;
+			return function (_n1) {
+				var state = _n1.a;
+				var data = _n1.b;
+				return A2(
+					author$project$Main$stepTargetSelector,
+					_Utils_update(
+						model,
+						{state: state}),
+					data);
+			}(
+				A3(author$project$Page$TargetSelector$update, msg, targetSelectorModel, model.state));
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
+	});
+var author$project$Page$Writer$actualCountDecoder = A2(elm$json$Json$Decode$field, 'actualCount', elm$json$Json$Decode$int);
+var author$project$Page$Writer$getValue = F3(
+	function (decoder, string, errorVal) {
+		var _n0 = A2(elm$json$Json$Decode$decodeValue, decoder, string);
+		if (_n0.$ === 'Err') {
+			return errorVal;
+		} else {
+			var value = _n0.a;
+			return value;
+		}
+	});
+var author$project$Page$Writer$Subtractive = {$: 'Subtractive'};
+var elm$json$Json$Decode$fail = _Json_fail;
+var author$project$Page$Writer$methodDecoder = A2(
+	elm$json$Json$Decode$andThen,
+	function (str) {
+		switch (str) {
+			case 'additive':
+				return elm$json$Json$Decode$succeed(author$project$Page$Writer$Additive);
+			case 'subtractive':
+				return elm$json$Json$Decode$succeed(author$project$Page$Writer$Subtractive);
+			default:
+				var wrongValue = str;
+				return elm$json$Json$Decode$fail('Count method decoding failed. Value: ' + wrongValue);
+		}
+	},
+	A2(elm$json$Json$Decode$field, 'method', elm$json$Json$Decode$string));
+var author$project$Page$Writer$textDecoder = A2(elm$json$Json$Decode$field, 'text', elm$json$Json$Decode$string);
+var author$project$Page$Writer$wordCountDecoder = A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int);
+var author$project$Page$Writer$updateContent = F3(
+	function (model, state, content) {
+		if (content.$ === 'Just') {
+			var data = content.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					state,
+					{
+						writtenCount: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$wordCountDecoder, data, 0)
+					}),
+				_Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							actualWordsAtLastCheck: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$actualCountDecoder, data, 0),
+							countMethod: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$methodDecoder, data, author$project$Page$Writer$Additive),
+							currentText: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$textDecoder, data, '')
+						}),
+					elm$core$Platform$Cmd$none));
+		} else {
+			return _Utils_Tuple2(
+				state,
+				_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+		}
+	});
+var elm$core$Basics$ge = _Utils_ge;
+var author$project$Page$Writer$calculateProgress = F2(
+	function (model, dif) {
+		var _n0 = model.currentTarget;
+		if (_n0.$ === 'Just') {
+			var target = _n0.a;
+			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? target.winCount : (model.winProgress + dif)) : model.winProgress;
+		} else {
+			return 0;
+		}
+	});
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var elm$core$String$any = _String_any;
+var elm$core$String$replace = F3(
+	function (before, after, string) {
+		return A2(
+			elm$core$String$join,
+			after,
+			A2(elm$core$String$split, before, string));
+	});
+var elm$core$String$words = _String_words;
+var author$project$Page$Writer$countWords = function (document) {
+	return elm$core$List$length(
+		A2(
+			elm$core$List$filter,
+			elm$core$String$any(elm$core$Char$isAlphaNum),
+			elm$core$String$words(
+				A3(
+					elm$core$String$replace,
+					'–',
+					' ',
+					A3(elm$core$String$replace, '—', ' ', document)))));
+};
+var author$project$Page$Writer$WordsReached = {$: 'WordsReached'};
+var author$project$Page$Writer$endFight = F2(
+	function (model, reason) {
+		if (reason.$ === 'TimeExpired') {
+			return 'Time\'s up!';
+		} else {
+			return 'You win!';
+		}
+	});
+var author$project$Page$Writer$generateEndMessage = F2(
+	function (model, dif) {
+		var _n0 = model.currentTarget;
+		if (_n0.$ === 'Just') {
+			var target = _n0.a;
+			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? A2(author$project$Page$Writer$endFight, model, author$project$Page$Writer$WordsReached) : model.endMessage) : model.endMessage;
+		} else {
+			return '';
+		}
+	});
+var author$project$Page$Writer$updateWrittenCount = F4(
+	function (writtenCount, trimmedWordCount, model, dif) {
+		return (dif > 0) ? (writtenCount + dif) : (_Utils_eq(model.countMethod, author$project$Page$Writer$Additive) ? writtenCount : trimmedWordCount);
+	});
+var author$project$Page$Writer$updateCounts = F3(
+	function (writtenCount, document, model) {
+		var trimmedWordCount = author$project$Page$Writer$countWords(document);
+		var dif = trimmedWordCount - model.actualWordsAtLastCheck;
+		return _Utils_Tuple2(
+			A4(author$project$Page$Writer$updateWrittenCount, writtenCount, trimmedWordCount, model, dif),
+			_Utils_update(
+				model,
+				{
+					actualWordsAtLastCheck: trimmedWordCount,
+					currentText: document,
+					endMessage: A2(author$project$Page$Writer$generateEndMessage, model, dif),
+					touched: true,
+					winProgress: A2(author$project$Page$Writer$calculateProgress, model, dif)
+				}));
+	});
+var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
+var author$project$Ports$Unknown = {$: 'Unknown'};
+var author$project$Ports$stringToOperation = function (operation) {
+	if (operation === 'ContentLoaded') {
+		return author$project$Ports$ContentLoaded;
+	} else {
+		return author$project$Ports$Unknown;
+	}
+};
+var author$project$Page$Writer$update = F3(
+	function (msg, model, state) {
+		switch (msg.$) {
+			case 'WordsWritten':
+				var document = msg.a;
+				return function (_n1) {
+					var count = _n1.a;
+					var updatedModel = _n1.b;
+					return _Utils_Tuple2(
+						_Utils_update(
+							state,
+							{writtenCount: count}),
+						_Utils_Tuple2(updatedModel, elm$core$Platform$Cmd$none));
+				}(
+					A3(author$project$Page$Writer$updateCounts, state.writtenCount, document, model));
+			case 'SaveTimerTicked':
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(
+						_Utils_update(
+							model,
+							{touched: false}),
+						A2(
+							author$project$Ports$sendMessage,
+							author$project$Ports$SaveContent,
+							elm$core$Maybe$Just(
+								A2(author$project$Page$Writer$encodeSaveObject, model, state)))));
+			default:
+				var message = msg.a;
+				var _n2 = author$project$Ports$stringToOperation(message.operation);
+				if (_n2.$ === 'ContentLoaded') {
+					return A3(author$project$Page$Writer$updateContent, model, state, message.content);
+				} else {
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+				}
+		}
+	});
+var author$project$Main$updateWriter = F2(
+	function (msg, model) {
+		var _n0 = model.page;
+		if (_n0.$ === 'Writer') {
+			var writerModel = _n0.a;
+			return function (_n1) {
+				var state = _n1.a;
+				var data = _n1.b;
+				return A2(
+					author$project$Main$stepWriter,
+					_Utils_update(
+						model,
+						{state: state}),
+					data);
+			}(
+				A3(author$project$Page$Writer$update, msg, writerModel, model.state));
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
+	});
 var author$project$Main$update = F2(
 	function (message, model) {
 		switch (message.$) {
 			case 'LinkClicked':
 				var urlRequest = message.a;
-				if (urlRequest.$ === 'Internal') {
-					var url = urlRequest.a;
-					return _Utils_Tuple2(
-						model,
-						A2(
-							elm$browser$Browser$Navigation$pushUrl,
-							model.key,
-							elm$url$Url$toString(url)));
-				} else {
-					var href = urlRequest.a;
-					return _Utils_Tuple2(
-						model,
-						elm$browser$Browser$Navigation$load(href));
-				}
+				return A2(author$project$Main$updateLinkClick, urlRequest, model);
 			case 'UrlChanged':
 				var url = message.a;
 				return A2(author$project$Main$stepUrl, url, model);
-			default:
+			case 'GotWriterMsg':
 				var msg = message.a;
 				return A2(author$project$Main$updateWriter, msg, model);
+			default:
+				var msg = message.a;
+				return A2(author$project$Main$updateTargetSelector, msg, model);
 		}
 	});
+var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
+	return {
+		actionButtonSettings: elm$core$Maybe$Just(
+			{action: '/', label: 'CANCEL'}),
+		signOutButtonSettings: elm$core$Maybe$Just(
+			{action: '/signout', label: 'Sign Out'}),
+		writtenCount: state.writtenCount
+	};
+};
+var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
+var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
+var author$project$Page$TargetSelector$showBody = function (model) {
+	return mdgriffith$elm_ui$Element$none;
+};
+var author$project$Page$TargetSelector$view = F2(
+	function (state, model) {
+		return {
+			body: author$project$Page$TargetSelector$showBody(model),
+			headerSettings: elm$core$Maybe$Just(
+				author$project$Page$TargetSelector$getHeaderSettings(state)),
+			title: 'Target Selector'
+		};
+	});
+var author$project$Page$Writer$getHeaderSettings = function (state) {
+	return {
+		actionButtonSettings: elm$core$Maybe$Just(
+			{action: '/target', label: 'TARGET'}),
+		signOutButtonSettings: elm$core$Maybe$Just(
+			{action: '/signout', label: 'Sign Out'}),
+		writtenCount: state.writtenCount
+	};
+};
 var author$project$Page$Writer$WordsWritten = function (a) {
 	return {$: 'WordsWritten', a: a};
 };
@@ -11975,8 +12142,6 @@ var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
 var mdgriffith$elm_ui$Element$inFront = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$InFront, element);
 };
-var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
-var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
 var mdgriffith$elm_ui$Internal$Model$OnLeft = {$: 'OnLeft'};
 var mdgriffith$elm_ui$Element$onLeft = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnLeft, element);
@@ -12995,55 +13160,52 @@ var mdgriffith$elm_ui$Element$Input$multiline = F2(
 			attrs,
 			{label: multi.label, onChange: multi.onChange, placeholder: multi.placeholder, text: multi.text});
 	});
-var author$project$Page$Writer$view = F2(
-	function (state, model) {
-		return {
-			body: A2(
-				mdgriffith$elm_ui$Element$column,
+var author$project$Page$Writer$showBody = function (model) {
+	return A2(
+		mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+				mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill)
+			]),
+		_List_fromArray(
+			[
+				function () {
+				var _n0 = model.currentTarget;
+				if (_n0.$ === 'Nothing') {
+					return mdgriffith$elm_ui$Element$none;
+				} else {
+					var target = _n0.a;
+					return A2(author$project$Page$Writer$showProgressBar, model, target);
+				}
+			}(),
+				A2(
+				mdgriffith$elm_ui$Element$Input$multiline,
 				_List_fromArray(
 					[
 						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill)
+						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
+						mdgriffith$elm_ui$Element$padding(25),
+						mdgriffith$elm_ui$Element$Border$width(0),
+						mdgriffith$elm_ui$Element$Border$rounded(0),
+						mdgriffith$elm_ui$Element$htmlAttribute(
+						elm$html$Html$Attributes$placeholder('Tap target to select one, then write your words here!'))
 					]),
-				_List_fromArray(
-					[
-						function () {
-						var _n0 = model.currentTarget;
-						if (_n0.$ === 'Nothing') {
-							return mdgriffith$elm_ui$Element$none;
-						} else {
-							var target = _n0.a;
-							return A2(author$project$Page$Writer$showProgressBar, model, target);
-						}
-					}(),
-						A2(
-						mdgriffith$elm_ui$Element$Input$multiline,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-								mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-								mdgriffith$elm_ui$Element$padding(25),
-								mdgriffith$elm_ui$Element$Border$width(0),
-								mdgriffith$elm_ui$Element$Border$rounded(0),
-								mdgriffith$elm_ui$Element$htmlAttribute(
-								elm$html$Html$Attributes$placeholder('Tap target to select one, then write your words here!'))
-							]),
-						{
-							label: mdgriffith$elm_ui$Element$Input$labelHidden(''),
-							onChange: author$project$Page$Writer$WordsWritten,
-							placeholder: elm$core$Maybe$Nothing,
-							spellcheck: true,
-							text: model.currentText
-						})
-					])),
-			headerSettings: elm$core$Maybe$Just(
 				{
-					actionButtonSettings: elm$core$Maybe$Just(
-						{action: '/target', label: 'TARGET'}),
-					signOutButtonSettings: elm$core$Maybe$Just(
-						{action: '/signout', label: 'Sign Out'}),
-					writtenCount: state.writtenCount
-				}),
+					label: mdgriffith$elm_ui$Element$Input$labelHidden(''),
+					onChange: author$project$Page$Writer$WordsWritten,
+					placeholder: elm$core$Maybe$Nothing,
+					spellcheck: true,
+					text: model.currentText
+				})
+			]));
+};
+var author$project$Page$Writer$view = F2(
+	function (state, model) {
+		return {
+			body: author$project$Page$Writer$showBody(model),
+			headerSettings: elm$core$Maybe$Just(
+				author$project$Page$Writer$getHeaderSettings(state)),
 			title: 'Writing page'
 		};
 	});
@@ -13565,19 +13727,26 @@ var author$project$Skeleton$view = F3(
 	});
 var author$project$Main$view = function (model) {
 	var _n0 = model.page;
-	if (_n0.$ === 'NotFound') {
-		return A3(author$project$Skeleton$view, model.state, elm$core$Basics$never, author$project$Skeleton$noPageFound);
-	} else {
-		var writerModel = _n0.a;
-		return A3(
-			author$project$Skeleton$view,
-			model.state,
-			author$project$Main$GotWriterMsg,
-			A2(author$project$Page$Writer$view, model.state, writerModel));
+	switch (_n0.$) {
+		case 'NotFound':
+			return A3(author$project$Skeleton$view, model.state, elm$core$Basics$never, author$project$Skeleton$noPageFound);
+		case 'Writer':
+			var writerModel = _n0.a;
+			return A3(
+				author$project$Skeleton$view,
+				model.state,
+				author$project$Main$GotWriterMsg,
+				A2(author$project$Page$Writer$view, model.state, writerModel));
+		default:
+			var targetSelectorModel = _n0.a;
+			return A3(
+				author$project$Skeleton$view,
+				model.state,
+				author$project$Main$GotTargetSelectorMsg,
+				A2(author$project$Page$TargetSelector$view, model.state, targetSelectorModel));
 	}
 };
 var elm$browser$Browser$application = _Browser_application;
 var author$project$Main$main = elm$browser$Browser$application(
 	{init: author$project$Main$init, onUrlChange: author$project$Main$UrlChanged, onUrlRequest: author$project$Main$LinkClicked, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$Main$view});
-_Platform_export({'Main':{'init':author$project$Main$main(
-	elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)(0)}});}(this));
