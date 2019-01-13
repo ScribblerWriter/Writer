@@ -43,7 +43,7 @@ init =
       , touched = False
       , countMethod = Additive
       }
-    , Ports.sendMessage Ports.LoadContent Nothing
+    , Ports.sendMessageWithJustResponse Ports.LoadContent Ports.ContentLoaded
     )
 
 
@@ -59,7 +59,7 @@ type CountMethod
 type Msg
     = WordsWritten String
     | SaveTimerTicked Time.Posix
-    | MessageReceived Ports.Message
+    | MessageReceived Ports.InMessage
 
 
 update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
@@ -74,7 +74,7 @@ update msg model state =
         SaveTimerTicked _ ->
             ( state
             , ( { model | touched = False }
-              , Ports.sendMessage Ports.SaveContent (Just (encodeSaveObject model state))
+              , saveContent model state
               )
             )
 
@@ -85,6 +85,11 @@ update msg model state =
 
                 _ ->
                     ( state, ( model, Cmd.none ) )
+
+
+saveContent : Model -> State -> Cmd msg
+saveContent model state =
+    Ports.sendMessageWithContent Ports.SaveContent (encodeSaveObject model state)
 
 
 updateContent : Model -> State -> Maybe Encode.Value -> ( State, ( Model, Cmd msg ) )
@@ -107,7 +112,7 @@ updateContent model state content =
 
 updatePageLinkClick : Model -> State -> Cmd msg
 updatePageLinkClick model state =
-    Ports.sendMessage Ports.SaveContent (Just (encodeSaveObject model state))
+    saveContent model state
 
 
 

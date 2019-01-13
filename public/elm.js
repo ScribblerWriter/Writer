@@ -5040,15 +5040,20 @@ var author$project$Page$TargetSelector$init = _Utils_Tuple2(
 	{targets: elm$core$Dict$empty},
 	elm$core$Platform$Cmd$none);
 var author$project$Page$Writer$Additive = {$: 'Additive'};
+var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
 var author$project$Ports$LoadContent = {$: 'LoadContent'};
-var author$project$Ports$operationToString = function (operation) {
-	switch (operation.$) {
-		case 'SaveContent':
-			return 'SaveContent';
-		case 'LoadContent':
-			return 'LoadContent';
-		default:
-			return 'Unknown';
+var author$project$Ports$inOperationToString = function (operation) {
+	if (operation.$ === 'ContentLoaded') {
+		return 'ContentLoaded';
+	} else {
+		return 'Unknown';
+	}
+};
+var author$project$Ports$outOperationToString = function (operation) {
+	if (operation.$ === 'SaveContent') {
+		return 'SaveContent';
+	} else {
+		return 'LoadContent';
 	}
 };
 var elm$core$Maybe$destruct = F3(
@@ -5088,20 +5093,42 @@ var author$project$Ports$outgoingMessage = _Platform_outgoingPort(
 					}($.content)),
 					_Utils_Tuple2(
 					'operation',
-					elm$json$Json$Encode$string($.operation))
+					elm$json$Json$Encode$string($.operation)),
+					_Utils_Tuple2(
+					'returnOperation',
+					function ($) {
+						return A3(elm$core$Maybe$destruct, elm$json$Json$Encode$null, elm$json$Json$Encode$string, $);
+					}($.returnOperation))
 				]));
 	});
-var author$project$Ports$sendMessage = F2(
-	function (operation, content) {
+var author$project$Ports$sendMessageWithContentAndResponse = F3(
+	function (operation, returnOperation, content) {
 		return author$project$Ports$outgoingMessage(
 			{
 				content: content,
-				operation: author$project$Ports$operationToString(operation)
+				operation: author$project$Ports$outOperationToString(operation),
+				returnOperation: function () {
+					if (returnOperation.$ === 'Just') {
+						var op = returnOperation.a;
+						return elm$core$Maybe$Just(
+							author$project$Ports$inOperationToString(op));
+					} else {
+						return elm$core$Maybe$Nothing;
+					}
+				}()
 			});
+	});
+var author$project$Ports$sendMessageWithJustResponse = F2(
+	function (operation, returnOperation) {
+		return A3(
+			author$project$Ports$sendMessageWithContentAndResponse,
+			operation,
+			elm$core$Maybe$Just(returnOperation),
+			elm$core$Maybe$Nothing);
 	});
 var author$project$Page$Writer$init = _Utils_Tuple2(
 	{actualWordsAtLastCheck: 0, countMethod: author$project$Page$Writer$Additive, currentTarget: elm$core$Maybe$Nothing, currentTargetTimerInSecs: 0, currentText: '', endMessage: '', touched: false, winProgress: 0},
-	A2(author$project$Ports$sendMessage, author$project$Ports$LoadContent, elm$core$Maybe$Nothing));
+	A2(author$project$Ports$sendMessageWithJustResponse, author$project$Ports$LoadContent, author$project$Ports$ContentLoaded));
 var elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -6239,13 +6266,24 @@ var author$project$Page$Writer$encodeSaveObject = F2(
 				]));
 	});
 var author$project$Ports$SaveContent = {$: 'SaveContent'};
-var author$project$Page$Writer$updatePageLinkClick = F2(
+var author$project$Ports$sendMessageWithContent = F2(
+	function (operation, content) {
+		return A3(
+			author$project$Ports$sendMessageWithContentAndResponse,
+			operation,
+			elm$core$Maybe$Nothing,
+			elm$core$Maybe$Just(content));
+	});
+var author$project$Page$Writer$saveContent = F2(
 	function (model, state) {
 		return A2(
-			author$project$Ports$sendMessage,
+			author$project$Ports$sendMessageWithContent,
 			author$project$Ports$SaveContent,
-			elm$core$Maybe$Just(
-				A2(author$project$Page$Writer$encodeSaveObject, model, state)));
+			A2(author$project$Page$Writer$encodeSaveObject, model, state));
+	});
+var author$project$Page$Writer$updatePageLinkClick = F2(
+	function (model, state) {
+		return A2(author$project$Page$Writer$saveContent, model, state);
 	});
 var author$project$Main$updatePageLinkClick = function (model) {
 	var _n0 = model.page;
@@ -6704,7 +6742,6 @@ var author$project$Page$Writer$updateCounts = F3(
 					winProgress: A2(author$project$Page$Writer$calculateProgress, model, dif)
 				}));
 	});
-var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
 var author$project$Ports$Unknown = {$: 'Unknown'};
 var author$project$Ports$stringToOperation = function (operation) {
 	if (operation === 'ContentLoaded') {
@@ -6735,11 +6772,7 @@ var author$project$Page$Writer$update = F3(
 						_Utils_update(
 							model,
 							{touched: false}),
-						A2(
-							author$project$Ports$sendMessage,
-							author$project$Ports$SaveContent,
-							elm$core$Maybe$Just(
-								A2(author$project$Page$Writer$encodeSaveObject, model, state)))));
+						A2(author$project$Page$Writer$saveContent, model, state)));
 			default:
 				var message = msg.a;
 				var _n2 = author$project$Ports$stringToOperation(message.operation);

@@ -1,24 +1,44 @@
-port module Ports exposing (Message, Operation(..), incomingMessage, sendMessage, stringToOperation)
+port module Ports exposing
+    ( InMessage
+    , InOperation(..)
+    , OutOperation(..)
+    , incomingMessage
+    , sendJustMessage
+    , sendMessageWithContent
+    , sendMessageWithContentAndResponse
+    , sendMessageWithJustResponse
+    , stringToOperation
+    )
 
 import Json.Encode as Encode
 
 
-type alias Message =
+type alias OutMessage =
+    { operation : String
+    , returnOperation : Maybe String
+    , content : Maybe Encode.Value
+    }
+
+
+type alias InMessage =
     { operation : String
     , content : Maybe Encode.Value
     }
 
 
-port outgoingMessage : Message -> Cmd msg
+port outgoingMessage : OutMessage -> Cmd msg
 
 
-port incomingMessage : (Message -> msg) -> Sub msg
+port incomingMessage : (InMessage -> msg) -> Sub msg
 
 
-type Operation
-    = Unknown
-    | SaveContent
+type OutOperation
+    = SaveContent
     | LoadContent
+
+
+type InOperation
+    = Unknown
     | ContentLoaded
 
 
@@ -26,20 +46,42 @@ type Operation
 -- Port operations
 
 
-sendMessage : Operation -> Maybe Encode.Value -> Cmd msg
-sendMessage operation content =
+sendJustMessage : OutOperation -> Cmd msg
+sendJustMessage operation =
+    sendMessageWithContentAndResponse operation Nothing Nothing
+
+
+sendMessageWithContent : OutOperation -> Encode.Value -> Cmd msg
+sendMessageWithContent operation content =
+    sendMessageWithContentAndResponse operation Nothing (Just content)
+
+
+sendMessageWithJustResponse : OutOperation -> InOperation -> Cmd msg
+sendMessageWithJustResponse operation returnOperation =
+    sendMessageWithContentAndResponse operation (Just returnOperation) Nothing
+
+
+sendMessageWithContentAndResponse : OutOperation -> Maybe InOperation -> Maybe Encode.Value -> Cmd msg
+sendMessageWithContentAndResponse operation returnOperation content =
     outgoingMessage
-        { operation = operationToString operation
+        { operation = outOperationToString operation
+        , returnOperation =
+            case returnOperation of
+                Just op ->
+                    Just (inOperationToString op)
+
+                Nothing ->
+                    Nothing
         , content = content
         }
 
 
 
--- Operations
+-- Conversions
 
 
-operationToString : Operation -> String
-operationToString operation =
+outOperationToString : OutOperation -> String
+outOperationToString operation =
     case operation of
         SaveContent ->
             "SaveContent"
@@ -47,11 +89,18 @@ operationToString operation =
         LoadContent ->
             "LoadContent"
 
-        _ ->
+
+inOperationToString : InOperation -> String
+inOperationToString operation =
+    case operation of
+        ContentLoaded ->
+            "ContentLoaded"
+
+        Unknown ->
             "Unknown"
 
 
-stringToOperation : String -> Operation
+stringToOperation : String -> InOperation
 stringToOperation operation =
     case operation of
         "ContentLoaded" ->
