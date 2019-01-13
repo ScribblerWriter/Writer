@@ -61,10 +61,10 @@ view model =
             Skeleton.view model.state never Skeleton.noPageFound
 
         Writer writerModel ->
-            Skeleton.view model.state GotWriterMsg (Writer.view model.state writerModel)
+            Skeleton.view model.state GotWriterMsg (Writer.view writerModel model.state)
 
         TargetSelector targetSelectorModel ->
-            Skeleton.view model.state GotTargetSelectorMsg (TargetSelector.view model.state targetSelectorModel)
+            Skeleton.view model.state GotTargetSelectorMsg (TargetSelector.view targetSelectorModel model.state)
 
 
 

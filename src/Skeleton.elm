@@ -61,17 +61,6 @@ noPageFound =
     }
 
 
-
-{- testHeaderSettings =
-   { writtenCount = 543543
-   , actionButtonSettings =
-       Just { action = "/target", label = "TARGET" }
-   , signOutButtonSettings =
-       Just { action = "/signout", label = "Sign Out" }
-   }
--}
-
-
 view : State -> (a -> msg) -> PageData a -> Browser.Document msg
 view state pageMapper pageData =
     { title = pageData.title

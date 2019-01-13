@@ -4,6 +4,9 @@ import Appearance
 import Data.Target exposing (Target)
 import Dict exposing (Dict)
 import Element exposing (..)
+import Element.Background as Background
+import Element.Events as Events
+import List.Extra
 import Ports
 import Skeleton
 import State exposing (State)
@@ -25,13 +28,13 @@ init =
 
 
 type Msg
-    = NoOp
+    = TargetButtonClicked String
 
 
 update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
 update msg model state =
     case msg of
-        NoOp ->
+        TargetButtonClicked name ->
             ( state, ( model, Cmd.none ) )
 
 
@@ -39,11 +42,11 @@ update msg model state =
 -- View
 
 
-view : State -> Model -> Skeleton.PageData Msg
-view state model =
+view : Model -> State -> Skeleton.PageData Msg
+view model state =
     { title = "Target Selector"
     , headerSettings = Just (getHeaderSettings state)
-    , body = showBody model
+    , body = showBody model state
     }
 
 
@@ -57,6 +60,64 @@ getHeaderSettings state =
     }
 
 
-showBody : Model -> Element Msg
-showBody model =
-    none
+showBody : Model -> State -> Element Msg
+showBody model state =
+    let
+        imageWidth : Int
+        imageWidth =
+            150
+
+        imagesPerRow : Int
+        imagesPerRow =
+            state.windowDimensions.width // (imageWidth + 10)
+    in
+    column
+        [ Background.color <| rgb255 108 160 229
+        , width fill
+        , height fill
+        , padding 25
+        ]
+    <|
+        buildTargetRows
+            imagesPerRow
+            imageWidth
+            (Dict.values model.targets)
+
+
+buildTargetRows : Int -> Int -> List Target -> List (Element Msg)
+buildTargetRows imagesPerRow imageWidth targets =
+    let
+        targetRows : List (List Target)
+        targetRows =
+            List.Extra.greedyGroupsOf imagesPerRow targets
+    in
+    List.map (buildSingleTargetRow imageWidth) targetRows
+
+
+buildSingleTargetRow : Int -> List Target -> Element Msg
+buildSingleTargetRow imageWidth targets =
+    row
+        [ padding 5 ]
+    <|
+        List.map
+            (buildSingleTargetSelector imageWidth)
+            targets
+
+
+buildSingleTargetSelector : Int -> Target -> Element Msg
+buildSingleTargetSelector imageWidth target =
+    el
+        [ Events.onClick (TargetButtonClicked target.name)
+        , pointer
+        ]
+    <|
+        column
+            []
+            [ image
+                [ width <| px imageWidth ]
+                { src = target.imgSource
+                , description = target.name
+                }
+            , el [ centerX ] <| text target.name
+            , el [ centerX ] <| text <| String.fromInt target.winCount ++ " words"
+            ]

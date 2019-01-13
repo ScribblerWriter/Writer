@@ -208,8 +208,8 @@ countWords document =
 -- view
 
 
-view : State -> Model -> Skeleton.PageData Msg
-view state model =
+view : Model -> State -> Skeleton.PageData Msg
+view model state =
     { title = "Writing page"
     , headerSettings = Just (getHeaderSettings state)
     , body = showBody model
