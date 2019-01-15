@@ -6,6 +6,7 @@ module Appearance exposing
     , siteFocusStyle
     , siteFontSize
     , siteLightFontColor
+    , siteWritingBackground
     )
 
 import Element exposing (..)
@@ -20,6 +21,11 @@ siteBackgroundBlue =
 siteLightFontColor : Color
 siteLightFontColor =
     rgb255 240 240 240
+
+
+siteWritingBackground : Color
+siteWritingBackground =
+    rgb255 255 255 255
 
 
 siteFocusStyle : Option

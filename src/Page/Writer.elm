@@ -16,8 +16,7 @@ import Time
 
 
 type alias Model =
-    { currentTarget : Maybe Target
-    , currentTargetTimerInSecs : Int
+    { currentTargetTimerInSecs : Int
     , currentText : String
     , winProgress : Int
     , endMessage : String
@@ -34,8 +33,7 @@ type EndReason
 
 init : ( Model, Cmd Msg )
 init =
-    ( { currentTarget = Nothing
-      , currentTargetTimerInSecs = 0
+    ( { currentTargetTimerInSecs = 0
       , currentText = ""
       , winProgress = 0
       , endMessage = ""
@@ -66,7 +64,7 @@ update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
 update msg model state =
     case msg of
         WordsWritten document ->
-            updateCounts state.writtenCount document model
+            updateCounts document model state
                 |> (\( count, updatedModel ) ->
                         ( { state | writtenCount = count }, ( updatedModel, Cmd.none ) )
                    )
@@ -79,7 +77,7 @@ update msg model state =
             )
 
         MessageReceived message ->
-            case Ports.stringToOperation message.operation of
+            case Ports.stringToInOperation message.operation of
                 Ports.ContentLoaded ->
                     updateContent model state message.content
 
@@ -89,7 +87,7 @@ update msg model state =
 
 saveContent : Model -> State -> Cmd msg
 saveContent model state =
-    Ports.sendMessageWithContent Ports.SaveContent (encodeSaveObject model state)
+    Ports.sendMessageWithJustContent Ports.SaveContent (encodeSaveObject model state)
 
 
 updateContent : Model -> State -> Maybe Encode.Value -> ( State, ( Model, Cmd msg ) )
@@ -119,8 +117,8 @@ updatePageLinkClick model state =
 -- counting
 
 
-updateCounts : Int -> String -> Model -> ( Int, Model )
-updateCounts writtenCount document model =
+updateCounts : String -> Model -> State -> ( Int, Model )
+updateCounts document model state =
     let
         trimmedWordCount : Int
         trimmedWordCount =
@@ -130,11 +128,11 @@ updateCounts writtenCount document model =
         dif =
             trimmedWordCount - model.actualWordsAtLastCheck
     in
-    ( updateWrittenCount writtenCount trimmedWordCount model dif
+    ( updateWrittenCount state.writtenCount trimmedWordCount model dif
     , { model
         | actualWordsAtLastCheck = trimmedWordCount
-        , winProgress = calculateProgress model dif
-        , endMessage = generateEndMessage model dif
+        , winProgress = calculateProgress model state dif
+        , endMessage = generateEndMessage model state dif
         , currentText = document
         , touched = True
       }
@@ -153,13 +151,13 @@ updateWrittenCount writtenCount trimmedWordCount model dif =
         trimmedWordCount
 
 
-calculateProgress : Model -> Int -> Int
-calculateProgress model dif =
-    case model.currentTarget of
+calculateProgress : Model -> State -> Int -> Int
+calculateProgress model state dif =
+    case state.currentTarget of
         Just target ->
             if dif > 0 then
-                if model.winProgress + dif >= target.winCount then
-                    target.winCount
+                if model.winProgress + dif >= target.count then
+                    target.count
 
                 else
                     model.winProgress + dif
@@ -171,12 +169,12 @@ calculateProgress model dif =
             0
 
 
-generateEndMessage : Model -> Int -> String
-generateEndMessage model dif =
-    case model.currentTarget of
+generateEndMessage : Model -> State -> Int -> String
+generateEndMessage model state dif =
+    case state.currentTarget of
         Just target ->
             if dif > 0 then
-                if model.winProgress + dif >= target.winCount then
+                if model.winProgress + dif >= target.count then
                     endFight model WordsReached
 
                 else
@@ -217,7 +215,7 @@ view : Model -> State -> Skeleton.PageData Msg
 view model state =
     { title = "Writing page"
     , headerSettings = Just (getHeaderSettings state)
-    , body = showBody model
+    , body = showBody model state
     }
 
 
@@ -231,13 +229,13 @@ getHeaderSettings state =
     }
 
 
-showBody : Model -> Element Msg
-showBody model =
+showBody : Model -> State -> Element Msg
+showBody model state =
     column
         [ width fill
         , height fill
         ]
-        [ case model.currentTarget of
+        [ case state.currentTarget of
             Nothing ->
                 none
 
@@ -266,6 +264,7 @@ showProgressBar model target =
         [ width fill
         , height <| px 38
         , centerY
+        , Background.color Appearance.siteWritingBackground
         , inFront <|
             image
                 [ width <| px 35
@@ -282,7 +281,7 @@ showProgressBar model target =
                             , width shrink
                             ]
                           <|
-                            text (currentTargetCounts model.winProgress target.winCount)
+                            text (currentTargetCounts model.winProgress target.count)
                         , el
                             [ alignLeft
                             ]
@@ -301,7 +300,7 @@ showProgressBar model target =
             ]
             none
         , el
-            [ width <| fillPortion <| target.winCount - model.winProgress
+            [ width <| fillPortion <| target.count - model.winProgress
             , height <| px 20
             , Background.color Appearance.progressBarBackground
             ]

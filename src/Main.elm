@@ -26,8 +26,7 @@ main =
 
 
 type alias Model =
-    { key : Nav.Key
-    , page : Page
+    { page : Page
     , state : State
     }
 
@@ -41,11 +40,12 @@ type Page
 init : Decode.Value -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     stepUrl url
-        { key = key
-        , page = NotFound
+        { page = NotFound
         , state =
             { writtenCount = 0
             , windowDimensions = State.decodeDimensions flags
+            , currentTarget = Nothing
+            , key = key
             }
         }
 
@@ -100,7 +100,7 @@ updateLinkClick urlRequest model =
         Browser.Internal url ->
             ( model
             , Cmd.batch
-                [ Nav.pushUrl model.key (Url.toString url)
+                [ Nav.pushUrl model.state.key (Url.toString url)
                 , updatePageLinkClick model
                 ]
             )
@@ -202,4 +202,4 @@ subscriptions model =
             Sub.map GotWriterMsg (Writer.subscriptions writerModel)
 
         TargetSelector targetSelectorModel ->
-            Sub.none
+            Sub.map GotTargetSelectorMsg (TargetSelector.subscriptions targetSelectorModel)

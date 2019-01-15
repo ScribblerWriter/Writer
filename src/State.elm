@@ -1,5 +1,6 @@
 module State exposing (State, decodeDimensions)
 
+import Browser.Navigation as Nav
 import Data.Target exposing (Target)
 import Json.Decode as Decode
 
@@ -7,6 +8,8 @@ import Json.Decode as Decode
 type alias State =
     { writtenCount : Int
     , windowDimensions : Dimensions
+    , currentTarget : Maybe Target
+    , key : Nav.Key
     }
 
 

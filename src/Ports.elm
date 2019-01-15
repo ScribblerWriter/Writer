@@ -4,10 +4,10 @@ port module Ports exposing
     , OutOperation(..)
     , incomingMessage
     , sendJustMessage
-    , sendMessageWithContent
     , sendMessageWithContentAndResponse
+    , sendMessageWithJustContent
     , sendMessageWithJustResponse
-    , stringToOperation
+    , stringToInOperation
     )
 
 import Json.Encode as Encode
@@ -35,11 +35,13 @@ port incomingMessage : (InMessage -> msg) -> Sub msg
 type OutOperation
     = SaveContent
     | LoadContent
+    | QueryDb
 
 
 type InOperation
     = Unknown
     | ContentLoaded
+    | TargetListReturned
 
 
 
@@ -48,21 +50,26 @@ type InOperation
 
 sendJustMessage : OutOperation -> Cmd msg
 sendJustMessage operation =
-    sendMessageWithContentAndResponse operation Nothing Nothing
+    sendMessage operation Nothing Nothing
 
 
-sendMessageWithContent : OutOperation -> Encode.Value -> Cmd msg
-sendMessageWithContent operation content =
-    sendMessageWithContentAndResponse operation Nothing (Just content)
+sendMessageWithJustContent : OutOperation -> Encode.Value -> Cmd msg
+sendMessageWithJustContent operation content =
+    sendMessage operation (Just content) Nothing
 
 
 sendMessageWithJustResponse : OutOperation -> InOperation -> Cmd msg
 sendMessageWithJustResponse operation returnOperation =
-    sendMessageWithContentAndResponse operation (Just returnOperation) Nothing
+    sendMessage operation Nothing (Just returnOperation)
 
 
-sendMessageWithContentAndResponse : OutOperation -> Maybe InOperation -> Maybe Encode.Value -> Cmd msg
-sendMessageWithContentAndResponse operation returnOperation content =
+sendMessageWithContentAndResponse : OutOperation -> Encode.Value -> InOperation -> Cmd msg
+sendMessageWithContentAndResponse operation content returnOperation =
+    sendMessage operation (Just content) (Just returnOperation)
+
+
+sendMessage : OutOperation -> Maybe Encode.Value -> Maybe InOperation -> Cmd msg
+sendMessage operation content returnOperation =
     outgoingMessage
         { operation = outOperationToString operation
         , returnOperation =
@@ -89,6 +96,9 @@ outOperationToString operation =
         LoadContent ->
             "LoadContent"
 
+        QueryDb ->
+            "QueryDb"
+
 
 inOperationToString : InOperation -> String
 inOperationToString operation =
@@ -99,12 +109,18 @@ inOperationToString operation =
         Unknown ->
             "Unknown"
 
+        TargetListReturned ->
+            "TargetListReturned"
 
-stringToOperation : String -> InOperation
-stringToOperation operation =
+
+stringToInOperation : String -> InOperation
+stringToInOperation operation =
     case operation of
         "ContentLoaded" ->
             ContentLoaded
+
+        "TargetListReturned" ->
+            TargetListReturned
 
         _ ->
             Unknown

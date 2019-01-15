@@ -5032,40 +5032,6 @@ var author$project$Main$stepWriter = F2(
 				}),
 			A2(elm$core$Platform$Cmd$map, author$project$Main$GotWriterMsg, writerCmds));
 	});
-var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
-var author$project$Page$TargetSelector$init = _Utils_Tuple2(
-	{targets: elm$core$Dict$empty},
-	elm$core$Platform$Cmd$none);
-var author$project$Page$Writer$Additive = {$: 'Additive'};
-var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
-var author$project$Ports$LoadContent = {$: 'LoadContent'};
-var author$project$Ports$inOperationToString = function (operation) {
-	if (operation.$ === 'ContentLoaded') {
-		return 'ContentLoaded';
-	} else {
-		return 'Unknown';
-	}
-};
-var author$project$Ports$outOperationToString = function (operation) {
-	if (operation.$ === 'SaveContent') {
-		return 'SaveContent';
-	} else {
-		return 'LoadContent';
-	}
-};
-var elm$core$Maybe$destruct = F3(
-	function (_default, func, maybe) {
-		if (maybe.$ === 'Just') {
-			var a = maybe.a;
-			return func(a);
-		} else {
-			return _default;
-		}
-	});
-var elm$json$Json$Encode$null = _Json_encodeNull;
 var elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
@@ -5080,6 +5046,45 @@ var elm$json$Json$Encode$object = function (pairs) {
 			pairs));
 };
 var elm$json$Json$Encode$string = _Json_wrap;
+var author$project$Page$TargetSelector$encodeGetTargetsQuery = elm$json$Json$Encode$object(
+	_List_fromArray(
+		[
+			_Utils_Tuple2(
+			'collection',
+			elm$json$Json$Encode$string('targets'))
+		]));
+var author$project$Ports$QueryDb = {$: 'QueryDb'};
+var author$project$Ports$TargetListReturned = {$: 'TargetListReturned'};
+var author$project$Ports$inOperationToString = function (operation) {
+	switch (operation.$) {
+		case 'ContentLoaded':
+			return 'ContentLoaded';
+		case 'Unknown':
+			return 'Unknown';
+		default:
+			return 'TargetListReturned';
+	}
+};
+var author$project$Ports$outOperationToString = function (operation) {
+	switch (operation.$) {
+		case 'SaveContent':
+			return 'SaveContent';
+		case 'LoadContent':
+			return 'LoadContent';
+		default:
+			return 'QueryDb';
+	}
+};
+var elm$core$Maybe$destruct = F3(
+	function (_default, func, maybe) {
+		if (maybe.$ === 'Just') {
+			var a = maybe.a;
+			return func(a);
+		} else {
+			return _default;
+		}
+	});
+var elm$json$Json$Encode$null = _Json_encodeNull;
 var author$project$Ports$outgoingMessage = _Platform_outgoingPort(
 	'outgoingMessage',
 	function ($) {
@@ -5101,8 +5106,8 @@ var author$project$Ports$outgoingMessage = _Platform_outgoingPort(
 					}($.returnOperation))
 				]));
 	});
-var author$project$Ports$sendMessageWithContentAndResponse = F3(
-	function (operation, returnOperation, content) {
+var author$project$Ports$sendMessage = F3(
+	function (operation, content, returnOperation) {
 		return author$project$Ports$outgoingMessage(
 			{
 				content: content,
@@ -5118,17 +5123,35 @@ var author$project$Ports$sendMessageWithContentAndResponse = F3(
 				}()
 			});
 	});
+var author$project$Ports$sendMessageWithContentAndResponse = F3(
+	function (operation, content, returnOperation) {
+		return A3(
+			author$project$Ports$sendMessage,
+			operation,
+			elm$core$Maybe$Just(content),
+			elm$core$Maybe$Just(returnOperation));
+	});
+var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
+var author$project$Page$TargetSelector$init = _Utils_Tuple2(
+	{targets: elm$core$Dict$empty},
+	A3(author$project$Ports$sendMessageWithContentAndResponse, author$project$Ports$QueryDb, author$project$Page$TargetSelector$encodeGetTargetsQuery, author$project$Ports$TargetListReturned));
+var author$project$Page$Writer$Additive = {$: 'Additive'};
+var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
+var author$project$Ports$LoadContent = {$: 'LoadContent'};
 var author$project$Ports$sendMessageWithJustResponse = F2(
 	function (operation, returnOperation) {
 		return A3(
-			author$project$Ports$sendMessageWithContentAndResponse,
+			author$project$Ports$sendMessage,
 			operation,
-			elm$core$Maybe$Just(returnOperation),
-			elm$core$Maybe$Nothing);
+			elm$core$Maybe$Nothing,
+			elm$core$Maybe$Just(returnOperation));
 	});
 var author$project$Page$Writer$init = _Utils_Tuple2(
-	{actualWordsAtLastCheck: 0, countMethod: author$project$Page$Writer$Additive, currentTarget: elm$core$Maybe$Nothing, currentTargetTimerInSecs: 0, currentText: '', endMessage: '', touched: false, winProgress: 0},
+	{actualWordsAtLastCheck: 0, countMethod: author$project$Page$Writer$Additive, currentTargetTimerInSecs: 0, currentText: '', endMessage: '', touched: false, winProgress: 0},
 	A2(author$project$Ports$sendMessageWithJustResponse, author$project$Ports$LoadContent, author$project$Ports$ContentLoaded));
+var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -5870,19 +5893,17 @@ var author$project$Main$init = F3(
 			author$project$Main$stepUrl,
 			url,
 			{
-				key: key,
 				page: author$project$Main$NotFound,
 				state: {
+					currentTarget: elm$core$Maybe$Nothing,
+					key: key,
 					windowDimensions: author$project$State$decodeDimensions(flags),
 					writtenCount: 0
 				}
 			});
 	});
-var author$project$Page$Writer$MessageReceived = function (a) {
+var author$project$Page$TargetSelector$MessageReceived = function (a) {
 	return {$: 'MessageReceived', a: a};
-};
-var author$project$Page$Writer$SaveTimerTicked = function (a) {
-	return {$: 'SaveTimerTicked', a: a};
 };
 var elm$json$Json$Decode$andThen = _Json_andThen;
 var elm$json$Json$Decode$map = _Json_map1;
@@ -5914,6 +5935,19 @@ var author$project$Ports$incomingMessage = _Platform_incomingPort(
 		},
 		A2(elm$json$Json$Decode$field, 'operation', elm$json$Json$Decode$string)));
 var elm$core$Platform$Sub$batch = _Platform_batch;
+var author$project$Page$TargetSelector$subscriptions = function (_n0) {
+	return elm$core$Platform$Sub$batch(
+		_List_fromArray(
+			[
+				author$project$Ports$incomingMessage(author$project$Page$TargetSelector$MessageReceived)
+			]));
+};
+var author$project$Page$Writer$MessageReceived = function (a) {
+	return {$: 'MessageReceived', a: a};
+};
+var author$project$Page$Writer$SaveTimerTicked = function (a) {
+	return {$: 'SaveTimerTicked', a: a};
+};
 var elm$time$Time$Every = F2(
 	function (a, b) {
 		return {$: 'Every', a: a, b: b};
@@ -6235,7 +6269,10 @@ var author$project$Main$subscriptions = function (model) {
 				author$project$Page$Writer$subscriptions(writerModel));
 		default:
 			var targetSelectorModel = _n0.a;
-			return elm$core$Platform$Sub$none;
+			return A2(
+				elm$core$Platform$Sub$map,
+				author$project$Main$GotTargetSelectorMsg,
+				author$project$Page$TargetSelector$subscriptions(targetSelectorModel));
 	}
 };
 var author$project$Page$Writer$methodEncoder = function (method) {
@@ -6266,18 +6303,18 @@ var author$project$Page$Writer$encodeSaveObject = F2(
 				]));
 	});
 var author$project$Ports$SaveContent = {$: 'SaveContent'};
-var author$project$Ports$sendMessageWithContent = F2(
+var author$project$Ports$sendMessageWithJustContent = F2(
 	function (operation, content) {
 		return A3(
-			author$project$Ports$sendMessageWithContentAndResponse,
+			author$project$Ports$sendMessage,
 			operation,
-			elm$core$Maybe$Nothing,
-			elm$core$Maybe$Just(content));
+			elm$core$Maybe$Just(content),
+			elm$core$Maybe$Nothing);
 	});
 var author$project$Page$Writer$saveContent = F2(
 	function (model, state) {
 		return A2(
-			author$project$Ports$sendMessageWithContent,
+			author$project$Ports$sendMessageWithJustContent,
 			author$project$Ports$SaveContent,
 			A2(author$project$Page$Writer$encodeSaveObject, model, state));
 	});
@@ -6568,7 +6605,7 @@ var author$project$Main$updateLinkClick = F2(
 						[
 							A2(
 							elm$browser$Browser$Navigation$pushUrl,
-							model.key,
+							model.state.key,
 							elm$url$Url$toString(url)),
 							author$project$Main$updatePageLinkClick(model)
 						])));
@@ -6579,12 +6616,113 @@ var author$project$Main$updateLinkClick = F2(
 				elm$browser$Browser$Navigation$load(href));
 		}
 	});
+var author$project$Data$Target$Target = F5(
+	function (name, imgSource, portraitSource, count, minutes) {
+		return {count: count, imgSource: imgSource, minutes: minutes, name: name, portraitSource: portraitSource};
+	});
+var elm$json$Json$Decode$map5 = _Json_map5;
+var author$project$Page$TargetSelector$targetDecoder = A6(
+	elm$json$Json$Decode$map5,
+	author$project$Data$Target$Target,
+	A2(elm$json$Json$Decode$field, 'name', elm$json$Json$Decode$string),
+	A2(elm$json$Json$Decode$field, 'imgSource', elm$json$Json$Decode$string),
+	A2(elm$json$Json$Decode$field, 'portraitSource', elm$json$Json$Decode$string),
+	A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int),
+	A2(elm$json$Json$Decode$field, 'minutes', elm$json$Json$Decode$int));
+var elm$core$Debug$log = _Debug_log;
+var elm$json$Json$Decode$list = _Json_decodeList;
+var author$project$Page$TargetSelector$decodeTargets = function (targetsValue) {
+	var _n0 = A2(elm$core$Debug$log, 'incoming targets', targetsValue);
+	var _n1 = A2(
+		elm$json$Json$Decode$decodeValue,
+		elm$json$Json$Decode$list(author$project$Page$TargetSelector$targetDecoder),
+		targetsValue);
+	if (_n1.$ === 'Ok') {
+		var targets = _n1.a;
+		return A3(
+			elm$core$List$foldl,
+			function (target) {
+				return A2(elm$core$Dict$insert, target.name, target);
+			},
+			elm$core$Dict$empty,
+			targets);
+	} else {
+		return elm$core$Dict$empty;
+	}
+};
+var author$project$Ports$Unknown = {$: 'Unknown'};
+var author$project$Ports$stringToInOperation = function (operation) {
+	switch (operation) {
+		case 'ContentLoaded':
+			return author$project$Ports$ContentLoaded;
+		case 'TargetListReturned':
+			return author$project$Ports$TargetListReturned;
+		default:
+			return author$project$Ports$Unknown;
+	}
+};
+var elm$url$Url$Builder$toQueryPair = function (_n0) {
+	var key = _n0.a;
+	var value = _n0.b;
+	return key + ('=' + value);
+};
+var elm$url$Url$Builder$toQuery = function (parameters) {
+	if (!parameters.b) {
+		return '';
+	} else {
+		return '?' + A2(
+			elm$core$String$join,
+			'&',
+			A2(elm$core$List$map, elm$url$Url$Builder$toQueryPair, parameters));
+	}
+};
+var elm$url$Url$Builder$absolute = F2(
+	function (pathSegments, parameters) {
+		return '/' + (A2(elm$core$String$join, '/', pathSegments) + elm$url$Url$Builder$toQuery(parameters));
+	});
 var author$project$Page$TargetSelector$update = F3(
 	function (msg, model, state) {
-		var name = msg.a;
-		return _Utils_Tuple2(
-			state,
-			_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+		if (msg.$ === 'TargetButtonClicked') {
+			var target = msg.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					state,
+					{
+						currentTarget: elm$core$Maybe$Just(target)
+					}),
+				_Utils_Tuple2(
+					model,
+					A2(
+						elm$browser$Browser$Navigation$pushUrl,
+						state.key,
+						A2(elm$url$Url$Builder$absolute, _List_Nil, _List_Nil))));
+		} else {
+			var message = msg.a;
+			var _n1 = author$project$Ports$stringToInOperation(message.operation);
+			if (_n1.$ === 'TargetListReturned') {
+				var _n2 = message.content;
+				if (_n2.$ === 'Just') {
+					var content = _n2.a;
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									targets: author$project$Page$TargetSelector$decodeTargets(content)
+								}),
+							elm$core$Platform$Cmd$none));
+				} else {
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+				}
+			} else {
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+			}
+		}
 	});
 var author$project$Main$updateTargetSelector = F2(
 	function (msg, model) {
@@ -6661,12 +6799,12 @@ var author$project$Page$Writer$updateContent = F3(
 		}
 	});
 var elm$core$Basics$ge = _Utils_ge;
-var author$project$Page$Writer$calculateProgress = F2(
-	function (model, dif) {
-		var _n0 = model.currentTarget;
+var author$project$Page$Writer$calculateProgress = F3(
+	function (model, state, dif) {
+		var _n0 = state.currentTarget;
 		if (_n0.$ === 'Just') {
 			var target = _n0.a;
-			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? target.winCount : (model.winProgress + dif)) : model.winProgress;
+			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.count) > -1) ? target.count : (model.winProgress + dif)) : model.winProgress;
 		} else {
 			return 0;
 		}
@@ -6712,12 +6850,12 @@ var author$project$Page$Writer$endFight = F2(
 			return 'You win!';
 		}
 	});
-var author$project$Page$Writer$generateEndMessage = F2(
-	function (model, dif) {
-		var _n0 = model.currentTarget;
+var author$project$Page$Writer$generateEndMessage = F3(
+	function (model, state, dif) {
+		var _n0 = state.currentTarget;
 		if (_n0.$ === 'Just') {
 			var target = _n0.a;
-			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.winCount) > -1) ? A2(author$project$Page$Writer$endFight, model, author$project$Page$Writer$WordsReached) : model.endMessage) : model.endMessage;
+			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.count) > -1) ? A2(author$project$Page$Writer$endFight, model, author$project$Page$Writer$WordsReached) : model.endMessage) : model.endMessage;
 		} else {
 			return '';
 		}
@@ -6727,29 +6865,21 @@ var author$project$Page$Writer$updateWrittenCount = F4(
 		return (dif > 0) ? (writtenCount + dif) : (_Utils_eq(model.countMethod, author$project$Page$Writer$Additive) ? writtenCount : trimmedWordCount);
 	});
 var author$project$Page$Writer$updateCounts = F3(
-	function (writtenCount, document, model) {
+	function (document, model, state) {
 		var trimmedWordCount = author$project$Page$Writer$countWords(document);
 		var dif = trimmedWordCount - model.actualWordsAtLastCheck;
 		return _Utils_Tuple2(
-			A4(author$project$Page$Writer$updateWrittenCount, writtenCount, trimmedWordCount, model, dif),
+			A4(author$project$Page$Writer$updateWrittenCount, state.writtenCount, trimmedWordCount, model, dif),
 			_Utils_update(
 				model,
 				{
 					actualWordsAtLastCheck: trimmedWordCount,
 					currentText: document,
-					endMessage: A2(author$project$Page$Writer$generateEndMessage, model, dif),
+					endMessage: A3(author$project$Page$Writer$generateEndMessage, model, state, dif),
 					touched: true,
-					winProgress: A2(author$project$Page$Writer$calculateProgress, model, dif)
+					winProgress: A3(author$project$Page$Writer$calculateProgress, model, state, dif)
 				}));
 	});
-var author$project$Ports$Unknown = {$: 'Unknown'};
-var author$project$Ports$stringToOperation = function (operation) {
-	if (operation === 'ContentLoaded') {
-		return author$project$Ports$ContentLoaded;
-	} else {
-		return author$project$Ports$Unknown;
-	}
-};
 var author$project$Page$Writer$update = F3(
 	function (msg, model, state) {
 		switch (msg.$) {
@@ -6764,7 +6894,7 @@ var author$project$Page$Writer$update = F3(
 							{writtenCount: count}),
 						_Utils_Tuple2(updatedModel, elm$core$Platform$Cmd$none));
 				}(
-					A3(author$project$Page$Writer$updateCounts, state.writtenCount, document, model));
+					A3(author$project$Page$Writer$updateCounts, document, model, state));
 			case 'SaveTimerTicked':
 				return _Utils_Tuple2(
 					state,
@@ -6775,7 +6905,7 @@ var author$project$Page$Writer$update = F3(
 						A2(author$project$Page$Writer$saveContent, model, state)));
 			default:
 				var message = msg.a;
-				var _n2 = author$project$Ports$stringToOperation(message.operation);
+				var _n2 = author$project$Ports$stringToInOperation(message.operation);
 				if (_n2.$ === 'ContentLoaded') {
 					return A3(author$project$Page$Writer$updateContent, model, state, message.content);
 				} else {
@@ -12135,7 +12265,7 @@ var author$project$Page$TargetSelector$buildSingleTargetSelector = F2(
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$Events$onClick(
-					author$project$Page$TargetSelector$TargetButtonClicked(target.name)),
+					author$project$Page$TargetSelector$TargetButtonClicked(target)),
 					mdgriffith$elm_ui$Element$pointer
 				]),
 			A2(
@@ -12161,7 +12291,19 @@ var author$project$Page$TargetSelector$buildSingleTargetSelector = F2(
 						_List_fromArray(
 							[mdgriffith$elm_ui$Element$centerX]),
 						mdgriffith$elm_ui$Element$text(
-							elm$core$String$fromInt(target.winCount) + ' words'))
+							elm$core$String$fromInt(target.count) + ' words')),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[mdgriffith$elm_ui$Element$centerX]),
+						mdgriffith$elm_ui$Element$text(
+							elm$core$String$fromInt(target.minutes) + ' minutes')),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[mdgriffith$elm_ui$Element$centerX]),
+						mdgriffith$elm_ui$Element$text(
+							elm$core$String$fromInt((target.count / target.minutes) | 0) + ' wpm'))
 					])));
 	});
 var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
@@ -12474,6 +12616,7 @@ var author$project$Page$Writer$WordsWritten = function (a) {
 };
 var author$project$Appearance$progressBarBackground = A3(mdgriffith$elm_ui$Element$rgb255, 200, 200, 200);
 var author$project$Appearance$progressBarForeground = A3(mdgriffith$elm_ui$Element$rgb255, 78, 185, 37);
+var author$project$Appearance$siteWritingBackground = A3(mdgriffith$elm_ui$Element$rgb255, 255, 255, 255);
 var author$project$Page$Writer$currentTargetCounts = F2(
 	function (winProgress, winCount) {
 		return '  ' + (elm$core$String$fromInt(winProgress) + (' / ' + elm$core$String$fromInt(winCount)));
@@ -12559,6 +12702,7 @@ var author$project$Page$Writer$showProgressBar = F2(
 					mdgriffith$elm_ui$Element$height(
 					mdgriffith$elm_ui$Element$px(38)),
 					mdgriffith$elm_ui$Element$centerY,
+					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteWritingBackground),
 					mdgriffith$elm_ui$Element$inFront(
 					A2(
 						mdgriffith$elm_ui$Element$image,
@@ -12589,7 +12733,7 @@ var author$project$Page$Writer$showProgressBar = F2(
 													mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
 												]),
 											mdgriffith$elm_ui$Element$text(
-												A2(author$project$Page$Writer$currentTargetCounts, model.winProgress, target.winCount))),
+												A2(author$project$Page$Writer$currentTargetCounts, model.winProgress, target.count))),
 											A2(
 											mdgriffith$elm_ui$Element$el,
 											_List_fromArray(
@@ -12618,7 +12762,7 @@ var author$project$Page$Writer$showProgressBar = F2(
 					_List_fromArray(
 						[
 							mdgriffith$elm_ui$Element$width(
-							mdgriffith$elm_ui$Element$fillPortion(target.winCount - model.winProgress)),
+							mdgriffith$elm_ui$Element$fillPortion(target.count - model.winProgress)),
 							mdgriffith$elm_ui$Element$height(
 							mdgriffith$elm_ui$Element$px(20)),
 							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$progressBarBackground)
@@ -13460,50 +13604,51 @@ var mdgriffith$elm_ui$Element$Input$multiline = F2(
 			attrs,
 			{label: multi.label, onChange: multi.onChange, placeholder: multi.placeholder, text: multi.text});
 	});
-var author$project$Page$Writer$showBody = function (model) {
-	return A2(
-		mdgriffith$elm_ui$Element$column,
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill)
-			]),
-		_List_fromArray(
-			[
-				function () {
-				var _n0 = model.currentTarget;
-				if (_n0.$ === 'Nothing') {
-					return mdgriffith$elm_ui$Element$none;
-				} else {
-					var target = _n0.a;
-					return A2(author$project$Page$Writer$showProgressBar, model, target);
-				}
-			}(),
-				A2(
-				mdgriffith$elm_ui$Element$Input$multiline,
-				_List_fromArray(
-					[
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-						mdgriffith$elm_ui$Element$padding(25),
-						mdgriffith$elm_ui$Element$Border$width(0),
-						mdgriffith$elm_ui$Element$Border$rounded(0),
-						mdgriffith$elm_ui$Element$htmlAttribute(
-						elm$html$Html$Attributes$placeholder('Tap target to select one, then write your words here!'))
-					]),
-				{
-					label: mdgriffith$elm_ui$Element$Input$labelHidden(''),
-					onChange: author$project$Page$Writer$WordsWritten,
-					placeholder: elm$core$Maybe$Nothing,
-					spellcheck: true,
-					text: model.currentText
-				})
-			]));
-};
+var author$project$Page$Writer$showBody = F2(
+	function (model, state) {
+		return A2(
+			mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill)
+				]),
+			_List_fromArray(
+				[
+					function () {
+					var _n0 = state.currentTarget;
+					if (_n0.$ === 'Nothing') {
+						return mdgriffith$elm_ui$Element$none;
+					} else {
+						var target = _n0.a;
+						return A2(author$project$Page$Writer$showProgressBar, model, target);
+					}
+				}(),
+					A2(
+					mdgriffith$elm_ui$Element$Input$multiline,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+							mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
+							mdgriffith$elm_ui$Element$padding(25),
+							mdgriffith$elm_ui$Element$Border$width(0),
+							mdgriffith$elm_ui$Element$Border$rounded(0),
+							mdgriffith$elm_ui$Element$htmlAttribute(
+							elm$html$Html$Attributes$placeholder('Tap target to select one, then write your words here!'))
+						]),
+					{
+						label: mdgriffith$elm_ui$Element$Input$labelHidden(''),
+						onChange: author$project$Page$Writer$WordsWritten,
+						placeholder: elm$core$Maybe$Nothing,
+						spellcheck: true,
+						text: model.currentText
+					})
+				]));
+	});
 var author$project$Page$Writer$view = F2(
 	function (model, state) {
 		return {
-			body: author$project$Page$Writer$showBody(model),
+			body: A2(author$project$Page$Writer$showBody, model, state),
 			headerSettings: elm$core$Maybe$Just(
 				author$project$Page$Writer$getHeaderSettings(state)),
 			title: 'Writing page'

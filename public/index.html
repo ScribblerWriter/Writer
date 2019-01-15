@@ -34,7 +34,7 @@
         } else if (msg.operation == 'SaveContent') {
           saveToStorage(msg.content);
         } else if (msg.operation == 'QueryDb') {
-          queryDb(msg.content); 
+          queryDb(msg.content, msg.returnOperation); 
         }
       });
 
@@ -49,7 +49,7 @@
       }
 
       function queryDb(content, returnOperation) {
-          fbdb.queryDb(msg.content)
+          fbdb.queryDb(content)
               .then(result => {
                 const message = { operation: returnOperation, content: result }
                 appElm.ports.incomingMessage.send(message);

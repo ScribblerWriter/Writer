@@ -5,6 +5,6 @@ type alias Target =
     { name : String
     , imgSource : String
     , portraitSource : String
-    , winCount : Int
+    , count : Int
     , minutes : Int
     }
