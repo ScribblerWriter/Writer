@@ -70,11 +70,15 @@ update msg model state =
                    )
 
         SaveTimerTicked _ ->
-            ( state
-            , ( { model | touched = False }
-              , saveContent model state
-              )
-            )
+            if model.touched then
+                ( state
+                , ( { model | touched = False }
+                  , saveContent model state
+                  )
+                )
+
+            else
+                ( state, ( model, Cmd.none ) )
 
         MessageReceived message ->
             case Ports.stringToInOperation message.operation of

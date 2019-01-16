@@ -6896,13 +6896,15 @@ var author$project$Page$Writer$update = F3(
 				}(
 					A3(author$project$Page$Writer$updateCounts, document, model, state));
 			case 'SaveTimerTicked':
-				return _Utils_Tuple2(
+				return model.touched ? _Utils_Tuple2(
 					state,
 					_Utils_Tuple2(
 						_Utils_update(
 							model,
 							{touched: false}),
-						A2(author$project$Page$Writer$saveContent, model, state)));
+						A2(author$project$Page$Writer$saveContent, model, state))) : _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
 			default:
 				var message = msg.a;
 				var _n2 = author$project$Ports$stringToInOperation(message.operation);
