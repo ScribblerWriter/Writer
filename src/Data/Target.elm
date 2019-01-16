@@ -7,4 +7,5 @@ type alias Target =
     , portraitSource : String
     , count : Int
     , minutes : Int
+    , new : Bool
     }

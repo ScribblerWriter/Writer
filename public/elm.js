@@ -5948,6 +5948,9 @@ var author$project$Page$Writer$MessageReceived = function (a) {
 var author$project$Page$Writer$SaveTimerTicked = function (a) {
 	return {$: 'SaveTimerTicked', a: a};
 };
+var author$project$Page$Writer$TargetTimerTicked = function (a) {
+	return {$: 'TargetTimerTicked', a: a};
+};
 var elm$time$Time$Every = F2(
 	function (a, b) {
 		return {$: 'Every', a: a, b: b};
@@ -6251,7 +6254,8 @@ var author$project$Page$Writer$subscriptions = function (_n0) {
 		_List_fromArray(
 			[
 				author$project$Ports$incomingMessage(author$project$Page$Writer$MessageReceived),
-				A2(elm$time$Time$every, 1000, author$project$Page$Writer$SaveTimerTicked)
+				A2(elm$time$Time$every, 1000, author$project$Page$Writer$SaveTimerTicked),
+				A2(elm$time$Time$every, 1000, author$project$Page$Writer$TargetTimerTicked)
 			]));
 };
 var elm$core$Platform$Sub$map = _Platform_map;
@@ -6616,19 +6620,20 @@ var author$project$Main$updateLinkClick = F2(
 				elm$browser$Browser$Navigation$load(href));
 		}
 	});
-var author$project$Data$Target$Target = F5(
-	function (name, imgSource, portraitSource, count, minutes) {
-		return {count: count, imgSource: imgSource, minutes: minutes, name: name, portraitSource: portraitSource};
+var author$project$Data$Target$Target = F6(
+	function (name, imgSource, portraitSource, count, minutes, _new) {
+		return {count: count, imgSource: imgSource, minutes: minutes, name: name, _new: _new, portraitSource: portraitSource};
 	});
-var elm$json$Json$Decode$map5 = _Json_map5;
-var author$project$Page$TargetSelector$targetDecoder = A6(
-	elm$json$Json$Decode$map5,
+var elm$json$Json$Decode$map6 = _Json_map6;
+var author$project$Page$TargetSelector$targetDecoder = A7(
+	elm$json$Json$Decode$map6,
 	author$project$Data$Target$Target,
 	A2(elm$json$Json$Decode$field, 'name', elm$json$Json$Decode$string),
 	A2(elm$json$Json$Decode$field, 'imgSource', elm$json$Json$Decode$string),
 	A2(elm$json$Json$Decode$field, 'portraitSource', elm$json$Json$Decode$string),
 	A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int),
-	A2(elm$json$Json$Decode$field, 'minutes', elm$json$Json$Decode$int));
+	A2(elm$json$Json$Decode$field, 'minutes', elm$json$Json$Decode$int),
+	elm$json$Json$Decode$succeed(true));
 var elm$core$Debug$log = _Debug_log;
 var elm$json$Json$Decode$list = _Json_decodeList;
 var author$project$Page$TargetSelector$decodeTargets = function (targetsValue) {
@@ -6744,6 +6749,15 @@ var author$project$Main$updateTargetSelector = F2(
 			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
+var author$project$Page$Writer$TimeExpired = {$: 'TimeExpired'};
+var author$project$Page$Writer$endFight = F2(
+	function (model, reason) {
+		if (reason.$ === 'TimeExpired') {
+			return 'Time\'s up!';
+		} else {
+			return 'You win!';
+		}
+	});
 var author$project$Page$Writer$actualCountDecoder = A2(elm$json$Json$Decode$field, 'actualCount', elm$json$Json$Decode$int);
 var author$project$Page$Writer$getValue = F3(
 	function (decoder, string, errorVal) {
@@ -6842,14 +6856,6 @@ var author$project$Page$Writer$countWords = function (document) {
 					A3(elm$core$String$replace, '—', ' ', document)))));
 };
 var author$project$Page$Writer$WordsReached = {$: 'WordsReached'};
-var author$project$Page$Writer$endFight = F2(
-	function (model, reason) {
-		if (reason.$ === 'TimeExpired') {
-			return 'Time\'s up!';
-		} else {
-			return 'You win!';
-		}
-	});
 var author$project$Page$Writer$generateEndMessage = F3(
 	function (model, state, dif) {
 		var _n0 = state.currentTarget;
@@ -6905,7 +6911,7 @@ var author$project$Page$Writer$update = F3(
 						A2(author$project$Page$Writer$saveContent, model, state))) : _Utils_Tuple2(
 					state,
 					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-			default:
+			case 'MessageReceived':
 				var message = msg.a;
 				var _n2 = author$project$Ports$stringToInOperation(message.operation);
 				if (_n2.$ === 'ContentLoaded') {
@@ -6914,6 +6920,43 @@ var author$project$Page$Writer$update = F3(
 					return _Utils_Tuple2(
 						state,
 						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+				}
+			default:
+				var _n3 = state.currentTarget;
+				if (_n3.$ === 'Nothing') {
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+				} else {
+					var target = _n3.a;
+					return target._new ? _Utils_Tuple2(
+						_Utils_update(
+							state,
+							{
+								currentTarget: elm$core$Maybe$Just(
+									_Utils_update(
+										target,
+										{_new: false}))
+							}),
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{currentTargetTimerInSecs: target.minutes * 60}),
+							elm$core$Platform$Cmd$none)) : ((model.currentTargetTimerInSecs <= 0) ? _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									endMessage: A2(author$project$Page$Writer$endFight, model, author$project$Page$Writer$TimeExpired)
+								}),
+							elm$core$Platform$Cmd$none)) : _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{currentTargetTimerInSecs: model.currentTargetTimerInSecs - 1}),
+							elm$core$Platform$Cmd$none)));
 				}
 		}
 	});
@@ -12649,22 +12692,23 @@ var elm$core$String$padLeft = F3(
 				elm$core$String$fromChar(_char)),
 			string);
 	});
+var author$project$Page$Writer$formatSecondsToStringHourCheck = F2(
+	function (seconds, hasHour) {
+		return (((seconds < 3600) && (seconds >= 60)) || hasHour) ? (A3(
+			elm$core$String$padLeft,
+			2,
+			_Utils_chr('0'),
+			elm$core$String$fromInt((seconds / 60) | 0)) + (':' + A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds % 60, false))) : ((seconds < 60) ? A3(
+			elm$core$String$padLeft,
+			2,
+			_Utils_chr('0'),
+			elm$core$String$fromInt(seconds)) : (elm$core$String$fromInt((seconds / 3600) | 0) + (':' + A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds % 3600, true))));
+	});
 var author$project$Page$Writer$formatSecondsToString = function (seconds) {
-	return (seconds < 60) ? A3(
-		elm$core$String$padLeft,
-		2,
-		_Utils_chr('0'),
-		elm$core$String$fromInt(seconds)) : ((seconds < 3600) ? (A3(
-		elm$core$String$padLeft,
-		2,
-		_Utils_chr('0'),
-		elm$core$String$fromInt((seconds / 60) | 0)) + (':' + author$project$Page$Writer$formatSecondsToString(seconds % 60))) : (elm$core$String$fromInt((seconds / 3600) | 0) + (':' + author$project$Page$Writer$formatSecondsToString(seconds % 3600))));
+	return A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds, false);
 };
 var author$project$Page$Writer$currentTargetFightStatus = function (model) {
 	return '  ' + ((model.endMessage !== '') ? model.endMessage : author$project$Page$Writer$formatSecondsToString(model.currentTargetTimerInSecs));
-};
-var author$project$Page$Writer$currentTargetName = function (name) {
-	return name + '  ';
 };
 var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
 var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
@@ -12718,8 +12762,7 @@ var author$project$Page$Writer$showProgressBar = F2(
 									mdgriffith$elm_ui$Element$el,
 									_List_fromArray(
 										[mdgriffith$elm_ui$Element$alignRight, mdgriffith$elm_ui$Element$centerY]),
-									mdgriffith$elm_ui$Element$text(
-										author$project$Page$Writer$currentTargetName(target.name)))),
+									mdgriffith$elm_ui$Element$text(target.name + '  '))),
 								mdgriffith$elm_ui$Element$onRight(
 								A2(
 									mdgriffith$elm_ui$Element$row,
@@ -13622,8 +13665,8 @@ var author$project$Page$Writer$showBody = F2(
 					if (_n0.$ === 'Nothing') {
 						return mdgriffith$elm_ui$Element$none;
 					} else {
-						var target = _n0.a;
-						return A2(author$project$Page$Writer$showProgressBar, model, target);
+						var currentTarget = _n0.a;
+						return A2(author$project$Page$Writer$showProgressBar, model, currentTarget);
 					}
 				}(),
 					A2(

@@ -58,6 +58,7 @@ type Msg
     = WordsWritten String
     | SaveTimerTicked Time.Posix
     | MessageReceived Ports.InMessage
+    | TargetTimerTicked Time.Posix
 
 
 update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
@@ -87,6 +88,27 @@ update msg model state =
 
                 _ ->
                     ( state, ( model, Cmd.none ) )
+
+        TargetTimerTicked _ ->
+            case state.currentTarget of
+                Nothing ->
+                    ( state, ( model, Cmd.none ) )
+
+                Just target ->
+                    if target.new then
+                        ( { state | currentTarget = Just { target | new = False } }
+                        , ( { model | currentTargetTimerInSecs = target.minutes * 60 }, Cmd.none )
+                        )
+
+                    else if model.currentTargetTimerInSecs <= 0 then
+                        ( state
+                        , ( { model | endMessage = endFight model TimeExpired }, Cmd.none )
+                        )
+
+                    else
+                        ( state
+                        , ( { model | currentTargetTimerInSecs = model.currentTargetTimerInSecs - 1 }, Cmd.none )
+                        )
 
 
 saveContent : Model -> State -> Cmd msg
@@ -243,8 +265,8 @@ showBody model state =
             Nothing ->
                 none
 
-            Just target ->
-                showProgressBar model target
+            Just currentTarget ->
+                showProgressBar model currentTarget
         , Input.multiline
             [ width fill
             , height fill
@@ -277,7 +299,7 @@ showProgressBar model target =
                     el
                         [ alignRight, centerY ]
                     <|
-                        text (currentTargetName target.name)
+                        text (target.name ++ "  ")
                 , onRight <|
                     row [ centerY ]
                         [ el
@@ -312,11 +334,6 @@ showProgressBar model target =
         ]
 
 
-currentTargetName : String -> String
-currentTargetName name =
-    name ++ "  "
-
-
 currentTargetCounts : Int -> Int -> String
 currentTargetCounts winProgress winCount =
     "  "
@@ -338,18 +355,23 @@ currentTargetFightStatus model =
 
 formatSecondsToString : Int -> String
 formatSecondsToString seconds =
-    if seconds < 60 then
-        String.padLeft 2 '0' (String.fromInt seconds)
+    formatSecondsToStringHourCheck seconds False
 
-    else if seconds < 3600 then
+
+formatSecondsToStringHourCheck : Int -> Bool -> String
+formatSecondsToStringHourCheck seconds hasHour =
+    if (seconds < 3600 && seconds >= 60) || hasHour then
         String.padLeft 2 '0' (String.fromInt (seconds // 60))
             ++ ":"
-            ++ formatSecondsToString (remainderBy 60 seconds)
+            ++ formatSecondsToStringHourCheck (remainderBy 60 seconds) False
+
+    else if seconds < 60 then
+        String.padLeft 2 '0' (String.fromInt seconds)
 
     else
         String.fromInt (seconds // 3600)
             ++ ":"
-            ++ formatSecondsToString (remainderBy 3600 seconds)
+            ++ formatSecondsToStringHourCheck (remainderBy 3600 seconds) True
 
 
 
@@ -435,4 +457,5 @@ subscriptions _ =
     Sub.batch
         [ Ports.incomingMessage MessageReceived
         , Time.every 1000 SaveTimerTicked
+        , Time.every 1000 TargetTimerTicked
         ]

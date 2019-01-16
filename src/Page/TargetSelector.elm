@@ -180,12 +180,13 @@ decodeTargets targetsValue =
 
 targetDecoder : Decode.Decoder Target
 targetDecoder =
-    Decode.map5 Target
+    Decode.map6 Target
         (Decode.field "name" Decode.string)
         (Decode.field "imgSource" Decode.string)
         (Decode.field "portraitSource" Decode.string)
         (Decode.field "count" Decode.int)
         (Decode.field "minutes" Decode.int)
+        (Decode.succeed True)
 
 
 
