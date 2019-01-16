@@ -368,6 +368,16 @@ function _Debug_toAnsiString(ansi, value)
 		return _Debug_ctorColor(ansi, tag) + output;
 	}
 
+	if (typeof DataView === 'function' && value instanceof DataView)
+	{
+		return _Debug_stringColor(ansi, '<' + value.byteLength + ' bytes>');
+	}
+
+	if (typeof File === 'function' && value instanceof File)
+	{
+		return _Debug_internalColor(ansi, '<' + value.name + '>');
+	}
+
 	if (typeof value === 'object')
 	{
 		var output = [];
@@ -436,6 +446,10 @@ function _Debug_internalColor(ansi, string)
 	return ansi ? '\x1b[94m' + string + '\x1b[0m' : string;
 }
 
+function _Debug_toHexDigit(n)
+{
+	return String.fromCharCode(n < 10 ? 48 + n : 55 + n);
+}
 
 
 // CRASH
@@ -605,7 +619,7 @@ function _Utils_cmp(x, y, ord)
 	//*/
 
 	/**_UNUSED/
-	if (!x.$)
+	if (typeof x.$ === 'undefined')
 	//*/
 	/**/
 	if (x.$[0] === '#')
@@ -859,9 +873,7 @@ function _Char_fromCode(code)
 			? String.fromCharCode(code)
 			:
 		(code -= 0x10000,
-			String.fromCharCode(Math.floor(code / 0x400) + 0xD800)
-			+
-			String.fromCharCode(code % 0x400 + 0xDC00)
+			String.fromCharCode(Math.floor(code / 0x400) + 0xD800, code % 0x400 + 0xDC00)
 		)
 	);
 }
@@ -6634,16 +6646,14 @@ var author$project$Page$TargetSelector$targetDecoder = A7(
 	A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int),
 	A2(elm$json$Json$Decode$field, 'minutes', elm$json$Json$Decode$int),
 	elm$json$Json$Decode$succeed(true));
-var elm$core$Debug$log = _Debug_log;
 var elm$json$Json$Decode$list = _Json_decodeList;
 var author$project$Page$TargetSelector$decodeTargets = function (targetsValue) {
-	var _n0 = A2(elm$core$Debug$log, 'incoming targets', targetsValue);
-	var _n1 = A2(
+	var _n0 = A2(
 		elm$json$Json$Decode$decodeValue,
 		elm$json$Json$Decode$list(author$project$Page$TargetSelector$targetDecoder),
 		targetsValue);
-	if (_n1.$ === 'Ok') {
-		var targets = _n1.a;
+	if (_n0.$ === 'Ok') {
+		var targets = _n0.a;
 		return A3(
 			elm$core$List$foldl,
 			function (target) {

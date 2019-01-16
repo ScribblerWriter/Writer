@@ -166,10 +166,6 @@ encodeGetTargetsQuery =
 
 decodeTargets : Decode.Value -> Dict String Target
 decodeTargets targetsValue =
-    let
-        _ =
-            Debug.log "incoming targets" targetsValue
-    in
     case Decode.decodeValue (Decode.list targetDecoder) targetsValue of
         Ok targets ->
             List.foldl (\target -> Dict.insert target.name target) Dict.empty targets
