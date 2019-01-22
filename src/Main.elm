@@ -126,6 +126,11 @@ updatePageLinkClick model =
 
 updateWriter : Writer.Msg -> Model -> ( Model, Cmd Msg )
 updateWriter msg model =
+    let
+        _ =
+            Debug.log "updateWriter:" msg
+    in
+            
     case model.page of
         Writer writerModel ->
             Writer.update msg writerModel model.state
@@ -137,6 +142,10 @@ updateWriter msg model =
 
 updateTargetSelector : TargetSelector.Msg -> Model -> ( Model, Cmd Msg )
 updateTargetSelector msg model =
+    let
+        _ =
+            Debug.log "updateTargetSelector:" msg
+    in
     case model.page of
         TargetSelector targetSelectorModel ->
             TargetSelector.update msg targetSelectorModel model.state
@@ -172,6 +181,7 @@ stepUrl url model =
                 [ route top (stepWriter model Writer.init)
                 , route (s "target") (stepTargetSelector model TargetSelector.init)
                 ]
+
     in
     case Parser.parse parser url of
         Just result ->

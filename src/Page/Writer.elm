@@ -456,6 +456,6 @@ subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ Ports.incomingMessage MessageReceived
-        , Time.every 1000 SaveTimerTicked
-        , Time.every 1000 TargetTimerTicked
+        --, Time.every 1000 SaveTimerTicked
+        --, Time.every 1000 TargetTimerTicked
         ]
