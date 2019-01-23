@@ -14,6 +14,7 @@ import Ports
 import Skeleton
 import State exposing (State)
 import Url.Builder
+import Browser.Events
 
 
 type alias Model =
@@ -37,6 +38,7 @@ init =
 type Msg
     = TargetButtonClicked Target
     | MessageReceived Ports.InMessage
+    | WindowResized Int Int
 
 
 update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
@@ -61,6 +63,10 @@ update msg model state =
 
                 _ ->
                     ( state, ( model, Cmd.none ) )
+
+        WindowResized width height ->
+            ( { state | windowDimensions = { width = width, height = height } }
+            , ( model, Cmd.none ))
 
 
 
@@ -97,16 +103,14 @@ showBody model state =
             state.windowDimensions.width // (imageWidth + 10)
     in
     column
-        [ Background.color <| rgb255 108 160 229
+        [ Background.color Appearance.siteTargetSelectionBackground
         , width fill
         , height fill
         , padding 25
+        , scrollbarY
         ]
     <|
-        buildTargetRows
-            imagesPerRow
-            imageWidth
-            (Dict.values model.targets)
+        buildTargetRows imagesPerRow imageWidth (Dict.values model.targets)
 
 
 buildTargetRows : Int -> Int -> List Target -> List (Element Msg)
@@ -192,4 +196,6 @@ targetDecoder =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ Ports.incomingMessage MessageReceived ]
+        [ Ports.incomingMessage MessageReceived
+        , Browser.Events.onResize WindowResized
+        ]
