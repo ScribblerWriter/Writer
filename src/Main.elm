@@ -129,7 +129,7 @@ updateWriter msg model =
     let
         _ =
             Debug.log "updateWriter:" msg
-    in       
+    in
     case model.page of
         Writer writerModel ->
             Writer.update msg writerModel model.state
@@ -164,7 +164,7 @@ stepWriter model ( writerModel, writerCmds ) =
     , Cmd.map GotWriterMsg writerCmds
     )
 
- 
+
 stepTargetSelector : Model -> ( TargetSelector.Model, Cmd TargetSelector.Msg ) -> ( Model, Cmd Msg )
 stepTargetSelector model ( targetSelectorModel, targetSelectorCmds ) =
     ( { model | page = TargetSelector targetSelectorModel }
@@ -180,7 +180,6 @@ stepUrl url model =
                 [ route top (stepWriter model Writer.init)
                 , route (s "target") (stepTargetSelector model TargetSelector.init)
                 ]
-
     in
     case Parser.parse parser url of
         Just result ->
