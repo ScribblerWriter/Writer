@@ -25,7 +25,6 @@ import Time
 
 type alias Model =
     { currentTargetTimerInSecs : Int
-    , currentText : String
     , winProgress : Int
     , endMessage : String
     , actualWordsAtLastCheck : Int
@@ -42,7 +41,6 @@ type EndReason
 init : ( Model, Cmd Msg )
 init =
     ( { currentTargetTimerInSecs = 0
-      , currentText = ""
       , winProgress = 0
       , endMessage = ""
       , actualWordsAtLastCheck = 0
@@ -74,8 +72,8 @@ update msg model state =
     case msg of
         WordsWritten document ->
             updateCounts document model state
-                |> (\( count, updatedModel ) ->
-                        ( { state | writtenCount = count }, ( updatedModel, Cmd.none ) )
+                |> (\( count, updatedModel, newState ) ->
+                        ( { newState | writtenCount = count }, ( updatedModel, Cmd.none ) )
                    )
 
         SaveTimerTicked _ ->
@@ -128,10 +126,12 @@ updateContent : Model -> State -> Maybe Encode.Value -> ( State, ( Model, Cmd ms
 updateContent model state content =
     case content of
         Just data ->
-            ( { state | writtenCount = getValue wordCountDecoder data 0 }
+            ( { state
+                | writtenCount = getValue wordCountDecoder data 0
+                , currentText = getValue textDecoder data ""
+              }
             , ( { model
-                    | currentText = getValue textDecoder data ""
-                    , countMethod = getValue methodDecoder data Additive
+                    | countMethod = getValue methodDecoder data Additive
                     , actualWordsAtLastCheck = getValue actualCountDecoder data 0
                 }
               , Cmd.none
@@ -151,7 +151,7 @@ updatePageLinkClick model state =
 -- counting
 
 
-updateCounts : String -> Model -> State -> ( Int, Model )
+updateCounts : String -> Model -> State -> ( Int, Model, State )
 updateCounts document model state =
     let
         trimmedWordCount : Int
@@ -167,9 +167,9 @@ updateCounts document model state =
         | actualWordsAtLastCheck = trimmedWordCount
         , winProgress = calculateProgress model state dif
         , endMessage = generateEndMessage model state dif
-        , currentText = document
         , touched = True
       }
+    , { state | currentText = document }
     )
 
 
@@ -284,7 +284,7 @@ showBody model state =
             , htmlAttribute <| Html.Attributes.placeholder "Tap target to select one, then write your words here!"
             ]
             { onChange = WordsWritten
-            , text = model.currentText
+            , text = state.currentText
             , placeholder = Nothing
             , label = Input.labelHidden ""
             , spellcheck = True
@@ -440,7 +440,7 @@ encodeSaveObject : Model -> State -> Encode.Value
 encodeSaveObject model state =
     Encode.object
         [ ( "count", Encode.int state.writtenCount )
-        , ( "text", Encode.string model.currentText )
+        , ( "text", Encode.string state.currentText )
         , ( "method", methodEncoder model.countMethod )
         , ( "actualCount", Encode.int model.actualWordsAtLastCheck )
         ]

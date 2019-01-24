@@ -43,6 +43,7 @@ init flags url key =
         { page = NotFound
         , state =
             { writtenCount = 0
+            , currentText = ""
             , windowDimensions = State.decodeDimensions flags
             , currentTarget = Nothing
             , key = key

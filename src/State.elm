@@ -7,6 +7,7 @@ import Json.Decode as Decode
 
 type alias State =
     { writtenCount : Int
+    , currentText : String
     , windowDimensions : Dimensions
     , currentTarget : Maybe Target
     , key : Nav.Key

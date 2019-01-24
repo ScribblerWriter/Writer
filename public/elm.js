@@ -5160,7 +5160,7 @@ var author$project$Ports$sendMessageWithJustResponse = F2(
 			elm$core$Maybe$Just(returnOperation));
 	});
 var author$project$Page$Writer$init = _Utils_Tuple2(
-	{actualWordsAtLastCheck: 0, countMethod: author$project$Page$Writer$Additive, currentTargetTimerInSecs: 0, currentText: '', endMessage: '', touched: false, winProgress: 0},
+	{actualWordsAtLastCheck: 0, countMethod: author$project$Page$Writer$Additive, currentTargetTimerInSecs: 0, endMessage: '', touched: false, winProgress: 0},
 	A2(author$project$Ports$sendMessageWithJustResponse, author$project$Ports$LoadContent, author$project$Ports$ContentLoaded));
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
@@ -5908,6 +5908,7 @@ var author$project$Main$init = F3(
 				page: author$project$Main$NotFound,
 				state: {
 					currentTarget: elm$core$Maybe$Nothing,
+					currentText: '',
 					key: key,
 					windowDimensions: author$project$State$decodeDimensions(flags),
 					writtenCount: 0
@@ -6742,7 +6743,7 @@ var author$project$Page$Writer$encodeSaveObject = F2(
 					elm$json$Json$Encode$int(state.writtenCount)),
 					_Utils_Tuple2(
 					'text',
-					elm$json$Json$Encode$string(model.currentText)),
+					elm$json$Json$Encode$string(state.currentText)),
 					_Utils_Tuple2(
 					'method',
 					author$project$Page$Writer$methodEncoder(model.countMethod)),
@@ -7038,6 +7039,7 @@ var author$project$Page$Writer$updateContent = F3(
 				_Utils_update(
 					state,
 					{
+						currentText: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$textDecoder, data, ''),
 						writtenCount: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$wordCountDecoder, data, 0)
 					}),
 				_Utils_Tuple2(
@@ -7045,8 +7047,7 @@ var author$project$Page$Writer$updateContent = F3(
 						model,
 						{
 							actualWordsAtLastCheck: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$actualCountDecoder, data, 0),
-							countMethod: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$methodDecoder, data, author$project$Page$Writer$Additive),
-							currentText: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$textDecoder, data, '')
+							countMethod: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$methodDecoder, data, author$project$Page$Writer$Additive)
 						}),
 					elm$core$Platform$Cmd$none));
 		} else {
@@ -7117,17 +7118,19 @@ var author$project$Page$Writer$updateCounts = F3(
 	function (document, model, state) {
 		var trimmedWordCount = author$project$Page$Writer$countWords(document);
 		var dif = trimmedWordCount - model.actualWordsAtLastCheck;
-		return _Utils_Tuple2(
+		return _Utils_Tuple3(
 			A4(author$project$Page$Writer$updateWrittenCount, state.writtenCount, trimmedWordCount, model, dif),
 			_Utils_update(
 				model,
 				{
 					actualWordsAtLastCheck: trimmedWordCount,
-					currentText: document,
 					endMessage: A3(author$project$Page$Writer$generateEndMessage, model, state, dif),
 					touched: true,
 					winProgress: A3(author$project$Page$Writer$calculateProgress, model, state, dif)
-				}));
+				}),
+			_Utils_update(
+				state,
+				{currentText: document}));
 	});
 var author$project$Page$Writer$update = F3(
 	function (msg, model, state) {
@@ -7137,9 +7140,10 @@ var author$project$Page$Writer$update = F3(
 				return function (_n1) {
 					var count = _n1.a;
 					var updatedModel = _n1.b;
+					var newState = _n1.c;
 					return _Utils_Tuple2(
 						_Utils_update(
-							state,
+							newState,
 							{writtenCount: count}),
 						_Utils_Tuple2(updatedModel, elm$core$Platform$Cmd$none));
 				}(
@@ -12824,7 +12828,7 @@ var mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
 };
 var mdgriffith$elm_ui$Element$fill = mdgriffith$elm_ui$Internal$Model$Fill(1);
 var mdgriffith$elm_ui$Internal$Flag$overflow = mdgriffith$elm_ui$Internal$Flag$flag(20);
-var mdgriffith$elm_ui$Element$scrollbars = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$overflow, mdgriffith$elm_ui$Internal$Style$classes.scrollbars);
+var mdgriffith$elm_ui$Element$scrollbarY = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$overflow, mdgriffith$elm_ui$Internal$Style$classes.scrollbarsY);
 var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
 var mdgriffith$elm_ui$Internal$Model$Colored = F3(
 	function (a, b, c) {
@@ -12859,7 +12863,7 @@ var author$project$Page$TargetSelector$showBody = F2(
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$padding(25),
-					mdgriffith$elm_ui$Element$scrollbars
+					mdgriffith$elm_ui$Element$scrollbarY
 				]),
 			A3(
 				author$project$Page$TargetSelector$buildTargetRows,
@@ -13915,7 +13919,7 @@ var author$project$Page$Writer$showBody = F2(
 						onChange: author$project$Page$Writer$WordsWritten,
 						placeholder: elm$core$Maybe$Nothing,
 						spellcheck: true,
-						text: model.currentText
+						text: state.currentText
 					})
 				]));
 	});
