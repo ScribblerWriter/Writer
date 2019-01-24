@@ -5,3 +5,4 @@ repl-temp-*
 /working files/
 /.firebase/
 /firebase-debug.log
+package-lock.json
