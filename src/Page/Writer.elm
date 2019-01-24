@@ -1,4 +1,12 @@
-module Page.Writer exposing (Model, Msg(..), init, subscriptions, update, updatePageLinkClick, view)
+module Page.Writer exposing
+    ( Model
+    , Msg(..)
+    , init
+    , subscriptions
+    , update
+    , updatePageLinkClick
+    , view
+    )
 
 import Appearance
 import Data.Target exposing (Target)
