@@ -15,7 +15,7 @@
         storageBucket: "writer-788cf.appspot.com",
         messagingSenderId: "181941734046"
       };
-    
+
       firebase.initializeApp(config);
     </script>
     <script src="elm.js"></script>
@@ -23,8 +23,8 @@
   <body>
     <main></main>
     <script>
-      const appElm = Elm.Main.init({ 
-        node: document.querySelector('main'), 
+      const appElm = Elm.Main.init({
+        node: document.querySelector('main'),
         flags: { width: window.innerWidth, height: window.innerHeight }
       });
 
@@ -34,18 +34,18 @@
         } else if (msg.operation == 'SaveContent') {
           saveToStorage(msg.content);
         } else if (msg.operation == 'QueryDb') {
-          queryDb(msg.content, msg.returnOperation); 
+          queryDb(msg.content, msg.returnOperation);
         }
       });
 
       function loadFromStorage(returnOperation) {
-          const content = JSON.parse(localStorage.getItem('text'));
+          const content = JSON.parse(localStorage.getItem('settings'));
           const message = { operation: returnOperation, content: content}
           appElm.ports.incomingMessage.send( message );
       }
 
       function saveToStorage(content) {
-          localStorage.setItem('text', JSON.stringify(content));
+          localStorage.setItem('settings', JSON.stringify(content));
       }
 
       function queryDb(content, returnOperation) {
@@ -85,7 +85,7 @@
       // appElm.ports.saveText.subscribe( text => {
       //   localStorage.setItem("text", text);
       // });
-      
+
       // appElm.ports.loadText.subscribe(() => {
       //   appElm.ports.textLoaded.send(
       //     localStorage.getItem("text")
