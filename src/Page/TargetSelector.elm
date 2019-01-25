@@ -1,6 +1,7 @@
 module Page.TargetSelector exposing (Model, Msg, init, subscriptions, update, view)
 
 import Appearance
+import Browser.Events
 import Browser.Navigation as Nav
 import Data.Target exposing (Target)
 import Dict exposing (Dict)
@@ -14,7 +15,6 @@ import Ports
 import Skeleton
 import State exposing (State)
 import Url.Builder
-import Browser.Events
 
 
 type alias Model =
@@ -66,7 +66,8 @@ update msg model state =
 
         WindowResized width height ->
             ( { state | windowDimensions = { width = width, height = height } }
-            , ( model, Cmd.none ))
+            , ( model, Cmd.none )
+            )
 
 
 
