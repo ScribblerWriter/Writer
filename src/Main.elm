@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import Html exposing (text)
 import Json.Decode as Decode
 import Json.Encode as Encode
+import Page.Login as Login
 import Page.TargetSelector as TargetSelector
 import Page.Writer as Writer
 import Skeleton
@@ -35,6 +36,7 @@ type Page
     = NotFound
     | Writer Writer.Model
     | TargetSelector TargetSelector.Model
+    | Login Login.Model
 
 
 init : Decode.Value -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -67,6 +69,9 @@ view model =
         TargetSelector targetSelectorModel ->
             Skeleton.view model.state GotTargetSelectorMsg (TargetSelector.view targetSelectorModel model.state)
 
+        Login loginModel ->
+            Skeleton.view model.state GotLoginMsg (Login.view loginModel model.state)
+
 
 
 -- Update
@@ -77,6 +82,7 @@ type Msg
     | LinkClicked Browser.UrlRequest
     | GotWriterMsg Writer.Msg
     | GotTargetSelectorMsg TargetSelector.Msg
+    | GotLoginMsg Login.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -93,6 +99,9 @@ update message model =
 
         GotTargetSelectorMsg msg ->
             updateTargetSelector msg model
+
+        GotLoginMsg msg ->
+            updateLogin msg model
 
 
 updateLinkClick : Browser.UrlRequest -> Model -> ( Model, Cmd Msg )
@@ -119,6 +128,9 @@ updatePageLinkClick model =
             Writer.updatePageLinkClick writerModel model.state
 
         TargetSelector targetSelectorModel ->
+            Cmd.none
+
+        Login loginModel ->
             Cmd.none
 
         NotFound ->
@@ -155,6 +167,17 @@ updateTargetSelector msg model =
             ( model, Cmd.none )
 
 
+updateLogin : Login.Msg -> Model -> ( Model, Cmd Msg )
+updateLogin msg model =
+    case model.page of
+        Login loginModel ->
+            Login.update msg loginModel model.state
+                |> (\( state, data ) -> stepLogin { model | state = state } data)
+
+        _ ->
+            ( model, Cmd.none )
+
+
 
 -- Routing
 
@@ -173,6 +196,13 @@ stepTargetSelector model ( targetSelectorModel, targetSelectorCmds ) =
     )
 
 
+stepLogin : Model -> ( Login.Model, Cmd Login.Msg ) -> ( Model, Cmd Msg )
+stepLogin model ( loginModel, loginCmds ) =
+    ( { model | page = Login loginModel }
+    , Cmd.map GotLoginMsg loginCmds
+    )
+
+
 stepUrl : Url.Url -> Model -> ( Model, Cmd Msg )
 stepUrl url model =
     let
@@ -180,6 +210,7 @@ stepUrl url model =
             oneOf
                 [ route top (stepWriter model Writer.init)
                 , route (s "target") (stepTargetSelector model TargetSelector.init)
+                , route (s "login") (stepLogin model Login.init)
                 ]
     in
     case Parser.parse parser url of
@@ -212,3 +243,6 @@ subscriptions model =
 
         TargetSelector targetSelectorModel ->
             Sub.map GotTargetSelectorMsg (TargetSelector.subscriptions targetSelectorModel)
+
+        Login loginModel ->
+            Sub.map GotLoginMsg (Login.subscriptions loginModel)

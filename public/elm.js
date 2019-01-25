@@ -4640,11 +4640,11 @@ var author$project$Main$route = F2(
 	function (parser, handler) {
 		return A2(elm$url$Url$Parser$map, handler, parser);
 	});
-var author$project$Main$GotTargetSelectorMsg = function (a) {
-	return {$: 'GotTargetSelectorMsg', a: a};
+var author$project$Main$GotLoginMsg = function (a) {
+	return {$: 'GotLoginMsg', a: a};
 };
-var author$project$Main$TargetSelector = function (a) {
-	return {$: 'TargetSelector', a: a};
+var author$project$Main$Login = function (a) {
+	return {$: 'Login', a: a};
 };
 var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$True = {$: 'True'};
@@ -5014,6 +5014,24 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 		}
 	});
 var elm$core$Platform$Cmd$map = _Platform_map;
+var author$project$Main$stepLogin = F2(
+	function (model, _n0) {
+		var loginModel = _n0.a;
+		var loginCmds = _n0.b;
+		return _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{
+					page: author$project$Main$Login(loginModel)
+				}),
+			A2(elm$core$Platform$Cmd$map, author$project$Main$GotLoginMsg, loginCmds));
+	});
+var author$project$Main$GotTargetSelectorMsg = function (a) {
+	return {$: 'GotTargetSelectorMsg', a: a};
+};
+var author$project$Main$TargetSelector = function (a) {
+	return {$: 'TargetSelector', a: a};
+};
 var author$project$Main$stepTargetSelector = F2(
 	function (model, _n0) {
 		var targetSelectorModel = _n0.a;
@@ -5044,6 +5062,11 @@ var author$project$Main$stepWriter = F2(
 				}),
 			A2(elm$core$Platform$Cmd$map, author$project$Main$GotWriterMsg, writerCmds));
 	});
+var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var author$project$Page$Login$init = _Utils_Tuple2(
+	{email: '', password: ''},
+	elm$core$Platform$Cmd$none);
 var elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
@@ -5162,8 +5185,6 @@ var author$project$Ports$sendMessageWithJustResponse = F2(
 var author$project$Page$Writer$init = _Utils_Tuple2(
 	{actualWordsAtLastCheck: 0, countMethod: author$project$Page$Writer$Additive, currentTargetTimerInSecs: 0, endMessage: '', touched: false, winProgress: 0},
 	A2(author$project$Ports$sendMessageWithJustResponse, author$project$Ports$LoadContent, author$project$Ports$ContentLoaded));
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -5863,7 +5884,11 @@ var author$project$Main$stepUrl = F2(
 					A2(
 					author$project$Main$route,
 					elm$url$Url$Parser$s('target'),
-					A2(author$project$Main$stepTargetSelector, model, author$project$Page$TargetSelector$init))
+					A2(author$project$Main$stepTargetSelector, model, author$project$Page$TargetSelector$init)),
+					A2(
+					author$project$Main$route,
+					elm$url$Url$Parser$s('login'),
+					A2(author$project$Main$stepLogin, model, author$project$Page$Login$init))
 				]));
 		var _n0 = A2(elm$url$Url$Parser$parse, parser, url);
 		if (_n0.$ === 'Just') {
@@ -5915,6 +5940,11 @@ var author$project$Main$init = F3(
 				}
 			});
 	});
+var elm$core$Platform$Sub$batch = _Platform_batch;
+var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
+var author$project$Page$Login$subscriptions = function (model) {
+	return elm$core$Platform$Sub$none;
+};
 var author$project$Page$TargetSelector$MessageReceived = function (a) {
 	return {$: 'MessageReceived', a: a};
 };
@@ -6492,7 +6522,6 @@ var elm$browser$Browser$Events$onResize = function (func) {
 				A2(elm$json$Json$Decode$field, 'innerWidth', elm$json$Json$Decode$int),
 				A2(elm$json$Json$Decode$field, 'innerHeight', elm$json$Json$Decode$int))));
 };
-var elm$core$Platform$Sub$batch = _Platform_batch;
 var author$project$Page$TargetSelector$subscriptions = function (_n0) {
 	return elm$core$Platform$Sub$batch(
 		_List_fromArray(
@@ -6705,7 +6734,6 @@ var author$project$Page$Writer$subscriptions = function (_n0) {
 			]));
 };
 var elm$core$Platform$Sub$map = _Platform_map;
-var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
 var author$project$Main$subscriptions = function (model) {
 	var _n0 = model.page;
 	switch (_n0.$) {
@@ -6717,12 +6745,18 @@ var author$project$Main$subscriptions = function (model) {
 				elm$core$Platform$Sub$map,
 				author$project$Main$GotWriterMsg,
 				author$project$Page$Writer$subscriptions(writerModel));
-		default:
+		case 'TargetSelector':
 			var targetSelectorModel = _n0.a;
 			return A2(
 				elm$core$Platform$Sub$map,
 				author$project$Main$GotTargetSelectorMsg,
 				author$project$Page$TargetSelector$subscriptions(targetSelectorModel));
+		default:
+			var loginModel = _n0.a;
+			return A2(
+				elm$core$Platform$Sub$map,
+				author$project$Main$GotLoginMsg,
+				author$project$Page$Login$subscriptions(loginModel));
 	}
 };
 var author$project$Page$Writer$methodEncoder = function (method) {
@@ -6780,6 +6814,9 @@ var author$project$Main$updatePageLinkClick = function (model) {
 			return A2(author$project$Page$Writer$updatePageLinkClick, writerModel, model.state);
 		case 'TargetSelector':
 			var targetSelectorModel = _n0.a;
+			return elm$core$Platform$Cmd$none;
+		case 'Login':
+			var loginModel = _n0.a;
 			return elm$core$Platform$Cmd$none;
 		default:
 			return elm$core$Platform$Cmd$none;
@@ -6851,6 +6888,49 @@ var author$project$Main$updateLinkClick = F2(
 			return _Utils_Tuple2(
 				model,
 				elm$browser$Browser$Navigation$load(href));
+		}
+	});
+var author$project$Page$Login$update = F3(
+	function (msg, model, state) {
+		switch (msg.$) {
+			case 'LoginInputReceived':
+				var inputType = msg.a;
+				var string = msg.b;
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+			case 'LoginButtonClicked':
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+			case 'SignUpButtonClicked':
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+			default:
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+		}
+	});
+var author$project$Main$updateLogin = F2(
+	function (msg, model) {
+		var _n0 = model.page;
+		if (_n0.$ === 'Login') {
+			var loginModel = _n0.a;
+			return function (_n1) {
+				var state = _n1.a;
+				var data = _n1.b;
+				return A2(
+					author$project$Main$stepLogin,
+					_Utils_update(
+						model,
+						{state: state}),
+					data);
+			}(
+				A3(author$project$Page$Login$update, msg, loginModel, model.state));
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
 var author$project$Data$Target$Target = F6(
@@ -7240,10 +7320,27 @@ var author$project$Main$update = F2(
 			case 'GotWriterMsg':
 				var msg = message.a;
 				return A2(author$project$Main$updateWriter, msg, model);
-			default:
+			case 'GotTargetSelectorMsg':
 				var msg = message.a;
 				return A2(author$project$Main$updateTargetSelector, msg, model);
+			default:
+				var msg = message.a;
+				return A2(author$project$Main$updateLogin, msg, model);
 		}
+	});
+var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
+var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
+var author$project$Page$Login$showBody = F2(
+	function (model, state) {
+		return mdgriffith$elm_ui$Element$none;
+	});
+var author$project$Page$Login$view = F2(
+	function (model, state) {
+		return {
+			body: A2(author$project$Page$Login$showBody, model, state),
+			headerSettings: elm$core$Maybe$Nothing,
+			title: 'Login'
+		};
 	});
 var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
 	return {
@@ -12961,8 +13058,6 @@ var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
 var mdgriffith$elm_ui$Element$inFront = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$InFront, element);
 };
-var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
-var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
 var mdgriffith$elm_ui$Internal$Model$OnLeft = {$: 'OnLeft'};
 var mdgriffith$elm_ui$Element$onLeft = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnLeft, element);
@@ -14460,13 +14555,20 @@ var author$project$Main$view = function (model) {
 				model.state,
 				author$project$Main$GotWriterMsg,
 				A2(author$project$Page$Writer$view, writerModel, model.state));
-		default:
+		case 'TargetSelector':
 			var targetSelectorModel = _n0.a;
 			return A3(
 				author$project$Skeleton$view,
 				model.state,
 				author$project$Main$GotTargetSelectorMsg,
 				A2(author$project$Page$TargetSelector$view, targetSelectorModel, model.state));
+		default:
+			var loginModel = _n0.a;
+			return A3(
+				author$project$Skeleton$view,
+				model.state,
+				author$project$Main$GotLoginMsg,
+				A2(author$project$Page$Login$view, loginModel, model.state));
 	}
 };
 var elm$browser$Browser$application = _Browser_application;
