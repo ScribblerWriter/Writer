@@ -1,4 +1,4 @@
-module Page.Login exposing (Model, Msg, init, subscriptions, update, view)
+module Page.Authentication exposing (Model, Msg, init, subscriptions, update, view)
 
 import Appearance
 import Browser
@@ -8,6 +8,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Json.Encode as Encode
 import Skeleton
 import State exposing (State)
 
@@ -73,11 +74,6 @@ view model state =
 
 showBody : Model -> State -> Element Msg
 showBody model state =
-    Element.none
-
-
-showLoginPanel : Model -> Element Msg
-showLoginPanel model =
     row
         [ width shrink
         , height shrink
@@ -131,6 +127,22 @@ loginPageButtonAttributes =
     , Background.color Appearance.siteBackgroundBlue
     , Font.color Appearance.siteLightFontColor
     ]
+
+
+
+-- encoding / Decoding
+
+
+emailPassEncoder : String -> String -> Encode.Value
+emailPassEncoder email pass =
+    Encode.object
+        [ ( "email", Encode.string email )
+        , ( "pass", Encode.string pass )
+        ]
+
+
+
+-- subscriptions
 
 
 subscriptions : Model -> Sub Msg

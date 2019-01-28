@@ -36,12 +36,16 @@ type OutOperation
     = SaveContent
     | LoadContent
     | QueryDb
+    | SignIn
+    | SignOut
+    | SignUp
 
 
 type InOperation
     = Unknown
     | ContentLoaded
     | TargetListReturned
+    | AuthStateChanged
 
 
 
@@ -99,6 +103,15 @@ outOperationToString operation =
         QueryDb ->
             "QueryDb"
 
+        SignIn ->
+            "SignIn"
+
+        SignOut ->
+            "SignOut"
+
+        SignUp ->
+            "SignUp"
+
 
 inOperationToString : InOperation -> String
 inOperationToString operation =
@@ -112,6 +125,9 @@ inOperationToString operation =
         TargetListReturned ->
             "TargetListReturned"
 
+        AuthStateChanged ->
+            "AuthStateChanged"
+
 
 stringToInOperation : String -> InOperation
 stringToInOperation operation =
@@ -121,6 +137,9 @@ stringToInOperation operation =
 
         "TargetListReturned" ->
             TargetListReturned
+
+        "AuthStateChanged" ->
+            AuthStateChanged
 
         _ ->
             Unknown

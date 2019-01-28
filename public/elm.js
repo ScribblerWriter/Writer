@@ -4640,11 +4640,11 @@ var author$project$Main$route = F2(
 	function (parser, handler) {
 		return A2(elm$url$Url$Parser$map, handler, parser);
 	});
-var author$project$Main$GotLoginMsg = function (a) {
-	return {$: 'GotLoginMsg', a: a};
+var author$project$Main$Auth = function (a) {
+	return {$: 'Auth', a: a};
 };
-var author$project$Main$Login = function (a) {
-	return {$: 'Login', a: a};
+var author$project$Main$GotAuthMsg = function (a) {
+	return {$: 'GotAuthMsg', a: a};
 };
 var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$True = {$: 'True'};
@@ -5014,17 +5014,17 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 		}
 	});
 var elm$core$Platform$Cmd$map = _Platform_map;
-var author$project$Main$stepLogin = F2(
+var author$project$Main$stepAuth = F2(
 	function (model, _n0) {
-		var loginModel = _n0.a;
-		var loginCmds = _n0.b;
+		var authModel = _n0.a;
+		var authCmds = _n0.b;
 		return _Utils_Tuple2(
 			_Utils_update(
 				model,
 				{
-					page: author$project$Main$Login(loginModel)
+					page: author$project$Main$Auth(authModel)
 				}),
-			A2(elm$core$Platform$Cmd$map, author$project$Main$GotLoginMsg, loginCmds));
+			A2(elm$core$Platform$Cmd$map, author$project$Main$GotAuthMsg, authCmds));
 	});
 var author$project$Main$GotTargetSelectorMsg = function (a) {
 	return {$: 'GotTargetSelectorMsg', a: a};
@@ -5064,7 +5064,7 @@ var author$project$Main$stepWriter = F2(
 	});
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
-var author$project$Page$Login$init = _Utils_Tuple2(
+var author$project$Page$Authentication$init = _Utils_Tuple2(
 	{email: '', password: ''},
 	elm$core$Platform$Cmd$none);
 var elm$json$Json$Encode$object = function (pairs) {
@@ -5096,8 +5096,10 @@ var author$project$Ports$inOperationToString = function (operation) {
 			return 'ContentLoaded';
 		case 'Unknown':
 			return 'Unknown';
-		default:
+		case 'TargetListReturned':
 			return 'TargetListReturned';
+		default:
+			return 'AuthStateChanged';
 	}
 };
 var author$project$Ports$outOperationToString = function (operation) {
@@ -5106,8 +5108,14 @@ var author$project$Ports$outOperationToString = function (operation) {
 			return 'SaveContent';
 		case 'LoadContent':
 			return 'LoadContent';
-		default:
+		case 'QueryDb':
 			return 'QueryDb';
+		case 'SignIn':
+			return 'SignIn';
+		case 'SignOut':
+			return 'SignOut';
+		default:
+			return 'SignUp';
 	}
 };
 var elm$core$Maybe$destruct = F3(
@@ -5887,8 +5895,8 @@ var author$project$Main$stepUrl = F2(
 					A2(author$project$Main$stepTargetSelector, model, author$project$Page$TargetSelector$init)),
 					A2(
 					author$project$Main$route,
-					elm$url$Url$Parser$s('login'),
-					A2(author$project$Main$stepLogin, model, author$project$Page$Login$init))
+					elm$url$Url$Parser$s('authentication'),
+					A2(author$project$Main$stepAuth, model, author$project$Page$Authentication$init))
 				]));
 		var _n0 = A2(elm$url$Url$Parser$parse, parser, url);
 		if (_n0.$ === 'Just') {
@@ -5942,7 +5950,7 @@ var author$project$Main$init = F3(
 	});
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
-var author$project$Page$Login$subscriptions = function (model) {
+var author$project$Page$Authentication$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
 var author$project$Page$TargetSelector$MessageReceived = function (a) {
@@ -6752,13 +6760,56 @@ var author$project$Main$subscriptions = function (model) {
 				author$project$Main$GotTargetSelectorMsg,
 				author$project$Page$TargetSelector$subscriptions(targetSelectorModel));
 		default:
-			var loginModel = _n0.a;
+			var authModel = _n0.a;
 			return A2(
 				elm$core$Platform$Sub$map,
-				author$project$Main$GotLoginMsg,
-				author$project$Page$Login$subscriptions(loginModel));
+				author$project$Main$GotAuthMsg,
+				author$project$Page$Authentication$subscriptions(authModel));
 	}
 };
+var author$project$Page$Authentication$update = F3(
+	function (msg, model, state) {
+		switch (msg.$) {
+			case 'LoginInputReceived':
+				var inputType = msg.a;
+				var string = msg.b;
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+			case 'LoginButtonClicked':
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+			case 'SignUpButtonClicked':
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+			default:
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+		}
+	});
+var author$project$Main$updateAuth = F2(
+	function (msg, model) {
+		var _n0 = model.page;
+		if (_n0.$ === 'Auth') {
+			var authModel = _n0.a;
+			return function (_n1) {
+				var state = _n1.a;
+				var data = _n1.b;
+				return A2(
+					author$project$Main$stepAuth,
+					_Utils_update(
+						model,
+						{state: state}),
+					data);
+			}(
+				A3(author$project$Page$Authentication$update, msg, authModel, model.state));
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
+	});
 var author$project$Page$Writer$methodEncoder = function (method) {
 	if (method.$ === 'Additive') {
 		return elm$json$Json$Encode$string('additive');
@@ -6815,8 +6866,8 @@ var author$project$Main$updatePageLinkClick = function (model) {
 		case 'TargetSelector':
 			var targetSelectorModel = _n0.a;
 			return elm$core$Platform$Cmd$none;
-		case 'Login':
-			var loginModel = _n0.a;
+		case 'Auth':
+			var authModel = _n0.a;
 			return elm$core$Platform$Cmd$none;
 		default:
 			return elm$core$Platform$Cmd$none;
@@ -6890,49 +6941,6 @@ var author$project$Main$updateLinkClick = F2(
 				elm$browser$Browser$Navigation$load(href));
 		}
 	});
-var author$project$Page$Login$update = F3(
-	function (msg, model, state) {
-		switch (msg.$) {
-			case 'LoginInputReceived':
-				var inputType = msg.a;
-				var string = msg.b;
-				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-			case 'LoginButtonClicked':
-				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-			case 'SignUpButtonClicked':
-				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-			default:
-				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-		}
-	});
-var author$project$Main$updateLogin = F2(
-	function (msg, model) {
-		var _n0 = model.page;
-		if (_n0.$ === 'Login') {
-			var loginModel = _n0.a;
-			return function (_n1) {
-				var state = _n1.a;
-				var data = _n1.b;
-				return A2(
-					author$project$Main$stepLogin,
-					_Utils_update(
-						model,
-						{state: state}),
-					data);
-			}(
-				A3(author$project$Page$Login$update, msg, loginModel, model.state));
-		} else {
-			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-		}
-	});
 var author$project$Data$Target$Target = F6(
 	function (name, imgSource, portraitSource, count, minutes, _new) {
 		return {count: count, imgSource: imgSource, minutes: minutes, name: name, _new: _new, portraitSource: portraitSource};
@@ -6966,6 +6974,7 @@ var author$project$Page$TargetSelector$decodeTargets = function (targetsValue) {
 		return elm$core$Dict$empty;
 	}
 };
+var author$project$Ports$AuthStateChanged = {$: 'AuthStateChanged'};
 var author$project$Ports$Unknown = {$: 'Unknown'};
 var author$project$Ports$stringToInOperation = function (operation) {
 	switch (operation) {
@@ -6973,6 +6982,8 @@ var author$project$Ports$stringToInOperation = function (operation) {
 			return author$project$Ports$ContentLoaded;
 		case 'TargetListReturned':
 			return author$project$Ports$TargetListReturned;
+		case 'AuthStateChanged':
+			return author$project$Ports$AuthStateChanged;
 		default:
 			return author$project$Ports$Unknown;
 	}
@@ -7325,32 +7336,17 @@ var author$project$Main$update = F2(
 				return A2(author$project$Main$updateTargetSelector, msg, model);
 			default:
 				var msg = message.a;
-				return A2(author$project$Main$updateLogin, msg, model);
+				return A2(author$project$Main$updateAuth, msg, model);
 		}
 	});
-var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
-var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
-var author$project$Page$Login$showBody = F2(
-	function (model, state) {
-		return mdgriffith$elm_ui$Element$none;
+var author$project$Page$Authentication$LoginButtonClicked = {$: 'LoginButtonClicked'};
+var author$project$Page$Authentication$LoginInputReceived = F2(
+	function (a, b) {
+		return {$: 'LoginInputReceived', a: a, b: b};
 	});
-var author$project$Page$Login$view = F2(
-	function (model, state) {
-		return {
-			body: A2(author$project$Page$Login$showBody, model, state),
-			headerSettings: elm$core$Maybe$Nothing,
-			title: 'Login'
-		};
-	});
-var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
-	return {
-		actionButtonSettings: elm$core$Maybe$Just(
-			{action: '/', label: 'CANCEL'}),
-		signOutButtonSettings: elm$core$Maybe$Just(
-			{action: '/signout', label: 'Sign Out'}),
-		writtenCount: state.writtenCount
-	};
-};
+var author$project$Page$Authentication$Password = {$: 'Password'};
+var author$project$Page$Authentication$SignUpButtonClicked = {$: 'SignUpButtonClicked'};
+var author$project$Page$Authentication$UserName = {$: 'UserName'};
 var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
 	function (a, b, c, d) {
 		return {$: 'Rgba', a: a, b: b, c: c, d: d};
@@ -7359,10 +7355,8 @@ var mdgriffith$elm_ui$Element$rgb255 = F3(
 	function (red, green, blue) {
 		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, red / 255, green / 255, blue / 255, 1);
 	});
-var author$project$Appearance$siteTargetSelectionBackground = A3(mdgriffith$elm_ui$Element$rgb255, 108, 160, 229);
-var author$project$Page$TargetSelector$TargetButtonClicked = function (a) {
-	return {$: 'TargetButtonClicked', a: a};
-};
+var author$project$Appearance$siteBackgroundBlue = A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113);
+var author$project$Appearance$siteLightFontColor = A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240);
 var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 	return {$: 'AlignX', a: a};
 };
@@ -7372,8 +7366,124 @@ var mdgriffith$elm_ui$Internal$Model$Height = function (a) {
 	return {$: 'Height', a: a};
 };
 var mdgriffith$elm_ui$Element$height = mdgriffith$elm_ui$Internal$Model$Height;
+var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
+	return {$: 'Flag', a: a};
+};
+var mdgriffith$elm_ui$Internal$Flag$Second = function (a) {
+	return {$: 'Second', a: a};
+};
+var mdgriffith$elm_ui$Internal$Flag$flag = function (i) {
+	return (i > 31) ? mdgriffith$elm_ui$Internal$Flag$Second(1 << (i - 32)) : mdgriffith$elm_ui$Internal$Flag$Flag(1 << i);
+};
+var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
+var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
+	function (a, b, c, d, e) {
+		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
+	});
+var mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
+	function (a, b) {
+		return {$: 'StyleClass', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$padding = function (x) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + elm$core$String$fromInt(x),
+			x,
+			x,
+			x,
+			x));
+};
 var mdgriffith$elm_ui$Internal$Model$Content = {$: 'Content'};
 var mdgriffith$elm_ui$Element$shrink = mdgriffith$elm_ui$Internal$Model$Content;
+var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
+var mdgriffith$elm_ui$Internal$Model$Colored = F3(
+	function (a, b, c) {
+		return {$: 'Colored', a: a, b: b, c: c};
+	});
+var elm$core$Basics$round = _Basics_round;
+var mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
+	return elm$core$String$fromInt(
+		elm$core$Basics$round(x * 255));
+};
+var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
+	var red = _n0.a;
+	var green = _n0.b;
+	var blue = _n0.c;
+	var alpha = _n0.d;
+	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
+};
+var mdgriffith$elm_ui$Element$Background$color = function (clr) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$bgColor,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Colored,
+			'bg-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
+			'background-color',
+			clr));
+};
+var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
+var mdgriffith$elm_ui$Internal$Model$Single = F3(
+	function (a, b, c) {
+		return {$: 'Single', a: a, b: b, c: c};
+	});
+var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderRound,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Single,
+			'br-' + elm$core$String$fromInt(radius),
+			'border-radius',
+			elm$core$String$fromInt(radius) + 'px'));
+};
+var mdgriffith$elm_ui$Internal$Flag$borderWidth = mdgriffith$elm_ui$Internal$Flag$flag(27);
+var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
+	function (a, b, c, d, e) {
+		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
+	});
+var mdgriffith$elm_ui$Element$Border$width = function (v) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderWidth,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$BorderWidth,
+			'b-' + elm$core$String$fromInt(v),
+			v,
+			v,
+			v,
+			v));
+};
+var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
+var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontColor,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Colored,
+			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
+			'color',
+			fontColor));
+};
+var author$project$Page$Authentication$loginPageButtonAttributes = _List_fromArray(
+	[
+		mdgriffith$elm_ui$Element$centerX,
+		mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+		mdgriffith$elm_ui$Element$padding(5),
+		mdgriffith$elm_ui$Element$Border$width(2),
+		mdgriffith$elm_ui$Element$Border$rounded(5),
+		mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundBlue),
+		mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+	]);
+var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
+	return {$: 'AlignY', a: a};
+};
+var mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
+var mdgriffith$elm_ui$Element$centerY = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$CenterY);
 var mdgriffith$elm_ui$Internal$Model$Width = function (a) {
 	return {$: 'Width', a: a};
 };
@@ -7520,16 +7630,6 @@ var elm$virtual_dom$VirtualDom$node = function (tag) {
 	return _VirtualDom_node(
 		_VirtualDom_noScript(tag));
 };
-var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
-var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
-	return {$: 'Flag', a: a};
-};
-var mdgriffith$elm_ui$Internal$Flag$Second = function (a) {
-	return {$: 'Second', a: a};
-};
-var mdgriffith$elm_ui$Internal$Flag$flag = function (i) {
-	return (i > 31) ? mdgriffith$elm_ui$Internal$Flag$Second(1 << (i - 32)) : mdgriffith$elm_ui$Internal$Flag$Flag(1 << i);
-};
 var mdgriffith$elm_ui$Internal$Flag$alignBottom = mdgriffith$elm_ui$Internal$Flag$flag(41);
 var mdgriffith$elm_ui$Internal$Flag$alignRight = mdgriffith$elm_ui$Internal$Flag$flag(40);
 var mdgriffith$elm_ui$Internal$Flag$centerX = mdgriffith$elm_ui$Internal$Flag$flag(42);
@@ -7607,11 +7707,6 @@ var mdgriffith$elm_ui$Internal$Model$lengthClassName = function (x) {
 			var len = x.b;
 			return 'max' + (elm$core$String$fromInt(max) + mdgriffith$elm_ui$Internal$Model$lengthClassName(len));
 	}
-};
-var elm$core$Basics$round = _Basics_round;
-var mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
-	return elm$core$String$fromInt(
-		elm$core$Basics$round(x * 255));
 };
 var mdgriffith$elm_ui$Internal$Model$transformClass = function (transform) {
 	switch (transform.$) {
@@ -11128,10 +11223,6 @@ var mdgriffith$elm_ui$Internal$Model$Embedded = F2(
 var mdgriffith$elm_ui$Internal$Model$NodeName = function (a) {
 	return {$: 'NodeName', a: a};
 };
-var mdgriffith$elm_ui$Internal$Model$Single = F3(
-	function (a, b, c) {
-		return {$: 'Single', a: a, b: b, c: c};
-	});
 var mdgriffith$elm_ui$Internal$Model$Transform = function (a) {
 	return {$: 'Transform', a: a};
 };
@@ -11574,7 +11665,6 @@ var mdgriffith$elm_ui$Internal$Model$renderWidth = function (w) {
 				A2(elm$core$List$cons, style, newStyle));
 	}
 };
-var mdgriffith$elm_ui$Internal$Flag$borderWidth = mdgriffith$elm_ui$Internal$Flag$flag(27);
 var mdgriffith$elm_ui$Internal$Model$skippable = F2(
 	function (flag, style) {
 		if (_Utils_eq(flag, mdgriffith$elm_ui$Internal$Flag$borderWidth)) {
@@ -12537,177 +12627,10 @@ var mdgriffith$elm_ui$Element$column = F2(
 						attrs))),
 			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
-var mdgriffith$elm_ui$Element$el = F2(
-	function (attrs, child) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asEl,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-					attrs)),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[child])));
-	});
-var elm$html$Html$Attributes$alt = elm$html$Html$Attributes$stringProperty('alt');
-var elm$html$Html$Attributes$src = function (url) {
-	return A2(
-		elm$html$Html$Attributes$stringProperty,
-		'src',
-		_VirtualDom_noJavaScriptOrHtmlUri(url));
+var mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
+	return {$: 'Fill', a: a};
 };
-var mdgriffith$elm_ui$Element$image = F2(
-	function (attrs, _n0) {
-		var src = _n0.src;
-		var description = _n0.description;
-		var imageAttributes = A2(
-			elm$core$List$filter,
-			function (a) {
-				switch (a.$) {
-					case 'Width':
-						return true;
-					case 'Height':
-						return true;
-					default:
-						return false;
-				}
-			},
-			attrs);
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asEl,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.imageContainer),
-				attrs),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[
-						A4(
-						mdgriffith$elm_ui$Internal$Model$element,
-						mdgriffith$elm_ui$Internal$Model$asEl,
-						mdgriffith$elm_ui$Internal$Model$NodeName('img'),
-						_Utils_ap(
-							_List_fromArray(
-								[
-									mdgriffith$elm_ui$Internal$Model$Attr(
-									elm$html$Html$Attributes$src(src)),
-									mdgriffith$elm_ui$Internal$Model$Attr(
-									elm$html$Html$Attributes$alt(description))
-								]),
-							imageAttributes),
-						mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil))
-					])));
-	});
-var mdgriffith$elm_ui$Internal$Flag$cursor = mdgriffith$elm_ui$Internal$Flag$flag(21);
-var mdgriffith$elm_ui$Internal$Model$Class = F2(
-	function (a, b) {
-		return {$: 'Class', a: a, b: b};
-	});
-var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
-var mdgriffith$elm_ui$Internal$Model$Px = function (a) {
-	return {$: 'Px', a: a};
-};
-var mdgriffith$elm_ui$Element$px = mdgriffith$elm_ui$Internal$Model$Px;
-var mdgriffith$elm_ui$Internal$Model$Text = function (a) {
-	return {$: 'Text', a: a};
-};
-var mdgriffith$elm_ui$Element$text = function (content) {
-	return mdgriffith$elm_ui$Internal$Model$Text(content);
-};
-var elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
-var elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		elm$html$Html$Events$on,
-		'click',
-		elm$json$Json$Decode$succeed(msg));
-};
-var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
-var author$project$Page$TargetSelector$buildSingleTargetSelector = F2(
-	function (imageWidth, target) {
-		return A2(
-			mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$Events$onClick(
-					author$project$Page$TargetSelector$TargetButtonClicked(target)),
-					mdgriffith$elm_ui$Element$pointer
-				]),
-			A2(
-				mdgriffith$elm_ui$Element$column,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						mdgriffith$elm_ui$Element$image,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$width(
-								mdgriffith$elm_ui$Element$px(imageWidth))
-							]),
-						{description: target.name, src: target.imgSource}),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[mdgriffith$elm_ui$Element$centerX]),
-						mdgriffith$elm_ui$Element$text(target.name)),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[mdgriffith$elm_ui$Element$centerX]),
-						mdgriffith$elm_ui$Element$text(
-							elm$core$String$fromInt(target.count) + ' words')),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[mdgriffith$elm_ui$Element$centerX]),
-						mdgriffith$elm_ui$Element$text(
-							elm$core$String$fromInt(target.minutes) + ' minutes')),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[mdgriffith$elm_ui$Element$centerX]),
-						mdgriffith$elm_ui$Element$text(
-							elm$core$String$fromInt((target.count / target.minutes) | 0) + ' wpm'))
-					])));
-	});
-var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
-var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
-	function (a, b, c, d, e) {
-		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
-	});
-var mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
-	function (a, b) {
-		return {$: 'StyleClass', a: a, b: b};
-	});
-var mdgriffith$elm_ui$Element$padding = function (x) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			'p-' + elm$core$String$fromInt(x),
-			x,
-			x,
-			x,
-			x));
-};
+var mdgriffith$elm_ui$Element$fill = mdgriffith$elm_ui$Internal$Model$Fill(1);
 var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
 var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
 var mdgriffith$elm_ui$Element$row = F2(
@@ -12728,455 +12651,157 @@ var mdgriffith$elm_ui$Element$row = F2(
 						attrs))),
 			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
-var author$project$Page$TargetSelector$buildSingleTargetRow = F2(
-	function (imageWidth, targets) {
+var mdgriffith$elm_ui$Internal$Model$Text = function (a) {
+	return {$: 'Text', a: a};
+};
+var mdgriffith$elm_ui$Element$text = function (content) {
+	return mdgriffith$elm_ui$Internal$Model$Text(content);
+};
+var elm$json$Json$Encode$bool = _Json_wrap;
+var elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
 		return A2(
-			mdgriffith$elm_ui$Element$row,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$padding(5)
-				]),
-			A2(
-				elm$core$List$map,
-				author$project$Page$TargetSelector$buildSingleTargetSelector(imageWidth),
-				targets));
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$bool(bool));
 	});
-var elm$core$List$drop = F2(
-	function (n, list) {
-		drop:
-		while (true) {
-			if (n <= 0) {
-				return list;
-			} else {
-				if (!list.b) {
-					return list;
-				} else {
-					var x = list.a;
-					var xs = list.b;
-					var $temp$n = n - 1,
-						$temp$list = xs;
-					n = $temp$n;
-					list = $temp$list;
-					continue drop;
-				}
-			}
-		}
-	});
-var elm$core$List$takeReverse = F3(
-	function (n, list, kept) {
-		takeReverse:
-		while (true) {
-			if (n <= 0) {
-				return kept;
-			} else {
-				if (!list.b) {
-					return kept;
-				} else {
-					var x = list.a;
-					var xs = list.b;
-					var $temp$n = n - 1,
-						$temp$list = xs,
-						$temp$kept = A2(elm$core$List$cons, x, kept);
-					n = $temp$n;
-					list = $temp$list;
-					kept = $temp$kept;
-					continue takeReverse;
-				}
-			}
-		}
-	});
-var elm$core$List$takeTailRec = F2(
-	function (n, list) {
-		return elm$core$List$reverse(
-			A3(elm$core$List$takeReverse, n, list, _List_Nil));
-	});
-var elm$core$List$takeFast = F3(
-	function (ctr, n, list) {
-		if (n <= 0) {
-			return _List_Nil;
-		} else {
-			var _n0 = _Utils_Tuple2(n, list);
-			_n0$1:
-			while (true) {
-				_n0$5:
-				while (true) {
-					if (!_n0.b.b) {
-						return list;
-					} else {
-						if (_n0.b.b.b) {
-							switch (_n0.a) {
-								case 1:
-									break _n0$1;
-								case 2:
-									var _n2 = _n0.b;
-									var x = _n2.a;
-									var _n3 = _n2.b;
-									var y = _n3.a;
-									return _List_fromArray(
-										[x, y]);
-								case 3:
-									if (_n0.b.b.b.b) {
-										var _n4 = _n0.b;
-										var x = _n4.a;
-										var _n5 = _n4.b;
-										var y = _n5.a;
-										var _n6 = _n5.b;
-										var z = _n6.a;
-										return _List_fromArray(
-											[x, y, z]);
-									} else {
-										break _n0$5;
-									}
-								default:
-									if (_n0.b.b.b.b && _n0.b.b.b.b.b) {
-										var _n7 = _n0.b;
-										var x = _n7.a;
-										var _n8 = _n7.b;
-										var y = _n8.a;
-										var _n9 = _n8.b;
-										var z = _n9.a;
-										var _n10 = _n9.b;
-										var w = _n10.a;
-										var tl = _n10.b;
-										return (ctr > 1000) ? A2(
-											elm$core$List$cons,
-											x,
-											A2(
-												elm$core$List$cons,
-												y,
-												A2(
-													elm$core$List$cons,
-													z,
-													A2(
-														elm$core$List$cons,
-														w,
-														A2(elm$core$List$takeTailRec, n - 4, tl))))) : A2(
-											elm$core$List$cons,
-											x,
-											A2(
-												elm$core$List$cons,
-												y,
-												A2(
-													elm$core$List$cons,
-													z,
-													A2(
-														elm$core$List$cons,
-														w,
-														A3(elm$core$List$takeFast, ctr + 1, n - 4, tl)))));
-									} else {
-										break _n0$5;
-									}
-							}
-						} else {
-							if (_n0.a === 1) {
-								break _n0$1;
-							} else {
-								break _n0$5;
-							}
-						}
-					}
-				}
-				return list;
-			}
-			var _n1 = _n0.b;
-			var x = _n1.a;
-			return _List_fromArray(
-				[x]);
-		}
-	});
-var elm$core$List$take = F2(
-	function (n, list) {
-		return A3(elm$core$List$takeFast, 0, n, list);
-	});
-var elm_community$list_extra$List$Extra$greedyGroupsOfWithStep = F3(
-	function (size, step, xs) {
-		var xs_ = A2(elm$core$List$drop, step, xs);
-		var okayXs = elm$core$List$length(xs) > 0;
-		var okayArgs = (size > 0) && (step > 0);
-		return (okayArgs && okayXs) ? A2(
-			elm$core$List$cons,
-			A2(elm$core$List$take, size, xs),
-			A3(elm_community$list_extra$List$Extra$greedyGroupsOfWithStep, size, step, xs_)) : _List_Nil;
-	});
-var elm_community$list_extra$List$Extra$greedyGroupsOf = F2(
-	function (size, xs) {
-		return A3(elm_community$list_extra$List$Extra$greedyGroupsOfWithStep, size, size, xs);
-	});
-var author$project$Page$TargetSelector$buildTargetRows = F3(
-	function (imagesPerRow, imageWidth, targets) {
-		var targetRows = A2(elm_community$list_extra$List$Extra$greedyGroupsOf, imagesPerRow, targets);
-		return A2(
-			elm$core$List$map,
-			author$project$Page$TargetSelector$buildSingleTargetRow(imageWidth),
-			targetRows);
-	});
-var elm$core$Dict$values = function (dict) {
-	return A3(
-		elm$core$Dict$foldr,
-		F3(
-			function (key, value, valueList) {
-				return A2(elm$core$List$cons, value, valueList);
-			}),
-		_List_Nil,
-		dict);
-};
-var mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
-	return {$: 'Fill', a: a};
-};
-var mdgriffith$elm_ui$Element$fill = mdgriffith$elm_ui$Internal$Model$Fill(1);
-var mdgriffith$elm_ui$Internal$Flag$overflow = mdgriffith$elm_ui$Internal$Flag$flag(20);
-var mdgriffith$elm_ui$Element$scrollbarY = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$overflow, mdgriffith$elm_ui$Internal$Style$classes.scrollbarsY);
-var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
-var mdgriffith$elm_ui$Internal$Model$Colored = F3(
-	function (a, b, c) {
-		return {$: 'Colored', a: a, b: b, c: c};
-	});
-var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
-	var red = _n0.a;
-	var green = _n0.b;
-	var blue = _n0.c;
-	var alpha = _n0.d;
-	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
-};
-var mdgriffith$elm_ui$Element$Background$color = function (clr) {
+var elm$html$Html$Attributes$disabled = elm$html$Html$Attributes$boolProperty('disabled');
+var elm$html$Html$Attributes$tabindex = function (n) {
 	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$bgColor,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Colored,
-			'bg-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
-			'background-color',
-			clr));
+		_VirtualDom_attribute,
+		'tabIndex',
+		elm$core$String$fromInt(n));
 };
-var author$project$Page$TargetSelector$showBody = F2(
-	function (model, state) {
-		var imageWidth = 150;
-		var imagesPerRow = (state.windowDimensions.width / (imageWidth + 10)) | 0;
-		return A2(
-			mdgriffith$elm_ui$Element$column,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteTargetSelectionBackground),
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$padding(25),
-					mdgriffith$elm_ui$Element$scrollbarY
-				]),
-			A3(
-				author$project$Page$TargetSelector$buildTargetRows,
-				imagesPerRow,
-				imageWidth,
-				elm$core$Dict$values(model.targets)));
-	});
-var author$project$Page$TargetSelector$view = F2(
-	function (model, state) {
-		return {
-			body: A2(author$project$Page$TargetSelector$showBody, model, state),
-			headerSettings: elm$core$Maybe$Just(
-				author$project$Page$TargetSelector$getHeaderSettings(state)),
-			title: 'Target Selector'
-		};
-	});
-var author$project$Page$Writer$getHeaderSettings = function (state) {
-	return {
-		actionButtonSettings: elm$core$Maybe$Just(
-			{action: '/target', label: 'TARGET'}),
-		signOutButtonSettings: elm$core$Maybe$Just(
-			{action: '/signout', label: 'Sign Out'}),
-		writtenCount: state.writtenCount
-	};
-};
-var author$project$Page$Writer$WordsWritten = function (a) {
-	return {$: 'WordsWritten', a: a};
-};
-var author$project$Appearance$progressBarBackground = A3(mdgriffith$elm_ui$Element$rgb255, 200, 200, 200);
-var author$project$Appearance$progressBarForeground = A3(mdgriffith$elm_ui$Element$rgb255, 78, 185, 37);
-var author$project$Appearance$siteWritingBackground = A3(mdgriffith$elm_ui$Element$rgb255, 255, 255, 255);
-var author$project$Page$Writer$currentTargetCounts = F2(
-	function (winProgress, winCount) {
-		return '  ' + (elm$core$String$fromInt(winProgress) + (' / ' + elm$core$String$fromInt(winCount)));
-	});
-var elm$core$String$cons = _String_cons;
-var elm$core$String$fromChar = function (_char) {
-	return A2(elm$core$String$cons, _char, '');
-};
-var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
-var elm$core$String$repeatHelp = F3(
-	function (n, chunk, result) {
-		return (n <= 0) ? result : A3(
-			elm$core$String$repeatHelp,
-			n >> 1,
-			_Utils_ap(chunk, chunk),
-			(!(n & 1)) ? result : _Utils_ap(result, chunk));
-	});
-var elm$core$String$repeat = F2(
-	function (n, chunk) {
-		return A3(elm$core$String$repeatHelp, n, chunk, '');
-	});
-var elm$core$String$padLeft = F3(
-	function (n, _char, string) {
-		return _Utils_ap(
-			A2(
-				elm$core$String$repeat,
-				n - elm$core$String$length(string),
-				elm$core$String$fromChar(_char)),
-			string);
-	});
-var author$project$Page$Writer$formatSecondsToStringHourCheck = F2(
-	function (seconds, hasHour) {
-		return (((seconds < 3600) && (seconds >= 60)) || hasHour) ? (A3(
-			elm$core$String$padLeft,
-			2,
-			_Utils_chr('0'),
-			elm$core$String$fromInt((seconds / 60) | 0)) + (':' + A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds % 60, false))) : ((seconds < 60) ? A3(
-			elm$core$String$padLeft,
-			2,
-			_Utils_chr('0'),
-			elm$core$String$fromInt(seconds)) : (elm$core$String$fromInt((seconds / 3600) | 0) + (':' + A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds % 3600, true))));
-	});
-var author$project$Page$Writer$formatSecondsToString = function (seconds) {
-	return A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds, false);
-};
-var author$project$Page$Writer$currentTargetFightStatus = function (model) {
-	return '  ' + ((model.endMessage !== '') ? model.endMessage : author$project$Page$Writer$formatSecondsToString(model.currentTargetTimerInSecs));
-};
-var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
-var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
-var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
-var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
-var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
-	return {$: 'AlignY', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
-var mdgriffith$elm_ui$Element$centerY = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$CenterY);
-var mdgriffith$elm_ui$Element$fillPortion = mdgriffith$elm_ui$Internal$Model$Fill;
-var mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
-var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
+var mdgriffith$elm_ui$Internal$Flag$cursor = mdgriffith$elm_ui$Internal$Flag$flag(21);
+var mdgriffith$elm_ui$Internal$Model$Class = F2(
 	function (a, b) {
-		return {$: 'Nearby', a: a, b: b};
+		return {$: 'Class', a: a, b: b};
 	});
-var mdgriffith$elm_ui$Element$inFront = function (element) {
-	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$InFront, element);
+var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
+var elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
 };
-var mdgriffith$elm_ui$Internal$Model$OnLeft = {$: 'OnLeft'};
-var mdgriffith$elm_ui$Element$onLeft = function (element) {
-	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnLeft, element);
-};
-var mdgriffith$elm_ui$Internal$Model$OnRight = {$: 'OnRight'};
-var mdgriffith$elm_ui$Element$onRight = function (element) {
-	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnRight, element);
-};
-var author$project$Page$Writer$showProgressBar = F2(
-	function (model, target) {
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var elm$html$Html$Events$on = F2(
+	function (event, decoder) {
 		return A2(
-			mdgriffith$elm_ui$Element$row,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$height(
-					mdgriffith$elm_ui$Element$px(38)),
-					mdgriffith$elm_ui$Element$centerY,
-					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteWritingBackground),
-					mdgriffith$elm_ui$Element$inFront(
-					A2(
-						mdgriffith$elm_ui$Element$image,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$width(
-								mdgriffith$elm_ui$Element$px(35)),
-								mdgriffith$elm_ui$Element$centerX,
-								mdgriffith$elm_ui$Element$onLeft(
-								A2(
-									mdgriffith$elm_ui$Element$el,
-									_List_fromArray(
-										[mdgriffith$elm_ui$Element$alignRight, mdgriffith$elm_ui$Element$centerY]),
-									mdgriffith$elm_ui$Element$text(target.name + '  '))),
-								mdgriffith$elm_ui$Element$onRight(
-								A2(
-									mdgriffith$elm_ui$Element$row,
-									_List_fromArray(
-										[mdgriffith$elm_ui$Element$centerY]),
-									_List_fromArray(
-										[
-											A2(
-											mdgriffith$elm_ui$Element$el,
-											_List_fromArray(
-												[
-													mdgriffith$elm_ui$Element$alignLeft,
-													mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
-												]),
-											mdgriffith$elm_ui$Element$text(
-												A2(author$project$Page$Writer$currentTargetCounts, model.winProgress, target.count))),
-											A2(
-											mdgriffith$elm_ui$Element$el,
-											_List_fromArray(
-												[mdgriffith$elm_ui$Element$alignLeft]),
-											mdgriffith$elm_ui$Element$text(
-												author$project$Page$Writer$currentTargetFightStatus(model)))
-										])))
-							]),
-						{description: target.name + ' portrait', src: target.portraitSource}))
-				]),
-			_List_fromArray(
-				[
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$width(
-							mdgriffith$elm_ui$Element$fillPortion(model.winProgress)),
-							mdgriffith$elm_ui$Element$height(
-							mdgriffith$elm_ui$Element$px(20)),
-							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$progressBarForeground)
-						]),
-					mdgriffith$elm_ui$Element$none),
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$width(
-							mdgriffith$elm_ui$Element$fillPortion(target.count - model.winProgress)),
-							mdgriffith$elm_ui$Element$height(
-							mdgriffith$elm_ui$Element$px(20)),
-							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$progressBarBackground)
-						]),
-					mdgriffith$elm_ui$Element$none)
-				]));
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$Normal(decoder));
 	});
-var elm$html$Html$Attributes$placeholder = elm$html$Html$Attributes$stringProperty('placeholder');
-var mdgriffith$elm_ui$Element$htmlAttribute = mdgriffith$elm_ui$Internal$Model$Attr;
-var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
-var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
+var elm$html$Html$Events$onClick = function (msg) {
 	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderRound,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Single,
-			'br-' + elm$core$String$fromInt(radius),
-			'border-radius',
-			elm$core$String$fromInt(radius) + 'px'));
+		elm$html$Html$Events$on,
+		'click',
+		elm$json$Json$Decode$succeed(msg));
 };
-var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
-	function (a, b, c, d, e) {
-		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
+var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
+var mdgriffith$elm_ui$Element$Input$hasFocusStyle = function (attr) {
+	if (((attr.$ === 'StyleClass') && (attr.b.$ === 'PseudoSelector')) && (attr.b.a.$ === 'Focus')) {
+		var _n1 = attr.b;
+		var _n2 = _n1.a;
+		return true;
+	} else {
+		return false;
+	}
+};
+var mdgriffith$elm_ui$Internal$Model$NoAttribute = {$: 'NoAttribute'};
+var mdgriffith$elm_ui$Element$Input$focusDefault = function (attrs) {
+	return A2(elm$core$List$any, mdgriffith$elm_ui$Element$Input$hasFocusStyle, attrs) ? mdgriffith$elm_ui$Internal$Model$NoAttribute : mdgriffith$elm_ui$Internal$Model$htmlClass('focusable');
+};
+var mdgriffith$elm_ui$Element$Input$enter = 'Enter';
+var elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
+	return {$: 'MayPreventDefault', a: a};
+};
+var elm$html$Html$Events$preventDefaultOn = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayPreventDefault(decoder));
 	});
-var mdgriffith$elm_ui$Element$Border$width = function (v) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderWidth,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$BorderWidth,
-			'b-' + elm$core$String$fromInt(v),
-			v,
-			v,
-			v,
-			v));
+var mdgriffith$elm_ui$Element$Input$onKey = F2(
+	function (desiredCode, msg) {
+		var decode = function (code) {
+			return _Utils_eq(code, desiredCode) ? elm$json$Json$Decode$succeed(msg) : elm$json$Json$Decode$fail('Not the enter key');
+		};
+		var isKey = A2(
+			elm$json$Json$Decode$andThen,
+			decode,
+			A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+		return mdgriffith$elm_ui$Internal$Model$Attr(
+			A2(
+				elm$html$Html$Events$preventDefaultOn,
+				'keyup',
+				A2(
+					elm$json$Json$Decode$map,
+					function (fired) {
+						return _Utils_Tuple2(fired, true);
+					},
+					isKey)));
+	});
+var mdgriffith$elm_ui$Element$Input$onEnter = function (msg) {
+	return A2(mdgriffith$elm_ui$Element$Input$onKey, mdgriffith$elm_ui$Element$Input$enter, msg);
 };
-var mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
-	return {$: 'HiddenLabel', a: a};
+var mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
+var mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
+	return {$: 'Describe', a: a};
 };
-var mdgriffith$elm_ui$Element$Input$labelHidden = mdgriffith$elm_ui$Element$Input$HiddenLabel;
-var mdgriffith$elm_ui$Element$Input$TextArea = {$: 'TextArea'};
+var mdgriffith$elm_ui$Element$Input$button = F2(
+	function (attrs, _n0) {
+		var onPress = _n0.onPress;
+		var label = _n0.label;
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asEl,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentCenterX + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.contentCenterY + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.seButton + (' ' + mdgriffith$elm_ui$Internal$Style$classes.noTextSelection)))))),
+						A2(
+							elm$core$List$cons,
+							mdgriffith$elm_ui$Element$pointer,
+							A2(
+								elm$core$List$cons,
+								mdgriffith$elm_ui$Element$Input$focusDefault(attrs),
+								A2(
+									elm$core$List$cons,
+									mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$Button),
+									A2(
+										elm$core$List$cons,
+										mdgriffith$elm_ui$Internal$Model$Attr(
+											elm$html$Html$Attributes$tabindex(0)),
+										function () {
+											if (onPress.$ === 'Nothing') {
+												return A2(
+													elm$core$List$cons,
+													mdgriffith$elm_ui$Internal$Model$Attr(
+														elm$html$Html$Attributes$disabled(true)),
+													attrs);
+											} else {
+												var msg = onPress.a;
+												return A2(
+													elm$core$List$cons,
+													mdgriffith$elm_ui$Element$Events$onClick(msg),
+													A2(
+														elm$core$List$cons,
+														mdgriffith$elm_ui$Element$Input$onEnter(msg),
+														attrs));
+											}
+										}()))))))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[label])));
+	});
+var mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
+	return {$: 'TextInputNode', a: a};
+};
 var elm$html$Html$Attributes$type_ = elm$html$Html$Attributes$stringProperty('type');
 var elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
@@ -13229,6 +12854,31 @@ var mdgriffith$elm_ui$Element$alpha = function (o) {
 			mdgriffith$elm_ui$Internal$Model$Transparency,
 			'transparency-' + mdgriffith$elm_ui$Internal$Model$floatClass(transparency),
 			transparency));
+};
+var mdgriffith$elm_ui$Element$el = F2(
+	function (attrs, child) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asEl,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					attrs)),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[child])));
+	});
+var mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
+var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
+	function (a, b) {
+		return {$: 'Nearby', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$inFront = function (element) {
+	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$InFront, element);
 };
 var mdgriffith$elm_ui$Internal$Model$paddingName = F4(
 	function (top, right, bottom, left) {
@@ -13289,17 +12939,6 @@ var mdgriffith$elm_ui$Element$Border$color = function (clr) {
 			'bc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
 			'border-color',
 			clr));
-};
-var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
-var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontColor,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Colored,
-			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
-			'color',
-			fontColor));
 };
 var mdgriffith$elm_ui$Element$Input$Padding = F4(
 	function (a, b, c, d) {
@@ -13414,22 +13053,6 @@ var mdgriffith$elm_ui$Element$Input$defaultTextBoxStyle = _List_fromArray(
 		mdgriffith$elm_ui$Element$spacing(3),
 		mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 	]);
-var mdgriffith$elm_ui$Element$Input$hasFocusStyle = function (attr) {
-	if (((attr.$ === 'StyleClass') && (attr.b.$ === 'PseudoSelector')) && (attr.b.a.$ === 'Focus')) {
-		var _n1 = attr.b;
-		var _n2 = _n1.a;
-		return true;
-	} else {
-		return false;
-	}
-};
-var mdgriffith$elm_ui$Internal$Model$NoAttribute = {$: 'NoAttribute'};
-var mdgriffith$elm_ui$Element$Input$focusDefault = function (attrs) {
-	return A2(elm$core$List$any, mdgriffith$elm_ui$Element$Input$hasFocusStyle, attrs) ? mdgriffith$elm_ui$Internal$Model$NoAttribute : mdgriffith$elm_ui$Internal$Model$htmlClass('focusable');
-};
-var mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
-	return {$: 'Describe', a: a};
-};
 var mdgriffith$elm_ui$Internal$Model$Label = function (a) {
 	return {$: 'Label', a: a};
 };
@@ -13471,14 +13094,6 @@ var mdgriffith$elm_ui$Element$Input$isHiddenLabel = function (label) {
 		return false;
 	}
 };
-var elm$json$Json$Encode$bool = _Json_wrap;
-var elm$html$Html$Attributes$boolProperty = F2(
-	function (key, bool) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$bool(bool));
-	});
 var elm$html$Html$Attributes$spellcheck = elm$html$Html$Attributes$boolProperty('spellcheck');
 var mdgriffith$elm_ui$Element$Input$spellcheck = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$spellcheck);
 var elm$core$String$lines = _String_lines;
@@ -13969,6 +13584,619 @@ var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 			textOptions.label,
 			inputElement);
 	});
+var mdgriffith$elm_ui$Element$Input$email = mdgriffith$elm_ui$Element$Input$textHelper(
+	{
+		autofill: elm$core$Maybe$Just('email'),
+		spellchecked: false,
+		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('email')
+	});
+var elm$html$Html$Attributes$autofocus = elm$html$Html$Attributes$boolProperty('autofocus');
+var mdgriffith$elm_ui$Element$Input$focusedOnLoad = mdgriffith$elm_ui$Internal$Model$Attr(
+	elm$html$Html$Attributes$autofocus(true));
+var mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
+	return {$: 'HiddenLabel', a: a};
+};
+var mdgriffith$elm_ui$Element$Input$labelHidden = mdgriffith$elm_ui$Element$Input$HiddenLabel;
+var mdgriffith$elm_ui$Element$Input$newPassword = F2(
+	function (attrs, pass) {
+		return A3(
+			mdgriffith$elm_ui$Element$Input$textHelper,
+			{
+				autofill: elm$core$Maybe$Just('new-password'),
+				spellchecked: false,
+				type_: mdgriffith$elm_ui$Element$Input$TextInputNode(
+					pass.show ? 'text' : 'password')
+			},
+			attrs,
+			{label: pass.label, onChange: pass.onChange, placeholder: pass.placeholder, text: pass.text});
+	});
+var mdgriffith$elm_ui$Element$Input$Placeholder = F2(
+	function (a, b) {
+		return {$: 'Placeholder', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$Input$placeholder = mdgriffith$elm_ui$Element$Input$Placeholder;
+var author$project$Page$Authentication$showBody = F2(
+	function (model, state) {
+		return A2(
+			mdgriffith$elm_ui$Element$row,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					mdgriffith$elm_ui$Element$centerX,
+					mdgriffith$elm_ui$Element$centerY
+				]),
+			_List_fromArray(
+				[
+					A2(
+					mdgriffith$elm_ui$Element$column,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+							mdgriffith$elm_ui$Element$padding(10)
+						]),
+					_List_fromArray(
+						[
+							A2(
+							mdgriffith$elm_ui$Element$Input$email,
+							_List_fromArray(
+								[mdgriffith$elm_ui$Element$Input$focusedOnLoad]),
+							{
+								label: mdgriffith$elm_ui$Element$Input$labelHidden('Email address'),
+								onChange: author$project$Page$Authentication$LoginInputReceived(author$project$Page$Authentication$UserName),
+								placeholder: elm$core$Maybe$Just(
+									A2(
+										mdgriffith$elm_ui$Element$Input$placeholder,
+										_List_Nil,
+										mdgriffith$elm_ui$Element$text('Email address'))),
+								text: model.email
+							}),
+							A2(
+							mdgriffith$elm_ui$Element$Input$button,
+							author$project$Page$Authentication$loginPageButtonAttributes,
+							{
+								label: mdgriffith$elm_ui$Element$text('Log in'),
+								onPress: elm$core$Maybe$Just(author$project$Page$Authentication$LoginButtonClicked)
+							})
+						])),
+					A2(
+					mdgriffith$elm_ui$Element$column,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+							mdgriffith$elm_ui$Element$padding(10)
+						]),
+					_List_fromArray(
+						[
+							A2(
+							mdgriffith$elm_ui$Element$Input$newPassword,
+							_List_Nil,
+							{
+								label: mdgriffith$elm_ui$Element$Input$labelHidden('Password'),
+								onChange: author$project$Page$Authentication$LoginInputReceived(author$project$Page$Authentication$Password),
+								placeholder: elm$core$Maybe$Just(
+									A2(
+										mdgriffith$elm_ui$Element$Input$placeholder,
+										_List_Nil,
+										mdgriffith$elm_ui$Element$text('Password'))),
+								show: false,
+								text: model.password
+							}),
+							A2(
+							mdgriffith$elm_ui$Element$Input$button,
+							author$project$Page$Authentication$loginPageButtonAttributes,
+							{
+								label: mdgriffith$elm_ui$Element$text('Sign up'),
+								onPress: elm$core$Maybe$Just(author$project$Page$Authentication$SignUpButtonClicked)
+							})
+						]))
+				]));
+	});
+var author$project$Page$Authentication$view = F2(
+	function (model, state) {
+		return {
+			body: A2(author$project$Page$Authentication$showBody, model, state),
+			headerSettings: elm$core$Maybe$Nothing,
+			title: 'Login'
+		};
+	});
+var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
+	return {
+		actionButtonSettings: elm$core$Maybe$Just(
+			{action: '/', label: 'CANCEL'}),
+		signOutButtonSettings: elm$core$Maybe$Just(
+			{action: '/signout', label: 'Sign Out'}),
+		writtenCount: state.writtenCount
+	};
+};
+var author$project$Appearance$siteTargetSelectionBackground = A3(mdgriffith$elm_ui$Element$rgb255, 108, 160, 229);
+var author$project$Page$TargetSelector$TargetButtonClicked = function (a) {
+	return {$: 'TargetButtonClicked', a: a};
+};
+var elm$html$Html$Attributes$alt = elm$html$Html$Attributes$stringProperty('alt');
+var elm$html$Html$Attributes$src = function (url) {
+	return A2(
+		elm$html$Html$Attributes$stringProperty,
+		'src',
+		_VirtualDom_noJavaScriptOrHtmlUri(url));
+};
+var mdgriffith$elm_ui$Element$image = F2(
+	function (attrs, _n0) {
+		var src = _n0.src;
+		var description = _n0.description;
+		var imageAttributes = A2(
+			elm$core$List$filter,
+			function (a) {
+				switch (a.$) {
+					case 'Width':
+						return true;
+					case 'Height':
+						return true;
+					default:
+						return false;
+				}
+			},
+			attrs);
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asEl,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.imageContainer),
+				attrs),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[
+						A4(
+						mdgriffith$elm_ui$Internal$Model$element,
+						mdgriffith$elm_ui$Internal$Model$asEl,
+						mdgriffith$elm_ui$Internal$Model$NodeName('img'),
+						_Utils_ap(
+							_List_fromArray(
+								[
+									mdgriffith$elm_ui$Internal$Model$Attr(
+									elm$html$Html$Attributes$src(src)),
+									mdgriffith$elm_ui$Internal$Model$Attr(
+									elm$html$Html$Attributes$alt(description))
+								]),
+							imageAttributes),
+						mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil))
+					])));
+	});
+var mdgriffith$elm_ui$Internal$Model$Px = function (a) {
+	return {$: 'Px', a: a};
+};
+var mdgriffith$elm_ui$Element$px = mdgriffith$elm_ui$Internal$Model$Px;
+var author$project$Page$TargetSelector$buildSingleTargetSelector = F2(
+	function (imageWidth, target) {
+		return A2(
+			mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$Events$onClick(
+					author$project$Page$TargetSelector$TargetButtonClicked(target)),
+					mdgriffith$elm_ui$Element$pointer
+				]),
+			A2(
+				mdgriffith$elm_ui$Element$column,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						mdgriffith$elm_ui$Element$image,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$width(
+								mdgriffith$elm_ui$Element$px(imageWidth))
+							]),
+						{description: target.name, src: target.imgSource}),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[mdgriffith$elm_ui$Element$centerX]),
+						mdgriffith$elm_ui$Element$text(target.name)),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[mdgriffith$elm_ui$Element$centerX]),
+						mdgriffith$elm_ui$Element$text(
+							elm$core$String$fromInt(target.count) + ' words')),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[mdgriffith$elm_ui$Element$centerX]),
+						mdgriffith$elm_ui$Element$text(
+							elm$core$String$fromInt(target.minutes) + ' minutes')),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[mdgriffith$elm_ui$Element$centerX]),
+						mdgriffith$elm_ui$Element$text(
+							elm$core$String$fromInt((target.count / target.minutes) | 0) + ' wpm'))
+					])));
+	});
+var author$project$Page$TargetSelector$buildSingleTargetRow = F2(
+	function (imageWidth, targets) {
+		return A2(
+			mdgriffith$elm_ui$Element$row,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$padding(5)
+				]),
+			A2(
+				elm$core$List$map,
+				author$project$Page$TargetSelector$buildSingleTargetSelector(imageWidth),
+				targets));
+	});
+var elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
+var elm$core$List$takeReverse = F3(
+	function (n, list, kept) {
+		takeReverse:
+		while (true) {
+			if (n <= 0) {
+				return kept;
+			} else {
+				if (!list.b) {
+					return kept;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs,
+						$temp$kept = A2(elm$core$List$cons, x, kept);
+					n = $temp$n;
+					list = $temp$list;
+					kept = $temp$kept;
+					continue takeReverse;
+				}
+			}
+		}
+	});
+var elm$core$List$takeTailRec = F2(
+	function (n, list) {
+		return elm$core$List$reverse(
+			A3(elm$core$List$takeReverse, n, list, _List_Nil));
+	});
+var elm$core$List$takeFast = F3(
+	function (ctr, n, list) {
+		if (n <= 0) {
+			return _List_Nil;
+		} else {
+			var _n0 = _Utils_Tuple2(n, list);
+			_n0$1:
+			while (true) {
+				_n0$5:
+				while (true) {
+					if (!_n0.b.b) {
+						return list;
+					} else {
+						if (_n0.b.b.b) {
+							switch (_n0.a) {
+								case 1:
+									break _n0$1;
+								case 2:
+									var _n2 = _n0.b;
+									var x = _n2.a;
+									var _n3 = _n2.b;
+									var y = _n3.a;
+									return _List_fromArray(
+										[x, y]);
+								case 3:
+									if (_n0.b.b.b.b) {
+										var _n4 = _n0.b;
+										var x = _n4.a;
+										var _n5 = _n4.b;
+										var y = _n5.a;
+										var _n6 = _n5.b;
+										var z = _n6.a;
+										return _List_fromArray(
+											[x, y, z]);
+									} else {
+										break _n0$5;
+									}
+								default:
+									if (_n0.b.b.b.b && _n0.b.b.b.b.b) {
+										var _n7 = _n0.b;
+										var x = _n7.a;
+										var _n8 = _n7.b;
+										var y = _n8.a;
+										var _n9 = _n8.b;
+										var z = _n9.a;
+										var _n10 = _n9.b;
+										var w = _n10.a;
+										var tl = _n10.b;
+										return (ctr > 1000) ? A2(
+											elm$core$List$cons,
+											x,
+											A2(
+												elm$core$List$cons,
+												y,
+												A2(
+													elm$core$List$cons,
+													z,
+													A2(
+														elm$core$List$cons,
+														w,
+														A2(elm$core$List$takeTailRec, n - 4, tl))))) : A2(
+											elm$core$List$cons,
+											x,
+											A2(
+												elm$core$List$cons,
+												y,
+												A2(
+													elm$core$List$cons,
+													z,
+													A2(
+														elm$core$List$cons,
+														w,
+														A3(elm$core$List$takeFast, ctr + 1, n - 4, tl)))));
+									} else {
+										break _n0$5;
+									}
+							}
+						} else {
+							if (_n0.a === 1) {
+								break _n0$1;
+							} else {
+								break _n0$5;
+							}
+						}
+					}
+				}
+				return list;
+			}
+			var _n1 = _n0.b;
+			var x = _n1.a;
+			return _List_fromArray(
+				[x]);
+		}
+	});
+var elm$core$List$take = F2(
+	function (n, list) {
+		return A3(elm$core$List$takeFast, 0, n, list);
+	});
+var elm_community$list_extra$List$Extra$greedyGroupsOfWithStep = F3(
+	function (size, step, xs) {
+		var xs_ = A2(elm$core$List$drop, step, xs);
+		var okayXs = elm$core$List$length(xs) > 0;
+		var okayArgs = (size > 0) && (step > 0);
+		return (okayArgs && okayXs) ? A2(
+			elm$core$List$cons,
+			A2(elm$core$List$take, size, xs),
+			A3(elm_community$list_extra$List$Extra$greedyGroupsOfWithStep, size, step, xs_)) : _List_Nil;
+	});
+var elm_community$list_extra$List$Extra$greedyGroupsOf = F2(
+	function (size, xs) {
+		return A3(elm_community$list_extra$List$Extra$greedyGroupsOfWithStep, size, size, xs);
+	});
+var author$project$Page$TargetSelector$buildTargetRows = F3(
+	function (imagesPerRow, imageWidth, targets) {
+		var targetRows = A2(elm_community$list_extra$List$Extra$greedyGroupsOf, imagesPerRow, targets);
+		return A2(
+			elm$core$List$map,
+			author$project$Page$TargetSelector$buildSingleTargetRow(imageWidth),
+			targetRows);
+	});
+var elm$core$Dict$values = function (dict) {
+	return A3(
+		elm$core$Dict$foldr,
+		F3(
+			function (key, value, valueList) {
+				return A2(elm$core$List$cons, value, valueList);
+			}),
+		_List_Nil,
+		dict);
+};
+var mdgriffith$elm_ui$Internal$Flag$overflow = mdgriffith$elm_ui$Internal$Flag$flag(20);
+var mdgriffith$elm_ui$Element$scrollbarY = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$overflow, mdgriffith$elm_ui$Internal$Style$classes.scrollbarsY);
+var author$project$Page$TargetSelector$showBody = F2(
+	function (model, state) {
+		var imageWidth = 150;
+		var imagesPerRow = (state.windowDimensions.width / (imageWidth + 10)) | 0;
+		return A2(
+			mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteTargetSelectionBackground),
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$padding(25),
+					mdgriffith$elm_ui$Element$scrollbarY
+				]),
+			A3(
+				author$project$Page$TargetSelector$buildTargetRows,
+				imagesPerRow,
+				imageWidth,
+				elm$core$Dict$values(model.targets)));
+	});
+var author$project$Page$TargetSelector$view = F2(
+	function (model, state) {
+		return {
+			body: A2(author$project$Page$TargetSelector$showBody, model, state),
+			headerSettings: elm$core$Maybe$Just(
+				author$project$Page$TargetSelector$getHeaderSettings(state)),
+			title: 'Target Selector'
+		};
+	});
+var author$project$Page$Writer$getHeaderSettings = function (state) {
+	return {
+		actionButtonSettings: elm$core$Maybe$Just(
+			{action: '/target', label: 'TARGET'}),
+		signOutButtonSettings: elm$core$Maybe$Just(
+			{action: '/signout', label: 'Sign Out'}),
+		writtenCount: state.writtenCount
+	};
+};
+var author$project$Page$Writer$WordsWritten = function (a) {
+	return {$: 'WordsWritten', a: a};
+};
+var author$project$Appearance$progressBarBackground = A3(mdgriffith$elm_ui$Element$rgb255, 200, 200, 200);
+var author$project$Appearance$progressBarForeground = A3(mdgriffith$elm_ui$Element$rgb255, 78, 185, 37);
+var author$project$Appearance$siteWritingBackground = A3(mdgriffith$elm_ui$Element$rgb255, 255, 255, 255);
+var author$project$Page$Writer$currentTargetCounts = F2(
+	function (winProgress, winCount) {
+		return '  ' + (elm$core$String$fromInt(winProgress) + (' / ' + elm$core$String$fromInt(winCount)));
+	});
+var elm$core$String$cons = _String_cons;
+var elm$core$String$fromChar = function (_char) {
+	return A2(elm$core$String$cons, _char, '');
+};
+var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var elm$core$String$repeatHelp = F3(
+	function (n, chunk, result) {
+		return (n <= 0) ? result : A3(
+			elm$core$String$repeatHelp,
+			n >> 1,
+			_Utils_ap(chunk, chunk),
+			(!(n & 1)) ? result : _Utils_ap(result, chunk));
+	});
+var elm$core$String$repeat = F2(
+	function (n, chunk) {
+		return A3(elm$core$String$repeatHelp, n, chunk, '');
+	});
+var elm$core$String$padLeft = F3(
+	function (n, _char, string) {
+		return _Utils_ap(
+			A2(
+				elm$core$String$repeat,
+				n - elm$core$String$length(string),
+				elm$core$String$fromChar(_char)),
+			string);
+	});
+var author$project$Page$Writer$formatSecondsToStringHourCheck = F2(
+	function (seconds, hasHour) {
+		return (((seconds < 3600) && (seconds >= 60)) || hasHour) ? (A3(
+			elm$core$String$padLeft,
+			2,
+			_Utils_chr('0'),
+			elm$core$String$fromInt((seconds / 60) | 0)) + (':' + A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds % 60, false))) : ((seconds < 60) ? A3(
+			elm$core$String$padLeft,
+			2,
+			_Utils_chr('0'),
+			elm$core$String$fromInt(seconds)) : (elm$core$String$fromInt((seconds / 3600) | 0) + (':' + A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds % 3600, true))));
+	});
+var author$project$Page$Writer$formatSecondsToString = function (seconds) {
+	return A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds, false);
+};
+var author$project$Page$Writer$currentTargetFightStatus = function (model) {
+	return '  ' + ((model.endMessage !== '') ? model.endMessage : author$project$Page$Writer$formatSecondsToString(model.currentTargetTimerInSecs));
+};
+var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
+var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
+var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
+var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
+var mdgriffith$elm_ui$Element$fillPortion = mdgriffith$elm_ui$Internal$Model$Fill;
+var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
+var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
+var mdgriffith$elm_ui$Internal$Model$OnLeft = {$: 'OnLeft'};
+var mdgriffith$elm_ui$Element$onLeft = function (element) {
+	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnLeft, element);
+};
+var mdgriffith$elm_ui$Internal$Model$OnRight = {$: 'OnRight'};
+var mdgriffith$elm_ui$Element$onRight = function (element) {
+	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnRight, element);
+};
+var author$project$Page$Writer$showProgressBar = F2(
+	function (model, target) {
+		return A2(
+			mdgriffith$elm_ui$Element$row,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$height(
+					mdgriffith$elm_ui$Element$px(38)),
+					mdgriffith$elm_ui$Element$centerY,
+					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteWritingBackground),
+					mdgriffith$elm_ui$Element$inFront(
+					A2(
+						mdgriffith$elm_ui$Element$image,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$width(
+								mdgriffith$elm_ui$Element$px(35)),
+								mdgriffith$elm_ui$Element$centerX,
+								mdgriffith$elm_ui$Element$onLeft(
+								A2(
+									mdgriffith$elm_ui$Element$el,
+									_List_fromArray(
+										[mdgriffith$elm_ui$Element$alignRight, mdgriffith$elm_ui$Element$centerY]),
+									mdgriffith$elm_ui$Element$text(target.name + '  '))),
+								mdgriffith$elm_ui$Element$onRight(
+								A2(
+									mdgriffith$elm_ui$Element$row,
+									_List_fromArray(
+										[mdgriffith$elm_ui$Element$centerY]),
+									_List_fromArray(
+										[
+											A2(
+											mdgriffith$elm_ui$Element$el,
+											_List_fromArray(
+												[
+													mdgriffith$elm_ui$Element$alignLeft,
+													mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
+												]),
+											mdgriffith$elm_ui$Element$text(
+												A2(author$project$Page$Writer$currentTargetCounts, model.winProgress, target.count))),
+											A2(
+											mdgriffith$elm_ui$Element$el,
+											_List_fromArray(
+												[mdgriffith$elm_ui$Element$alignLeft]),
+											mdgriffith$elm_ui$Element$text(
+												author$project$Page$Writer$currentTargetFightStatus(model)))
+										])))
+							]),
+						{description: target.name + ' portrait', src: target.portraitSource}))
+				]),
+			_List_fromArray(
+				[
+					A2(
+					mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$width(
+							mdgriffith$elm_ui$Element$fillPortion(model.winProgress)),
+							mdgriffith$elm_ui$Element$height(
+							mdgriffith$elm_ui$Element$px(20)),
+							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$progressBarForeground)
+						]),
+					mdgriffith$elm_ui$Element$none),
+					A2(
+					mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$width(
+							mdgriffith$elm_ui$Element$fillPortion(target.count - model.winProgress)),
+							mdgriffith$elm_ui$Element$height(
+							mdgriffith$elm_ui$Element$px(20)),
+							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$progressBarBackground)
+						]),
+					mdgriffith$elm_ui$Element$none)
+				]));
+	});
+var elm$html$Html$Attributes$placeholder = elm$html$Html$Attributes$stringProperty('placeholder');
+var mdgriffith$elm_ui$Element$htmlAttribute = mdgriffith$elm_ui$Internal$Model$Attr;
+var mdgriffith$elm_ui$Element$Input$TextArea = {$: 'TextArea'};
 var mdgriffith$elm_ui$Element$Input$multiline = F2(
 	function (attrs, multi) {
 		return A3(
@@ -14027,7 +14255,6 @@ var author$project$Page$Writer$view = F2(
 			title: 'Writing page'
 		};
 	});
-var author$project$Appearance$siteLightFontColor = A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240);
 var author$project$Skeleton$noPageFound = {
 	body: A2(
 		mdgriffith$elm_ui$Element$el,
@@ -14177,7 +14404,6 @@ var author$project$Skeleton$buildHeader = function (headerSettings) {
 				]));
 	}
 };
-var author$project$Appearance$siteBackgroundBlue = A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113);
 var mdgriffith$elm_ui$Internal$Model$FocusStyleOption = function (a) {
 	return {$: 'FocusStyleOption', a: a};
 };
@@ -14563,12 +14789,12 @@ var author$project$Main$view = function (model) {
 				author$project$Main$GotTargetSelectorMsg,
 				A2(author$project$Page$TargetSelector$view, targetSelectorModel, model.state));
 		default:
-			var loginModel = _n0.a;
+			var authModel = _n0.a;
 			return A3(
 				author$project$Skeleton$view,
 				model.state,
-				author$project$Main$GotLoginMsg,
-				A2(author$project$Page$Login$view, loginModel, model.state));
+				author$project$Main$GotAuthMsg,
+				A2(author$project$Page$Authentication$view, authModel, model.state));
 	}
 };
 var elm$browser$Browser$application = _Browser_application;
