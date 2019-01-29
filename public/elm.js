@@ -13862,8 +13862,7 @@ var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
 		actionButtonSettings: elm$core$Maybe$Just(
 			{action: '/', label: 'CANCEL'}),
 		signOutButtonSettings: elm$core$Maybe$Just(
-			{action: '/signout', label: 'Sign Out'}),
-		writtenCount: state.actualCount
+			{action: '/signout', label: 'Sign Out'})
 	};
 };
 var author$project$Appearance$siteTargetSelectionBackground = A3(mdgriffith$elm_ui$Element$rgb255, 108, 160, 229);
@@ -14201,8 +14200,7 @@ var author$project$Page$Writer$getHeaderSettings = function (state) {
 		actionButtonSettings: elm$core$Maybe$Just(
 			{action: '/target', label: 'TARGET'}),
 		signOutButtonSettings: elm$core$Maybe$Just(
-			{action: '/signout', label: 'Sign Out'}),
-		writtenCount: state.additiveCount
+			{action: '/signout', label: 'Sign Out'})
 	};
 };
 var author$project$Page$Writer$WordsWritten = function (a) {
@@ -14505,62 +14503,63 @@ var author$project$Skeleton$buildSignOutButton = function (settings) {
 			url: settings.action
 		});
 };
-var author$project$Skeleton$buildHeader = function (headerSettings) {
-	if (headerSettings.$ === 'Nothing') {
-		return mdgriffith$elm_ui$Element$none;
-	} else {
-		var settings = headerSettings.a;
-		return A2(
-			mdgriffith$elm_ui$Element$row,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$height(
-					mdgriffith$elm_ui$Element$px(50)),
-					mdgriffith$elm_ui$Element$inFront(
-					function () {
-						var _n1 = settings.actionButtonSettings;
-						if (_n1.$ === 'Nothing') {
-							return mdgriffith$elm_ui$Element$none;
-						} else {
-							var buttonSettings = _n1.a;
-							return author$project$Skeleton$buildActionButton(buttonSettings);
-						}
-					}())
-				]),
-			_List_fromArray(
-				[
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$padding(10),
-							mdgriffith$elm_ui$Element$centerY,
-							mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-						]),
-					mdgriffith$elm_ui$Element$text(
-						'Written so far: ' + elm$core$String$fromInt(settings.writtenCount))),
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$padding(10),
-							mdgriffith$elm_ui$Element$centerY,
-							mdgriffith$elm_ui$Element$alignRight,
-							mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-						]),
-					function () {
-						var _n2 = settings.signOutButtonSettings;
-						if (_n2.$ === 'Nothing') {
-							return mdgriffith$elm_ui$Element$none;
-						} else {
-							var buttonSettings = _n2.a;
-							return author$project$Skeleton$buildSignOutButton(buttonSettings);
-						}
-					}())
-				]));
-	}
-};
+var author$project$Skeleton$buildHeader = F2(
+	function (state, headerSettings) {
+		if (headerSettings.$ === 'Nothing') {
+			return mdgriffith$elm_ui$Element$none;
+		} else {
+			var settings = headerSettings.a;
+			return A2(
+				mdgriffith$elm_ui$Element$row,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+						mdgriffith$elm_ui$Element$height(
+						mdgriffith$elm_ui$Element$px(50)),
+						mdgriffith$elm_ui$Element$inFront(
+						function () {
+							var _n1 = settings.actionButtonSettings;
+							if (_n1.$ === 'Nothing') {
+								return mdgriffith$elm_ui$Element$none;
+							} else {
+								var buttonSettings = _n1.a;
+								return author$project$Skeleton$buildActionButton(buttonSettings);
+							}
+						}())
+					]),
+				_List_fromArray(
+					[
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$padding(10),
+								mdgriffith$elm_ui$Element$centerY,
+								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+							]),
+						mdgriffith$elm_ui$Element$text(
+							'Written so far: ' + elm$core$String$fromInt(state.additiveCount))),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$padding(10),
+								mdgriffith$elm_ui$Element$centerY,
+								mdgriffith$elm_ui$Element$alignRight,
+								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+							]),
+						function () {
+							var _n2 = settings.signOutButtonSettings;
+							if (_n2.$ === 'Nothing') {
+								return mdgriffith$elm_ui$Element$none;
+							} else {
+								var buttonSettings = _n2.a;
+								return author$project$Skeleton$buildSignOutButton(buttonSettings);
+							}
+						}())
+					]));
+		}
+	});
 var mdgriffith$elm_ui$Internal$Model$FocusStyleOption = function (a) {
 	return {$: 'FocusStyleOption', a: a};
 };
@@ -14924,7 +14923,7 @@ var author$project$Skeleton$view = F3(
 				[
 					A2(
 					author$project$Skeleton$composePage,
-					author$project$Skeleton$buildHeader(pageData.headerSettings),
+					A2(author$project$Skeleton$buildHeader, state, pageData.headerSettings),
 					A2(mdgriffith$elm_ui$Element$map, pageMapper, pageData.body))
 				]),
 			title: pageData.title

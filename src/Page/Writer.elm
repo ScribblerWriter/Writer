@@ -217,8 +217,7 @@ view model state =
 
 getHeaderSettings : State -> Skeleton.HeaderSettings
 getHeaderSettings state =
-    { writtenCount = state.additiveCount
-    , actionButtonSettings =
+    { actionButtonSettings =
         Just { action = "/target", label = "TARGET" }
     , signOutButtonSettings =
         Just { action = "/signout", label = "Sign Out" }

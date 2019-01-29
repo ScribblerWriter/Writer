@@ -27,8 +27,7 @@ type alias PageData msg =
 
 
 type alias HeaderSettings =
-    { writtenCount : Int
-    , actionButtonSettings : Maybe LinkSettings
+    { actionButtonSettings : Maybe LinkSettings
     , signOutButtonSettings : Maybe LinkSettings
     }
 
@@ -66,7 +65,7 @@ view state pageMapper pageData =
     { title = pageData.title
     , body =
         [ composePage
-            (buildHeader pageData.headerSettings)
+            (buildHeader state pageData.headerSettings)
             (Element.map pageMapper pageData.body)
         ]
     }
@@ -119,8 +118,8 @@ horizontalSpacer =
         none
 
 
-buildHeader : Maybe HeaderSettings -> Element msg
-buildHeader headerSettings =
+buildHeader : State -> Maybe HeaderSettings -> Element msg
+buildHeader state headerSettings =
     case headerSettings of
         Nothing ->
             none
@@ -145,7 +144,7 @@ buildHeader headerSettings =
                   <|
                     text <|
                         "Written so far: "
-                            ++ String.fromInt settings.writtenCount
+                            ++ String.fromInt state.additiveCount
                 , el
                     [ padding 10
                     , centerY
