@@ -2,11 +2,6 @@ const fbdb = (function() {
 	// Initialize database
 	const db = firebase.firestore();
 
-	// Disable deprecated features
-	db.settings({
-		timestampsInSnapshots: true
-	});
-
 	// Return functions for db operations
 	return {
 		queryDb: query => {

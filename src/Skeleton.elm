@@ -78,6 +78,8 @@ composePage header body =
         { options = [ Appearance.siteFocusStyle ] }
         [ Font.size Appearance.siteFontSize
         , Background.color Appearance.siteBackgroundBlue
+        , width fill
+        , height fill
         ]
     <|
         column
@@ -89,6 +91,7 @@ composePage header body =
             , row
                 [ width fill
                 , height fill
+                , scrollbars
                 ]
                 [ horizontalSpacer
                 , body

@@ -15,8 +15,6 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Input as Input
 import Html.Attributes
-import Json.Decode as Decode
-import Json.Encode as Encode
 import Ports
 import Skeleton
 import State exposing (State)
@@ -27,9 +25,7 @@ type alias Model =
     { currentTargetTimerInSecs : Int
     , winProgress : Int
     , endMessage : String
-    , actualWordsAtLastCheck : Int
     , touched : Bool
-    , countMethod : CountMethod
     }
 
 
@@ -43,17 +39,10 @@ init =
     ( { currentTargetTimerInSecs = 0
       , winProgress = 0
       , endMessage = ""
-      , actualWordsAtLastCheck = 0
       , touched = False
-      , countMethod = Additive
       }
-    , Ports.sendMessageWithJustResponse Ports.LoadContent Ports.ContentLoaded
+    , Cmd.none
     )
-
-
-type CountMethod
-    = Additive
-    | Subtractive
 
 
 
@@ -63,7 +52,6 @@ type CountMethod
 type Msg
     = WordsWritten String
     | SaveTimerTicked Time.Posix
-    | MessageReceived Ports.InMessage
     | TargetTimerTicked Time.Posix
 
 
@@ -73,7 +61,7 @@ update msg model state =
         WordsWritten document ->
             updateCounts document model state
                 |> (\( count, updatedModel, newState ) ->
-                        ( { newState | writtenCount = count }, ( updatedModel, Cmd.none ) )
+                        ( { newState | additiveCount = count }, ( updatedModel, Cmd.none ) )
                    )
 
         SaveTimerTicked _ ->
@@ -86,14 +74,6 @@ update msg model state =
 
             else
                 ( state, ( model, Cmd.none ) )
-
-        MessageReceived message ->
-            case Ports.stringToInOperation message.operation of
-                Ports.ContentLoaded ->
-                    updateContent model state message.content
-
-                _ ->
-                    ( state, ( model, Cmd.none ) )
 
         TargetTimerTicked _ ->
             case state.currentTarget of
@@ -119,27 +99,7 @@ update msg model state =
 
 saveContent : Model -> State -> Cmd msg
 saveContent model state =
-    Ports.sendMessageWithJustContent Ports.SaveContent (encodeSaveObject model state)
-
-
-updateContent : Model -> State -> Maybe Encode.Value -> ( State, ( Model, Cmd msg ) )
-updateContent model state content =
-    case content of
-        Just data ->
-            ( { state
-                | writtenCount = getValue wordCountDecoder data 0
-                , currentText = getValue textDecoder data ""
-              }
-            , ( { model
-                    | countMethod = getValue methodDecoder data Additive
-                    , actualWordsAtLastCheck = getValue actualCountDecoder data 0
-                }
-              , Cmd.none
-              )
-            )
-
-        Nothing ->
-            ( state, ( model, Cmd.none ) )
+    Ports.sendMessageWithJustContent Ports.SaveContent (State.encodeSaveState state)
 
 
 updatePageLinkClick : Model -> State -> Cmd msg
@@ -160,25 +120,27 @@ updateCounts document model state =
 
         dif : Int
         dif =
-            trimmedWordCount - model.actualWordsAtLastCheck
+            trimmedWordCount - state.actualCount
     in
-    ( updateWrittenCount state.writtenCount trimmedWordCount model dif
+    ( updateWrittenCount state.additiveCount trimmedWordCount state dif
     , { model
-        | actualWordsAtLastCheck = trimmedWordCount
-        , winProgress = calculateProgress model state dif
+        | winProgress = calculateProgress model state dif
         , endMessage = generateEndMessage model state dif
         , touched = True
       }
-    , { state | currentText = document }
+    , { state
+        | currentText = document
+        , actualCount = trimmedWordCount
+      }
     )
 
 
-updateWrittenCount : Int -> Int -> Model -> Int -> Int
-updateWrittenCount writtenCount trimmedWordCount model dif =
+updateWrittenCount : Int -> Int -> State -> Int -> Int
+updateWrittenCount writtenCount trimmedWordCount state dif =
     if dif > 0 then
         writtenCount + dif
 
-    else if model.countMethod == Additive then
+    else if state.countMethod == State.Additive then
         writtenCount
 
     else
@@ -255,7 +217,7 @@ view model state =
 
 getHeaderSettings : State -> Skeleton.HeaderSettings
 getHeaderSettings state =
-    { writtenCount = state.writtenCount
+    { writtenCount = state.additiveCount
     , actionButtonSettings =
         Just { action = "/target", label = "TARGET" }
     , signOutButtonSettings =
@@ -383,87 +345,12 @@ formatSecondsToStringHourCheck seconds hasHour =
 
 
 
--- Encoding / Decoding
---{ count : Int
---, text : String
---, actualCount : Int
---, method : CountMethod } -- "additive"/"subtractive"
-
-
-getValue : Decode.Decoder a -> Encode.Value -> a -> a
-getValue decoder string errorVal =
-    case Decode.decodeValue decoder string of
-        Err _ ->
-            errorVal
-
-        Ok value ->
-            value
-
-
-wordCountDecoder : Decode.Decoder Int
-wordCountDecoder =
-    Decode.field "count" Decode.int
-
-
-textDecoder : Decode.Decoder String
-textDecoder =
-    Decode.field "text" Decode.string
-
-
-actualCountDecoder : Decode.Decoder Int
-actualCountDecoder =
-    Decode.field "actualCount" Decode.int
-
-
-methodDecoder : Decode.Decoder CountMethod
-methodDecoder =
-    Decode.field "method" Decode.string
-        |> Decode.andThen
-            (\str ->
-                case str of
-                    "additive" ->
-                        Decode.succeed Additive
-
-                    "subtractive" ->
-                        Decode.succeed Subtractive
-
-                    wrongValue ->
-                        Decode.fail ("Count method decoding failed. Value: " ++ wrongValue)
-            )
-
-
-
--- Encoding
-
-
-encodeSaveObject : Model -> State -> Encode.Value
-encodeSaveObject model state =
-    Encode.object
-        [ ( "count", Encode.int state.writtenCount )
-        , ( "text", Encode.string state.currentText )
-        , ( "method", methodEncoder model.countMethod )
-        , ( "actualCount", Encode.int model.actualWordsAtLastCheck )
-        ]
-
-
-methodEncoder : CountMethod -> Encode.Value
-methodEncoder method =
-    case method of
-        Additive ->
-            Encode.string "additive"
-
-        Subtractive ->
-            Encode.string "subtractive"
-
-
-
 -- Subscriptions
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ Ports.incomingMessage MessageReceived
-        , Time.every 1000 SaveTimerTicked
+        [ Time.every 1000 SaveTimerTicked
         , Time.every 1000 TargetTimerTicked
         ]

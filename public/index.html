@@ -1,98 +1,81 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>The Amazing Text Combatotron</title>
+    <head>
+        <meta charset="utf-8">
+        <title>The Amazing Text Combatotron</title>
 
-    <script src="https://www.gstatic.com/firebasejs/5.7.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/5.7.2/firebase-firestore.js"></script>
-    <script>
-      const config = {
-        apiKey: "AIzaSyA7yISzO1I4rss7s1mykVmBjMAKGDExRjo",
-        authDomain: "writer-788cf.firebaseapp.com",
-        databaseURL: "https://writer-788cf.firebaseio.com",
-        projectId: "writer-788cf",
-        storageBucket: "writer-788cf.appspot.com",
-        messagingSenderId: "181941734046"
-      };
+        <script src="https://www.gstatic.com/firebasejs/5.8.1/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/5.8.1/firebase-firestore.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/5.8.1/firebase-auth.js"></script>
+        <script>
+            const config = {
+                apiKey: "AIzaSyA7yISzO1I4rss7s1mykVmBjMAKGDExRjo",
+                authDomain: "writer-788cf.firebaseapp.com",
+                databaseURL: "https://writer-788cf.firebaseio.com",
+                projectId: "writer-788cf",
+                storageBucket: "writer-788cf.appspot.com",
+                messagingSenderId: "181941734046"
+            };
 
-      firebase.initializeApp(config);
-    </script>
-    <script src="elm.js"></script>
-  </head>
-  <body>
-    <main></main>
-    <script>
-      const appElm = Elm.Main.init({
-        node: document.querySelector('main'),
-        flags: { width: window.innerWidth, height: window.innerHeight }
-      });
+            firebase.initializeApp(config);
+        </script>
+        <script src="elm.js"></script>
+    </head>
+    <body>
+        <main></main>
+        <script>
+            const appElm = Elm.Main.init({
+                node: document.querySelector('main'),
+                flags: { width: window.innerWidth, height: window.innerHeight }
+            });
 
-      appElm.ports.outgoingMessage.subscribe( msg => {
-        if (msg.operation == 'LoadContent') {
-          loadFromStorage(msg.returnOperation);
-        } else if (msg.operation == 'SaveContent') {
-          saveToStorage(msg.content);
-        } else if (msg.operation == 'QueryDb') {
-          queryDb(msg.content, msg.returnOperation);
-        }
-      });
+            appElm.ports.outgoingMessage.subscribe( msg => {
+                if (msg.operation == 'LoadContent') {
+                    loadFromStorage(msg.returnOperation);
+                } else if (msg.operation == 'SaveContent') {
+                    saveToStorage(msg.content);
+                } else if (msg.operation == 'QueryDb') {
+                    queryDb(msg.content, msg.returnOperation);
+                } else  if (msg.operation == "SignIn") {
+                    fbauth.login(msg.content);
+                }
 
-      function loadFromStorage(returnOperation) {
-          const content = JSON.parse(localStorage.getItem('settings'));
-          const message = { operation: returnOperation, content: content}
-          appElm.ports.incomingMessage.send( message );
-      }
+            });
 
-      function saveToStorage(content) {
-          localStorage.setItem('settings', JSON.stringify(content));
-      }
+            function loadFromStorage(returnOperation) {
+                const content = JSON.parse(localStorage.getItem('settings'));
+                const message = { operation: returnOperation, content: content}
+                appElm.ports.incomingMessage.send( message );
+            }
 
-      function queryDb(content, returnOperation) {
-          fbdb.queryDb(content)
-              .then(result => {
-                const message = { operation: returnOperation, content: result }
-                appElm.ports.incomingMessage.send(message);
-              })
-              .catch(error => {
-                console.log ("Couldn't send to port: ", error);
-              });
-      }
+            function saveToStorage(content) {
+                localStorage.setItem('settings', JSON.stringify(content));
+            }
 
-      // appElm.ports.outgoingMessage.subscribe( msg => {
-      //   console.log(msg);
-      //   if (msg.operation == 'Login') {
-      //     fbauth.login(msg.content);
-      //   } else if (msg.operation == 'SignUp') {
-      //     fbauth.signup(msg.content);
-      //   } else if (msg.operation == 'SignOut') {
-      //     fbauth.signout();
-      //   } else {
-      //     console.error("Unrecognized outgoing message.");
-      //   }
-      // });
+            function queryDb(content, returnOperation) {
+                fbdb.queryDb(content)
+                .then(result => {
+                    const message = { operation: returnOperation, content: result }
+                    appElm.ports.incomingMessage.send(message);
+                })
+                .catch(error => {
+                    console.log ("Couldn't send to port: ", error);
+                });
+            }
 
-      // function messageCallback(message) {
-      //   try {
-      //     console.log(message);
-      //     appElm.ports.incomingMessage.send(message);
-      //   }
-      //   catch (error) {
-      //     console.error ("Error in incoming message: ", error.message);
-      //   }
-      // }
+            function messageCallback(message) {
+                try {
+                    console.log(message);
+                    appElm.ports.incomingMessage.send(message);
+                }
+                catch (error) {
+                    console.error ("Error in incoming message: ", error.message);
+                }
+              }
 
-      // appElm.ports.saveText.subscribe( text => {
-      //   localStorage.setItem("text", text);
-      // });
 
-      // appElm.ports.loadText.subscribe(() => {
-      //   appElm.ports.textLoaded.send(
-      //     localStorage.getItem("text")
-      //   );
-      // });
-
-    </script>
-    <script src="fb-db.js"></script>
-  </body>
+        </script>
+        <script src="fb-db.js"></script>
+        <script src="fb-auth.js"></script>
+    </body>
 </html>

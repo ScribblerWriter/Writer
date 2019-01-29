@@ -4640,11 +4640,11 @@ var author$project$Main$route = F2(
 	function (parser, handler) {
 		return A2(elm$url$Url$Parser$map, handler, parser);
 	});
-var author$project$Main$Auth = function (a) {
-	return {$: 'Auth', a: a};
+var author$project$Main$Authenticator = function (a) {
+	return {$: 'Authenticator', a: a};
 };
-var author$project$Main$GotAuthMsg = function (a) {
-	return {$: 'GotAuthMsg', a: a};
+var author$project$Main$GotAuthenticatorMsg = function (a) {
+	return {$: 'GotAuthenticatorMsg', a: a};
 };
 var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$True = {$: 'True'};
@@ -5014,17 +5014,17 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 		}
 	});
 var elm$core$Platform$Cmd$map = _Platform_map;
-var author$project$Main$stepAuth = F2(
+var author$project$Main$stepAuthenticator = F2(
 	function (model, _n0) {
-		var authModel = _n0.a;
-		var authCmds = _n0.b;
+		var authenticatorModel = _n0.a;
+		var authenticatorCmds = _n0.b;
 		return _Utils_Tuple2(
 			_Utils_update(
 				model,
 				{
-					page: author$project$Main$Auth(authModel)
+					page: author$project$Main$Authenticator(authenticatorModel)
 				}),
-			A2(elm$core$Platform$Cmd$map, author$project$Main$GotAuthMsg, authCmds));
+			A2(elm$core$Platform$Cmd$map, author$project$Main$GotAuthenticatorMsg, authenticatorCmds));
 	});
 var author$project$Main$GotTargetSelectorMsg = function (a) {
 	return {$: 'GotTargetSelectorMsg', a: a};
@@ -5064,7 +5064,7 @@ var author$project$Main$stepWriter = F2(
 	});
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
-var author$project$Page$Authentication$init = _Utils_Tuple2(
+var author$project$Page$Authenticator$init = _Utils_Tuple2(
 	{email: '', password: ''},
 	elm$core$Platform$Cmd$none);
 var elm$json$Json$Encode$object = function (pairs) {
@@ -5179,20 +5179,9 @@ var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var author$project$Page$TargetSelector$init = _Utils_Tuple2(
 	{targets: elm$core$Dict$empty},
 	A3(author$project$Ports$sendMessageWithContentAndResponse, author$project$Ports$QueryDb, author$project$Page$TargetSelector$encodeGetTargetsQuery, author$project$Ports$TargetListReturned));
-var author$project$Page$Writer$Additive = {$: 'Additive'};
-var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
-var author$project$Ports$LoadContent = {$: 'LoadContent'};
-var author$project$Ports$sendMessageWithJustResponse = F2(
-	function (operation, returnOperation) {
-		return A3(
-			author$project$Ports$sendMessage,
-			operation,
-			elm$core$Maybe$Nothing,
-			elm$core$Maybe$Just(returnOperation));
-	});
 var author$project$Page$Writer$init = _Utils_Tuple2(
-	{actualWordsAtLastCheck: 0, countMethod: author$project$Page$Writer$Additive, currentTargetTimerInSecs: 0, endMessage: '', touched: false, winProgress: 0},
-	A2(author$project$Ports$sendMessageWithJustResponse, author$project$Ports$LoadContent, author$project$Ports$ContentLoaded));
+	{currentTargetTimerInSecs: 0, endMessage: '', touched: false, winProgress: 0},
+	elm$core$Platform$Cmd$none);
 var elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -5896,7 +5885,7 @@ var author$project$Main$stepUrl = F2(
 					A2(
 					author$project$Main$route,
 					elm$url$Url$Parser$s('authentication'),
-					A2(author$project$Main$stepAuth, model, author$project$Page$Authentication$init))
+					A2(author$project$Main$stepAuthenticator, model, author$project$Page$Authenticator$init))
 				]));
 		var _n0 = A2(elm$url$Url$Parser$parse, parser, url);
 		if (_n0.$ === 'Just') {
@@ -5910,18 +5899,42 @@ var author$project$Main$stepUrl = F2(
 				elm$core$Platform$Cmd$none);
 		}
 	});
+var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
+var author$project$Ports$LoadContent = {$: 'LoadContent'};
+var author$project$Ports$sendMessageWithJustResponse = F2(
+	function (operation, returnOperation) {
+		return A3(
+			author$project$Ports$sendMessage,
+			operation,
+			elm$core$Maybe$Nothing,
+			elm$core$Maybe$Just(returnOperation));
+	});
+var author$project$State$Additive = {$: 'Additive'};
+var elm$json$Json$Decode$map2 = _Json_map2;
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
+var elm$json$Json$Decode$field = _Json_decodeField;
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
+	function (key, valDecoder, decoder) {
+		return A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			A2(elm$json$Json$Decode$field, key, valDecoder),
+			decoder);
+	});
 var author$project$State$Dimensions = F2(
 	function (width, height) {
 		return {height: height, width: width};
 	});
-var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$int = _Json_decodeInt;
-var elm$json$Json$Decode$map2 = _Json_map2;
+var elm$json$Json$Decode$succeed = _Json_succeed;
 var author$project$State$dimensionDecoder = A3(
-	elm$json$Json$Decode$map2,
-	author$project$State$Dimensions,
-	A2(elm$json$Json$Decode$field, 'width', elm$json$Json$Decode$int),
-	A2(elm$json$Json$Decode$field, 'height', elm$json$Json$Decode$int));
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'height',
+	elm$json$Json$Decode$int,
+	A3(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'width',
+		elm$json$Json$Decode$int,
+		elm$json$Json$Decode$succeed(author$project$State$Dimensions)));
 var elm$json$Json$Decode$decodeValue = _Json_run;
 var author$project$State$decodeDimensions = function (value) {
 	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$dimensionDecoder, value);
@@ -5934,23 +5947,41 @@ var author$project$State$decodeDimensions = function (value) {
 };
 var author$project$Main$init = F3(
 	function (flags, url, key) {
-		return A2(
-			author$project$Main$stepUrl,
-			url,
-			{
-				page: author$project$Main$NotFound,
-				state: {
-					currentTarget: elm$core$Maybe$Nothing,
-					currentText: '',
-					key: key,
-					windowDimensions: author$project$State$decodeDimensions(flags),
-					writtenCount: 0
-				}
-			});
+		return function (_n0) {
+			var model = _n0.a;
+			var cmd = _n0.b;
+			return _Utils_Tuple2(
+				model,
+				elm$core$Platform$Cmd$batch(
+					_List_fromArray(
+						[
+							cmd,
+							A2(author$project$Ports$sendMessageWithJustResponse, author$project$Ports$LoadContent, author$project$Ports$ContentLoaded)
+						])));
+		}(
+			A2(
+				author$project$Main$stepUrl,
+				url,
+				{
+					page: author$project$Main$NotFound,
+					state: {
+						actualCount: 0,
+						additiveCount: 0,
+						countMethod: author$project$State$Additive,
+						currentTarget: elm$core$Maybe$Nothing,
+						currentText: '',
+						key: key,
+						user: elm$core$Maybe$Nothing,
+						windowDimensions: author$project$State$decodeDimensions(flags)
+					}
+				}));
 	});
+var author$project$Main$MessageReceived = function (a) {
+	return {$: 'MessageReceived', a: a};
+};
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
-var author$project$Page$Authentication$subscriptions = function (model) {
+var author$project$Page$Authenticator$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
 var author$project$Page$TargetSelector$MessageReceived = function (a) {
@@ -5965,7 +5996,6 @@ var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$null = _Json_decodeNull;
 var elm$json$Json$Decode$oneOf = _Json_oneOf;
 var elm$json$Json$Decode$string = _Json_decodeString;
-var elm$json$Json$Decode$succeed = _Json_succeed;
 var elm$json$Json$Decode$value = _Json_decodeValue;
 var author$project$Ports$incomingMessage = _Platform_incomingPort(
 	'incomingMessage',
@@ -6538,9 +6568,6 @@ var author$project$Page$TargetSelector$subscriptions = function (_n0) {
 				elm$browser$Browser$Events$onResize(author$project$Page$TargetSelector$WindowResized)
 			]));
 };
-var author$project$Page$Writer$MessageReceived = function (a) {
-	return {$: 'MessageReceived', a: a};
-};
 var author$project$Page$Writer$SaveTimerTicked = function (a) {
 	return {$: 'SaveTimerTicked', a: a};
 };
@@ -6736,50 +6763,100 @@ var author$project$Page$Writer$subscriptions = function (_n0) {
 	return elm$core$Platform$Sub$batch(
 		_List_fromArray(
 			[
-				author$project$Ports$incomingMessage(author$project$Page$Writer$MessageReceived),
 				A2(elm$time$Time$every, 1000, author$project$Page$Writer$SaveTimerTicked),
 				A2(elm$time$Time$every, 1000, author$project$Page$Writer$TargetTimerTicked)
 			]));
 };
 var elm$core$Platform$Sub$map = _Platform_map;
 var author$project$Main$subscriptions = function (model) {
-	var _n0 = model.page;
-	switch (_n0.$) {
-		case 'NotFound':
-			return elm$core$Platform$Sub$none;
-		case 'Writer':
-			var writerModel = _n0.a;
-			return A2(
-				elm$core$Platform$Sub$map,
-				author$project$Main$GotWriterMsg,
-				author$project$Page$Writer$subscriptions(writerModel));
-		case 'TargetSelector':
-			var targetSelectorModel = _n0.a;
-			return A2(
-				elm$core$Platform$Sub$map,
-				author$project$Main$GotTargetSelectorMsg,
-				author$project$Page$TargetSelector$subscriptions(targetSelectorModel));
-		default:
-			var authModel = _n0.a;
-			return A2(
-				elm$core$Platform$Sub$map,
-				author$project$Main$GotAuthMsg,
-				author$project$Page$Authentication$subscriptions(authModel));
-	}
+	return function (subs) {
+		return elm$core$Platform$Sub$batch(
+			_List_fromArray(
+				[
+					subs,
+					author$project$Ports$incomingMessage(author$project$Main$MessageReceived)
+				]));
+	}(
+		function () {
+			var _n0 = model.page;
+			switch (_n0.$) {
+				case 'NotFound':
+					return elm$core$Platform$Sub$none;
+				case 'Writer':
+					var writerModel = _n0.a;
+					return A2(
+						elm$core$Platform$Sub$map,
+						author$project$Main$GotWriterMsg,
+						author$project$Page$Writer$subscriptions(writerModel));
+				case 'TargetSelector':
+					var targetSelectorModel = _n0.a;
+					return A2(
+						elm$core$Platform$Sub$map,
+						author$project$Main$GotTargetSelectorMsg,
+						author$project$Page$TargetSelector$subscriptions(targetSelectorModel));
+				default:
+					var authenticatorModel = _n0.a;
+					return A2(
+						elm$core$Platform$Sub$map,
+						author$project$Main$GotAuthenticatorMsg,
+						author$project$Page$Authenticator$subscriptions(authenticatorModel));
+			}
+		}());
 };
-var author$project$Page$Authentication$update = F3(
+var author$project$Page$Authenticator$emailPassEncoder = F2(
+	function (email, pass) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'email',
+					elm$json$Json$Encode$string(email)),
+					_Utils_Tuple2(
+					'pass',
+					elm$json$Json$Encode$string(pass))
+				]));
+	});
+var author$project$Ports$SignIn = {$: 'SignIn'};
+var author$project$Ports$sendMessageWithJustContent = F2(
+	function (operation, content) {
+		return A3(
+			author$project$Ports$sendMessage,
+			operation,
+			elm$core$Maybe$Just(content),
+			elm$core$Maybe$Nothing);
+	});
+var author$project$Page$Authenticator$update = F3(
 	function (msg, model, state) {
 		switch (msg.$) {
-			case 'LoginInputReceived':
+			case 'SignInInputReceived':
 				var inputType = msg.a;
-				var string = msg.b;
+				var value = msg.b;
+				if (inputType.$ === 'Email') {
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{email: value}),
+							elm$core$Platform$Cmd$none));
+				} else {
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{password: value}),
+							elm$core$Platform$Cmd$none));
+				}
+			case 'SignInButtonClicked':
 				return _Utils_Tuple2(
 					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-			case 'LoginButtonClicked':
-				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+					_Utils_Tuple2(
+						model,
+						A2(
+							author$project$Ports$sendMessageWithJustContent,
+							author$project$Ports$SignIn,
+							A2(author$project$Page$Authenticator$emailPassEncoder, model.email, model.password))));
 			case 'SignUpButtonClicked':
 				return _Utils_Tuple2(
 					state,
@@ -6790,27 +6867,28 @@ var author$project$Page$Authentication$update = F3(
 					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
 		}
 	});
-var author$project$Main$updateAuth = F2(
+var author$project$Main$updateAuthenticator = F2(
 	function (msg, model) {
 		var _n0 = model.page;
-		if (_n0.$ === 'Auth') {
-			var authModel = _n0.a;
+		if (_n0.$ === 'Authenticator') {
+			var authenticatorModel = _n0.a;
 			return function (_n1) {
 				var state = _n1.a;
 				var data = _n1.b;
 				return A2(
-					author$project$Main$stepAuth,
+					author$project$Main$stepAuthenticator,
 					_Utils_update(
 						model,
 						{state: state}),
 					data);
 			}(
-				A3(author$project$Page$Authentication$update, msg, authModel, model.state));
+				A3(author$project$Page$Authenticator$update, msg, authenticatorModel, model.state));
 		} else {
 			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$Page$Writer$methodEncoder = function (method) {
+var author$project$Ports$SaveContent = {$: 'SaveContent'};
+var author$project$State$methodEncoder = function (method) {
 	if (method.$ === 'Additive') {
 		return elm$json$Json$Encode$string('additive');
 	} else {
@@ -6818,40 +6896,30 @@ var author$project$Page$Writer$methodEncoder = function (method) {
 	}
 };
 var elm$json$Json$Encode$int = _Json_wrap;
-var author$project$Page$Writer$encodeSaveObject = F2(
-	function (model, state) {
-		return elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'count',
-					elm$json$Json$Encode$int(state.writtenCount)),
-					_Utils_Tuple2(
-					'text',
-					elm$json$Json$Encode$string(state.currentText)),
-					_Utils_Tuple2(
-					'method',
-					author$project$Page$Writer$methodEncoder(model.countMethod)),
-					_Utils_Tuple2(
-					'actualCount',
-					elm$json$Json$Encode$int(model.actualWordsAtLastCheck))
-				]));
-	});
-var author$project$Ports$SaveContent = {$: 'SaveContent'};
-var author$project$Ports$sendMessageWithJustContent = F2(
-	function (operation, content) {
-		return A3(
-			author$project$Ports$sendMessage,
-			operation,
-			elm$core$Maybe$Just(content),
-			elm$core$Maybe$Nothing);
-	});
+var author$project$State$encodeSaveState = function (state) {
+	return elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'count',
+				elm$json$Json$Encode$int(state.additiveCount)),
+				_Utils_Tuple2(
+				'text',
+				elm$json$Json$Encode$string(state.currentText)),
+				_Utils_Tuple2(
+				'method',
+				author$project$State$methodEncoder(state.countMethod)),
+				_Utils_Tuple2(
+				'actualCount',
+				elm$json$Json$Encode$int(state.actualCount))
+			]));
+};
 var author$project$Page$Writer$saveContent = F2(
 	function (model, state) {
 		return A2(
 			author$project$Ports$sendMessageWithJustContent,
 			author$project$Ports$SaveContent,
-			A2(author$project$Page$Writer$encodeSaveObject, model, state));
+			author$project$State$encodeSaveState(state));
 	});
 var author$project$Page$Writer$updatePageLinkClick = F2(
 	function (model, state) {
@@ -6866,8 +6934,8 @@ var author$project$Main$updatePageLinkClick = function (model) {
 		case 'TargetSelector':
 			var targetSelectorModel = _n0.a;
 			return elm$core$Platform$Cmd$none;
-		case 'Auth':
-			var authModel = _n0.a;
+		case 'Authenticator':
+			var authenticatorModel = _n0.a;
 			return elm$core$Platform$Cmd$none;
 		default:
 			return elm$core$Platform$Cmd$none;
@@ -6941,6 +7009,174 @@ var author$project$Main$updateLinkClick = F2(
 				elm$browser$Browser$Navigation$load(href));
 		}
 	});
+var elm$json$Json$Decode$fail = _Json_fail;
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder = F3(
+	function (pathDecoder, valDecoder, fallback) {
+		var nullOr = function (decoder) {
+			return elm$json$Json$Decode$oneOf(
+				_List_fromArray(
+					[
+						decoder,
+						elm$json$Json$Decode$null(fallback)
+					]));
+		};
+		var handleResult = function (input) {
+			var _n0 = A2(elm$json$Json$Decode$decodeValue, pathDecoder, input);
+			if (_n0.$ === 'Ok') {
+				var rawValue = _n0.a;
+				var _n1 = A2(
+					elm$json$Json$Decode$decodeValue,
+					nullOr(valDecoder),
+					rawValue);
+				if (_n1.$ === 'Ok') {
+					var finalResult = _n1.a;
+					return elm$json$Json$Decode$succeed(finalResult);
+				} else {
+					var finalErr = _n1.a;
+					return elm$json$Json$Decode$fail(
+						elm$json$Json$Decode$errorToString(finalErr));
+				}
+			} else {
+				return elm$json$Json$Decode$succeed(fallback);
+			}
+		};
+		return A2(elm$json$Json$Decode$andThen, handleResult, elm$json$Json$Decode$value);
+	});
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional = F4(
+	function (key, valDecoder, fallback, decoder) {
+		return A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			A3(
+				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder,
+				A2(elm$json$Json$Decode$field, key, elm$json$Json$Decode$value),
+				valDecoder,
+				fallback),
+			decoder);
+	});
+var author$project$State$User = F3(
+	function (email, uid, displayName) {
+		return {displayName: displayName, email: email, uid: uid};
+	});
+var author$project$State$userDecoder = A4(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+	'displayName',
+	elm$json$Json$Decode$string,
+	'',
+	A3(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'uid',
+		elm$json$Json$Decode$string,
+		A3(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'email',
+			elm$json$Json$Decode$string,
+			elm$json$Json$Decode$succeed(author$project$State$User))));
+var author$project$State$decodeUser = function (value) {
+	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$userDecoder, value);
+	if (_n0.$ === 'Ok') {
+		var user = _n0.a;
+		return elm$core$Maybe$Just(user);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Main$updateUser = F2(
+	function (value, state) {
+		if (value.$ === 'Nothing') {
+			return _Utils_update(
+				state,
+				{user: elm$core$Maybe$Nothing});
+		} else {
+			var user = value.a;
+			return _Utils_update(
+				state,
+				{
+					user: author$project$State$decodeUser(user)
+				});
+		}
+	});
+var author$project$Ports$AuthStateChanged = {$: 'AuthStateChanged'};
+var author$project$Ports$Unknown = {$: 'Unknown'};
+var author$project$Ports$stringToInOperation = function (operation) {
+	switch (operation) {
+		case 'ContentLoaded':
+			return author$project$Ports$ContentLoaded;
+		case 'TargetListReturned':
+			return author$project$Ports$TargetListReturned;
+		case 'AuthStateChanged':
+			return author$project$Ports$AuthStateChanged;
+		default:
+			return author$project$Ports$Unknown;
+	}
+};
+var author$project$State$actualCountDecoder = A2(elm$json$Json$Decode$field, 'actualCount', elm$json$Json$Decode$int);
+var author$project$State$getValue = F3(
+	function (decoder, string, errorVal) {
+		var _n0 = A2(elm$json$Json$Decode$decodeValue, decoder, string);
+		if (_n0.$ === 'Err') {
+			return errorVal;
+		} else {
+			var value = _n0.a;
+			return value;
+		}
+	});
+var author$project$State$Subtractive = {$: 'Subtractive'};
+var author$project$State$methodDecoder = A2(
+	elm$json$Json$Decode$andThen,
+	function (str) {
+		switch (str) {
+			case 'additive':
+				return elm$json$Json$Decode$succeed(author$project$State$Additive);
+			case 'subtractive':
+				return elm$json$Json$Decode$succeed(author$project$State$Subtractive);
+			default:
+				var wrongValue = str;
+				return elm$json$Json$Decode$fail('Count method decoding failed. Value: ' + wrongValue);
+		}
+	},
+	A2(elm$json$Json$Decode$field, 'method', elm$json$Json$Decode$string));
+var author$project$State$textDecoder = A2(elm$json$Json$Decode$field, 'text', elm$json$Json$Decode$string);
+var author$project$State$wordCountDecoder = A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int);
+var author$project$State$decodeLoadedState = F2(
+	function (content, state) {
+		if (content.$ === 'Just') {
+			var data = content.a;
+			return _Utils_update(
+				state,
+				{
+					actualCount: A3(author$project$State$getValue, author$project$State$actualCountDecoder, data, 0),
+					additiveCount: A3(author$project$State$getValue, author$project$State$wordCountDecoder, data, 0),
+					countMethod: A3(author$project$State$getValue, author$project$State$methodDecoder, data, author$project$State$Additive),
+					currentText: A3(author$project$State$getValue, author$project$State$textDecoder, data, '')
+				});
+		} else {
+			return state;
+		}
+	});
+var author$project$Main$updateMessageReceived = F2(
+	function (message, model) {
+		var _n0 = author$project$Ports$stringToInOperation(message.operation);
+		switch (_n0.$) {
+			case 'ContentLoaded':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							state: A2(author$project$State$decodeLoadedState, message.content, model.state)
+						}),
+					elm$core$Platform$Cmd$none);
+			case 'AuthStateChanged':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							state: A2(author$project$Main$updateUser, message.content, model.state)
+						}),
+					elm$core$Platform$Cmd$none);
+			default:
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
+	});
 var author$project$Data$Target$Target = F6(
 	function (name, imgSource, portraitSource, count, minutes, _new) {
 		return {count: count, imgSource: imgSource, minutes: minutes, name: name, _new: _new, portraitSource: portraitSource};
@@ -6972,20 +7208,6 @@ var author$project$Page$TargetSelector$decodeTargets = function (targetsValue) {
 			targets);
 	} else {
 		return elm$core$Dict$empty;
-	}
-};
-var author$project$Ports$AuthStateChanged = {$: 'AuthStateChanged'};
-var author$project$Ports$Unknown = {$: 'Unknown'};
-var author$project$Ports$stringToInOperation = function (operation) {
-	switch (operation) {
-		case 'ContentLoaded':
-			return author$project$Ports$ContentLoaded;
-		case 'TargetListReturned':
-			return author$project$Ports$TargetListReturned;
-		case 'AuthStateChanged':
-			return author$project$Ports$AuthStateChanged;
-		default:
-			return author$project$Ports$Unknown;
 	}
 };
 var elm$url$Url$Builder$toQueryPair = function (_n0) {
@@ -7062,16 +7284,14 @@ var author$project$Page$TargetSelector$update = F3(
 					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
 		}
 	});
-var elm$core$Debug$log = _Debug_log;
 var author$project$Main$updateTargetSelector = F2(
 	function (msg, model) {
-		var _n0 = A2(elm$core$Debug$log, 'updateTargetSelector:', msg);
-		var _n1 = model.page;
-		if (_n1.$ === 'TargetSelector') {
-			var targetSelectorModel = _n1.a;
-			return function (_n2) {
-				var state = _n2.a;
-				var data = _n2.b;
+		var _n0 = model.page;
+		if (_n0.$ === 'TargetSelector') {
+			var targetSelectorModel = _n0.a;
+			return function (_n1) {
+				var state = _n1.a;
+				var data = _n1.b;
 				return A2(
 					author$project$Main$stepTargetSelector,
 					_Utils_update(
@@ -7091,60 +7311,6 @@ var author$project$Page$Writer$endFight = F2(
 			return 'Time\'s up!';
 		} else {
 			return 'You win!';
-		}
-	});
-var author$project$Page$Writer$actualCountDecoder = A2(elm$json$Json$Decode$field, 'actualCount', elm$json$Json$Decode$int);
-var author$project$Page$Writer$getValue = F3(
-	function (decoder, string, errorVal) {
-		var _n0 = A2(elm$json$Json$Decode$decodeValue, decoder, string);
-		if (_n0.$ === 'Err') {
-			return errorVal;
-		} else {
-			var value = _n0.a;
-			return value;
-		}
-	});
-var author$project$Page$Writer$Subtractive = {$: 'Subtractive'};
-var elm$json$Json$Decode$fail = _Json_fail;
-var author$project$Page$Writer$methodDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (str) {
-		switch (str) {
-			case 'additive':
-				return elm$json$Json$Decode$succeed(author$project$Page$Writer$Additive);
-			case 'subtractive':
-				return elm$json$Json$Decode$succeed(author$project$Page$Writer$Subtractive);
-			default:
-				var wrongValue = str;
-				return elm$json$Json$Decode$fail('Count method decoding failed. Value: ' + wrongValue);
-		}
-	},
-	A2(elm$json$Json$Decode$field, 'method', elm$json$Json$Decode$string));
-var author$project$Page$Writer$textDecoder = A2(elm$json$Json$Decode$field, 'text', elm$json$Json$Decode$string);
-var author$project$Page$Writer$wordCountDecoder = A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int);
-var author$project$Page$Writer$updateContent = F3(
-	function (model, state, content) {
-		if (content.$ === 'Just') {
-			var data = content.a;
-			return _Utils_Tuple2(
-				_Utils_update(
-					state,
-					{
-						currentText: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$textDecoder, data, ''),
-						writtenCount: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$wordCountDecoder, data, 0)
-					}),
-				_Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							actualWordsAtLastCheck: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$actualCountDecoder, data, 0),
-							countMethod: A3(author$project$Page$Writer$getValue, author$project$Page$Writer$methodDecoder, data, author$project$Page$Writer$Additive)
-						}),
-					elm$core$Platform$Cmd$none));
-		} else {
-			return _Utils_Tuple2(
-				state,
-				_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
 		}
 	});
 var elm$core$Basics$ge = _Utils_ge;
@@ -7202,26 +7368,25 @@ var author$project$Page$Writer$generateEndMessage = F3(
 		}
 	});
 var author$project$Page$Writer$updateWrittenCount = F4(
-	function (writtenCount, trimmedWordCount, model, dif) {
-		return (dif > 0) ? (writtenCount + dif) : (_Utils_eq(model.countMethod, author$project$Page$Writer$Additive) ? writtenCount : trimmedWordCount);
+	function (writtenCount, trimmedWordCount, state, dif) {
+		return (dif > 0) ? (writtenCount + dif) : (_Utils_eq(state.countMethod, author$project$State$Additive) ? writtenCount : trimmedWordCount);
 	});
 var author$project$Page$Writer$updateCounts = F3(
 	function (document, model, state) {
 		var trimmedWordCount = author$project$Page$Writer$countWords(document);
-		var dif = trimmedWordCount - model.actualWordsAtLastCheck;
+		var dif = trimmedWordCount - state.actualCount;
 		return _Utils_Tuple3(
-			A4(author$project$Page$Writer$updateWrittenCount, state.writtenCount, trimmedWordCount, model, dif),
+			A4(author$project$Page$Writer$updateWrittenCount, state.additiveCount, trimmedWordCount, state, dif),
 			_Utils_update(
 				model,
 				{
-					actualWordsAtLastCheck: trimmedWordCount,
 					endMessage: A3(author$project$Page$Writer$generateEndMessage, model, state, dif),
 					touched: true,
 					winProgress: A3(author$project$Page$Writer$calculateProgress, model, state, dif)
 				}),
 			_Utils_update(
 				state,
-				{currentText: document}));
+				{actualCount: trimmedWordCount, currentText: document}));
 	});
 var author$project$Page$Writer$update = F3(
 	function (msg, model, state) {
@@ -7235,7 +7400,7 @@ var author$project$Page$Writer$update = F3(
 					return _Utils_Tuple2(
 						_Utils_update(
 							newState,
-							{writtenCount: count}),
+							{additiveCount: count}),
 						_Utils_Tuple2(updatedModel, elm$core$Platform$Cmd$none));
 				}(
 					A3(author$project$Page$Writer$updateCounts, document, model, state));
@@ -7249,24 +7414,14 @@ var author$project$Page$Writer$update = F3(
 						A2(author$project$Page$Writer$saveContent, model, state))) : _Utils_Tuple2(
 					state,
 					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-			case 'MessageReceived':
-				var message = msg.a;
-				var _n2 = author$project$Ports$stringToInOperation(message.operation);
-				if (_n2.$ === 'ContentLoaded') {
-					return A3(author$project$Page$Writer$updateContent, model, state, message.content);
-				} else {
-					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-				}
 			default:
-				var _n3 = state.currentTarget;
-				if (_n3.$ === 'Nothing') {
+				var _n2 = state.currentTarget;
+				if (_n2.$ === 'Nothing') {
 					return _Utils_Tuple2(
 						state,
 						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
 				} else {
-					var target = _n3.a;
+					var target = _n2.a;
 					return target._new ? _Utils_Tuple2(
 						_Utils_update(
 							state,
@@ -7300,13 +7455,12 @@ var author$project$Page$Writer$update = F3(
 	});
 var author$project$Main$updateWriter = F2(
 	function (msg, model) {
-		var _n0 = A2(elm$core$Debug$log, 'updateWriter:', msg);
-		var _n1 = model.page;
-		if (_n1.$ === 'Writer') {
-			var writerModel = _n1.a;
-			return function (_n2) {
-				var state = _n2.a;
-				var data = _n2.b;
+		var _n0 = model.page;
+		if (_n0.$ === 'Writer') {
+			var writerModel = _n0.a;
+			return function (_n1) {
+				var state = _n1.a;
+				var data = _n1.b;
 				return A2(
 					author$project$Main$stepWriter,
 					_Utils_update(
@@ -7328,6 +7482,9 @@ var author$project$Main$update = F2(
 			case 'UrlChanged':
 				var url = message.a;
 				return A2(author$project$Main$stepUrl, url, model);
+			case 'MessageReceived':
+				var msg = message.a;
+				return A2(author$project$Main$updateMessageReceived, msg, model);
 			case 'GotWriterMsg':
 				var msg = message.a;
 				return A2(author$project$Main$updateWriter, msg, model);
@@ -7336,17 +7493,17 @@ var author$project$Main$update = F2(
 				return A2(author$project$Main$updateTargetSelector, msg, model);
 			default:
 				var msg = message.a;
-				return A2(author$project$Main$updateAuth, msg, model);
+				return A2(author$project$Main$updateAuthenticator, msg, model);
 		}
 	});
-var author$project$Page$Authentication$LoginButtonClicked = {$: 'LoginButtonClicked'};
-var author$project$Page$Authentication$LoginInputReceived = F2(
+var author$project$Page$Authenticator$Email = {$: 'Email'};
+var author$project$Page$Authenticator$Password = {$: 'Password'};
+var author$project$Page$Authenticator$SignInButtonClicked = {$: 'SignInButtonClicked'};
+var author$project$Page$Authenticator$SignInInputReceived = F2(
 	function (a, b) {
-		return {$: 'LoginInputReceived', a: a, b: b};
+		return {$: 'SignInInputReceived', a: a, b: b};
 	});
-var author$project$Page$Authentication$Password = {$: 'Password'};
-var author$project$Page$Authentication$SignUpButtonClicked = {$: 'SignUpButtonClicked'};
-var author$project$Page$Authentication$UserName = {$: 'UserName'};
+var author$project$Page$Authenticator$SignUpButtonClicked = {$: 'SignUpButtonClicked'};
 var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
 	function (a, b, c, d) {
 		return {$: 'Rgba', a: a, b: b, c: c, d: d};
@@ -7469,7 +7626,7 @@ var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
 			'color',
 			fontColor));
 };
-var author$project$Page$Authentication$loginPageButtonAttributes = _List_fromArray(
+var author$project$Page$Authenticator$loginPageButtonAttributes = _List_fromArray(
 	[
 		mdgriffith$elm_ui$Element$centerX,
 		mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
@@ -13615,7 +13772,7 @@ var mdgriffith$elm_ui$Element$Input$Placeholder = F2(
 		return {$: 'Placeholder', a: a, b: b};
 	});
 var mdgriffith$elm_ui$Element$Input$placeholder = mdgriffith$elm_ui$Element$Input$Placeholder;
-var author$project$Page$Authentication$showBody = F2(
+var author$project$Page$Authenticator$showBody = F2(
 	function (model, state) {
 		return A2(
 			mdgriffith$elm_ui$Element$row,
@@ -13643,7 +13800,7 @@ var author$project$Page$Authentication$showBody = F2(
 								[mdgriffith$elm_ui$Element$Input$focusedOnLoad]),
 							{
 								label: mdgriffith$elm_ui$Element$Input$labelHidden('Email address'),
-								onChange: author$project$Page$Authentication$LoginInputReceived(author$project$Page$Authentication$UserName),
+								onChange: author$project$Page$Authenticator$SignInInputReceived(author$project$Page$Authenticator$Email),
 								placeholder: elm$core$Maybe$Just(
 									A2(
 										mdgriffith$elm_ui$Element$Input$placeholder,
@@ -13653,10 +13810,10 @@ var author$project$Page$Authentication$showBody = F2(
 							}),
 							A2(
 							mdgriffith$elm_ui$Element$Input$button,
-							author$project$Page$Authentication$loginPageButtonAttributes,
+							author$project$Page$Authenticator$loginPageButtonAttributes,
 							{
-								label: mdgriffith$elm_ui$Element$text('Log in'),
-								onPress: elm$core$Maybe$Just(author$project$Page$Authentication$LoginButtonClicked)
+								label: mdgriffith$elm_ui$Element$text('Sign in'),
+								onPress: elm$core$Maybe$Just(author$project$Page$Authenticator$SignInButtonClicked)
 							})
 						])),
 					A2(
@@ -13673,7 +13830,7 @@ var author$project$Page$Authentication$showBody = F2(
 							_List_Nil,
 							{
 								label: mdgriffith$elm_ui$Element$Input$labelHidden('Password'),
-								onChange: author$project$Page$Authentication$LoginInputReceived(author$project$Page$Authentication$Password),
+								onChange: author$project$Page$Authenticator$SignInInputReceived(author$project$Page$Authenticator$Password),
 								placeholder: elm$core$Maybe$Just(
 									A2(
 										mdgriffith$elm_ui$Element$Input$placeholder,
@@ -13684,20 +13841,20 @@ var author$project$Page$Authentication$showBody = F2(
 							}),
 							A2(
 							mdgriffith$elm_ui$Element$Input$button,
-							author$project$Page$Authentication$loginPageButtonAttributes,
+							author$project$Page$Authenticator$loginPageButtonAttributes,
 							{
 								label: mdgriffith$elm_ui$Element$text('Sign up'),
-								onPress: elm$core$Maybe$Just(author$project$Page$Authentication$SignUpButtonClicked)
+								onPress: elm$core$Maybe$Just(author$project$Page$Authenticator$SignUpButtonClicked)
 							})
 						]))
 				]));
 	});
-var author$project$Page$Authentication$view = F2(
+var author$project$Page$Authenticator$view = F2(
 	function (model, state) {
 		return {
-			body: A2(author$project$Page$Authentication$showBody, model, state),
+			body: A2(author$project$Page$Authenticator$showBody, model, state),
 			headerSettings: elm$core$Maybe$Nothing,
-			title: 'Login'
+			title: 'Sign In'
 		};
 	});
 var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
@@ -13706,7 +13863,7 @@ var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
 			{action: '/', label: 'CANCEL'}),
 		signOutButtonSettings: elm$core$Maybe$Just(
 			{action: '/signout', label: 'Sign Out'}),
-		writtenCount: state.writtenCount
+		writtenCount: state.actualCount
 	};
 };
 var author$project$Appearance$siteTargetSelectionBackground = A3(mdgriffith$elm_ui$Element$rgb255, 108, 160, 229);
@@ -14045,7 +14202,7 @@ var author$project$Page$Writer$getHeaderSettings = function (state) {
 			{action: '/target', label: 'TARGET'}),
 		signOutButtonSettings: elm$core$Maybe$Just(
 			{action: '/signout', label: 'Sign Out'}),
-		writtenCount: state.writtenCount
+		writtenCount: state.additiveCount
 	};
 };
 var author$project$Page$Writer$WordsWritten = function (a) {
@@ -14682,6 +14839,7 @@ var mdgriffith$elm_ui$Element$layoutWith = F3(
 				_Utils_ap(mdgriffith$elm_ui$Internal$Model$rootStyle, attrs)),
 			child);
 	});
+var mdgriffith$elm_ui$Element$scrollbars = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$overflow, mdgriffith$elm_ui$Internal$Style$classes.scrollbars);
 var mdgriffith$elm_ui$Element$Font$size = function (i) {
 	return A2(
 		mdgriffith$elm_ui$Internal$Model$StyleClass,
@@ -14699,7 +14857,9 @@ var author$project$Skeleton$composePage = F2(
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$Font$size(author$project$Appearance$siteFontSize),
-					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundBlue)
+					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundBlue),
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill)
 				]),
 			A2(
 				mdgriffith$elm_ui$Element$column,
@@ -14717,7 +14877,8 @@ var author$project$Skeleton$composePage = F2(
 						_List_fromArray(
 							[
 								mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-								mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill)
+								mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
+								mdgriffith$elm_ui$Element$scrollbars
 							]),
 						_List_fromArray(
 							[author$project$Skeleton$horizontalSpacer, body, author$project$Skeleton$horizontalSpacer])),
@@ -14789,12 +14950,12 @@ var author$project$Main$view = function (model) {
 				author$project$Main$GotTargetSelectorMsg,
 				A2(author$project$Page$TargetSelector$view, targetSelectorModel, model.state));
 		default:
-			var authModel = _n0.a;
+			var authenticatorModel = _n0.a;
 			return A3(
 				author$project$Skeleton$view,
 				model.state,
-				author$project$Main$GotAuthMsg,
-				A2(author$project$Page$Authentication$view, authModel, model.state));
+				author$project$Main$GotAuthenticatorMsg,
+				A2(author$project$Page$Authenticator$view, authenticatorModel, model.state));
 	}
 };
 var elm$browser$Browser$application = _Browser_application;

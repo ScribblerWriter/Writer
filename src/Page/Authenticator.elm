@@ -1,4 +1,4 @@
-module Page.Authentication exposing (Model, Msg, init, subscriptions, update, view)
+module Page.Authenticator exposing (Model, Msg, init, subscriptions, update, view)
 
 import Appearance
 import Browser
@@ -9,6 +9,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Json.Encode as Encode
+import Ports
 import Skeleton
 import State exposing (State)
 
@@ -20,13 +21,13 @@ type alias Model =
 
 
 type InputType
-    = UserName
+    = Email
     | Password
 
 
 type Msg
-    = LoginInputReceived InputType String
-    | LoginButtonClicked
+    = SignInInputReceived InputType String
+    | SignInButtonClicked
     | SignUpButtonClicked
     | SignOutButtonClicked
 
@@ -47,11 +48,22 @@ init =
 update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
 update msg model state =
     case msg of
-        LoginInputReceived inputType string ->
-            ( state, ( model, Cmd.none ) )
+        SignInInputReceived inputType value ->
+            case inputType of
+                Email ->
+                    ( state, ( { model | email = value }, Cmd.none ) )
 
-        LoginButtonClicked ->
-            ( state, ( model, Cmd.none ) )
+                Password ->
+                    ( state, ( { model | password = value }, Cmd.none ) )
+
+        SignInButtonClicked ->
+            ( state
+            , ( model
+              , Ports.sendMessageWithJustContent
+                    Ports.SignIn
+                    (emailPassEncoder model.email model.password)
+              )
+            )
 
         SignUpButtonClicked ->
             ( state, ( model, Cmd.none ) )
@@ -66,7 +78,7 @@ update msg model state =
 
 view : Model -> State -> Skeleton.PageData Msg
 view model state =
-    { title = "Login"
+    { title = "Sign In"
     , headerSettings = Nothing
     , body = showBody model state
     }
@@ -86,15 +98,15 @@ showBody model state =
             ]
             [ Input.email
                 [ Input.focusedOnLoad ]
-                { onChange = LoginInputReceived UserName
+                { onChange = SignInInputReceived Email
                 , text = model.email
                 , placeholder = Just <| Input.placeholder [] (text "Email address")
                 , label = Input.labelHidden "Email address"
                 }
             , Input.button
                 loginPageButtonAttributes
-                { onPress = Just LoginButtonClicked
-                , label = text "Log in"
+                { onPress = Just SignInButtonClicked
+                , label = text "Sign in"
                 }
             ]
         , column
@@ -102,7 +114,7 @@ showBody model state =
             , padding 10
             ]
             [ Input.newPassword []
-                { onChange = LoginInputReceived Password
+                { onChange = SignInInputReceived Password
                 , text = model.password
                 , placeholder = Just <| Input.placeholder [] (text "Password")
                 , label = Input.labelHidden "Password"
