@@ -22,25 +22,12 @@ import Time
 
 
 type alias Model =
-    { currentTargetTimerInSecs : Int
-    , winProgress : Int
-    , endMessage : String
-    , touched : Bool
-    }
-
-
-type EndReason
-    = TimeExpired
-    | WordsReached
+    { touched : Bool }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { currentTargetTimerInSecs = 0
-      , winProgress = 0
-      , endMessage = ""
-      , touched = False
-      }
+    ( { touched = False }
     , Cmd.none
     )
 
@@ -52,7 +39,6 @@ init =
 type Msg
     = WordsWritten String
     | SaveTimerTicked Time.Posix
-    | TargetTimerTicked Time.Posix
 
 
 update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
@@ -74,27 +60,6 @@ update msg model state =
 
             else
                 ( state, ( model, Cmd.none ) )
-
-        TargetTimerTicked _ ->
-            case state.currentTarget of
-                Nothing ->
-                    ( state, ( model, Cmd.none ) )
-
-                Just target ->
-                    if target.new then
-                        ( { state | currentTarget = Just { target | new = False } }
-                        , ( { model | currentTargetTimerInSecs = target.minutes * 60 }, Cmd.none )
-                        )
-
-                    else if model.currentTargetTimerInSecs <= 0 then
-                        ( state
-                        , ( { model | endMessage = endFight model TimeExpired }, Cmd.none )
-                        )
-
-                    else
-                        ( state
-                        , ( { model | currentTargetTimerInSecs = model.currentTargetTimerInSecs - 1 }, Cmd.none )
-                        )
 
 
 saveContent : Model -> State -> Cmd msg
@@ -124,13 +89,13 @@ updateCounts document model state =
     in
     ( updateWrittenCount state.additiveCount trimmedWordCount state dif
     , { model
-        | winProgress = calculateProgress model state dif
-        , endMessage = generateEndMessage model state dif
-        , touched = True
+        | touched = True
       }
     , { state
         | currentText = document
         , actualCount = trimmedWordCount
+        , winProgress = calculateProgress state dif
+        , endMessage = generateEndMessage state dif
       }
     )
 
@@ -147,50 +112,40 @@ updateWrittenCount writtenCount trimmedWordCount state dif =
         trimmedWordCount
 
 
-calculateProgress : Model -> State -> Int -> Int
-calculateProgress model state dif =
+calculateProgress : State -> Int -> Int
+calculateProgress state dif =
     case state.currentTarget of
         Just target ->
             if dif > 0 then
-                if model.winProgress + dif >= target.count then
+                if state.winProgress + dif >= target.count then
                     target.count
 
                 else
-                    model.winProgress + dif
+                    state.winProgress + dif
 
             else
-                model.winProgress
+                state.winProgress
 
         Nothing ->
             0
 
 
-generateEndMessage : Model -> State -> Int -> String
-generateEndMessage model state dif =
+generateEndMessage : State -> Int -> String
+generateEndMessage state dif =
     case state.currentTarget of
         Just target ->
             if dif > 0 then
-                if model.winProgress + dif >= target.count then
-                    endFight model WordsReached
+                if state.winProgress + dif >= target.count then
+                    State.endReasonToString State.WordsReached
 
                 else
-                    model.endMessage
+                    state.endMessage
 
             else
-                model.endMessage
+                state.endMessage
 
         Nothing ->
             ""
-
-
-endFight : Model -> EndReason -> String
-endFight model reason =
-    case reason of
-        TimeExpired ->
-            "Time's up!"
-
-        WordsReached ->
-            "You win!"
 
 
 countWords : String -> Int
@@ -235,7 +190,7 @@ showBody model state =
                 none
 
             Just currentTarget ->
-                showProgressBar model currentTarget
+                showProgressBar model state currentTarget
         , Input.multiline
             [ width fill
             , height fill
@@ -253,8 +208,8 @@ showBody model state =
         ]
 
 
-showProgressBar : Model -> Target -> Element Msg
-showProgressBar model target =
+showProgressBar : Model -> State -> Target -> Element Msg
+showProgressBar model state target =
     row
         [ width fill
         , height <| px 38
@@ -276,12 +231,12 @@ showProgressBar model target =
                             , width shrink
                             ]
                           <|
-                            text (currentTargetCounts model.winProgress target.count)
+                            text (currentTargetCounts state.winProgress target.count)
                         , el
                             [ alignLeft
                             ]
                           <|
-                            text (currentTargetFightStatus model)
+                            text (currentTargetFightStatus model state)
                         ]
                 ]
                 { src = target.portraitSource
@@ -289,13 +244,13 @@ showProgressBar model target =
                 }
         ]
         [ el
-            [ width <| fillPortion model.winProgress
+            [ width <| fillPortion state.winProgress
             , height <| px 20
             , Background.color Appearance.progressBarForeground
             ]
             none
         , el
-            [ width <| fillPortion <| target.count - model.winProgress
+            [ width <| fillPortion <| target.count - state.winProgress
             , height <| px 20
             , Background.color Appearance.progressBarBackground
             ]
@@ -311,14 +266,14 @@ currentTargetCounts winProgress winCount =
         ++ String.fromInt winCount
 
 
-currentTargetFightStatus : Model -> String
-currentTargetFightStatus model =
+currentTargetFightStatus : Model -> State -> String
+currentTargetFightStatus model state =
     "  "
-        ++ (if model.endMessage /= "" then
-                model.endMessage
+        ++ (if state.endMessage /= "" then
+                state.endMessage
 
             else
-                formatSecondsToString model.currentTargetTimerInSecs
+                formatSecondsToString state.currentTargetTimerInSecs
            )
 
 
@@ -349,7 +304,4 @@ formatSecondsToStringHourCheck seconds hasHour =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.batch
-        [ Time.every 1000 SaveTimerTicked
-        , Time.every 1000 TargetTimerTicked
-        ]
+    Time.every 1000 SaveTimerTicked

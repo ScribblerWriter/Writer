@@ -11,6 +11,7 @@ import Page.Writer as Writer
 import Ports
 import Skeleton
 import State exposing (State)
+import Time
 import Url
 import Url.Builder
 import Url.Parser as Parser exposing ((</>), Parser, custom, fragment, map, oneOf, s, top)
@@ -50,6 +51,9 @@ init flags url key =
             , actualCount = 0
             , currentText = ""
             , currentTarget = Nothing
+            , currentTargetTimerInSecs = 0
+            , winProgress = 0
+            , endMessage = ""
             , countMethod = State.Additive
             , windowDimensions = State.decodeDimensions flags
             , user = Nothing
@@ -97,6 +101,7 @@ type Msg
     | GotWriterMsg Writer.Msg
     | GotTargetSelectorMsg TargetSelector.Msg
     | GotAuthenticatorMsg Authenticator.Msg
+    | TargetTimerTicked Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -110,6 +115,9 @@ update message model =
 
         MessageReceived msg ->
             updateMessageReceived msg model
+
+        TargetTimerTicked _ ->
+            ( { model | state = updateTargetTimer model.state }, Cmd.none )
 
         GotWriterMsg msg ->
             updateWriter msg model
@@ -142,6 +150,26 @@ updateUser value state =
 
         Just user ->
             { state | user = State.decodeUser user }
+
+
+updateTargetTimer : State -> State
+updateTargetTimer state =
+    case state.currentTarget of
+        Nothing ->
+            state
+
+        Just target ->
+            if target.new then
+                { state
+                    | currentTarget = Just { target | new = False }
+                    , currentTargetTimerInSecs = target.minutes * 60
+                }
+
+            else if state.currentTargetTimerInSecs <= 0 then
+                { state | endMessage = State.endReasonToString State.TimeExpired }
+
+            else
+                { state | currentTargetTimerInSecs = state.currentTargetTimerInSecs - 1 }
 
 
 updateLinkClick : Browser.UrlRequest -> Model -> ( Model, Cmd Msg )
@@ -286,5 +314,6 @@ subscriptions model =
                 Sub.batch
                     [ subs
                     , Ports.incomingMessage MessageReceived
+                    , Time.every 1000 TargetTimerTicked
                     ]
            )

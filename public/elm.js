@@ -5180,7 +5180,7 @@ var author$project$Page$TargetSelector$init = _Utils_Tuple2(
 	{targets: elm$core$Dict$empty},
 	A3(author$project$Ports$sendMessageWithContentAndResponse, author$project$Ports$QueryDb, author$project$Page$TargetSelector$encodeGetTargetsQuery, author$project$Ports$TargetListReturned));
 var author$project$Page$Writer$init = _Utils_Tuple2(
-	{currentTargetTimerInSecs: 0, endMessage: '', touched: false, winProgress: 0},
+	{touched: false},
 	elm$core$Platform$Cmd$none);
 var elm$core$List$append = F2(
 	function (xs, ys) {
@@ -5969,15 +5969,21 @@ var author$project$Main$init = F3(
 						additiveCount: 0,
 						countMethod: author$project$State$Additive,
 						currentTarget: elm$core$Maybe$Nothing,
+						currentTargetTimerInSecs: 0,
 						currentText: '',
+						endMessage: '',
 						key: key,
 						user: elm$core$Maybe$Nothing,
+						winProgress: 0,
 						windowDimensions: author$project$State$decodeDimensions(flags)
 					}
 				}));
 	});
 var author$project$Main$MessageReceived = function (a) {
 	return {$: 'MessageReceived', a: a};
+};
+var author$project$Main$TargetTimerTicked = function (a) {
+	return {$: 'TargetTimerTicked', a: a};
 };
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
@@ -6571,9 +6577,6 @@ var author$project$Page$TargetSelector$subscriptions = function (_n0) {
 var author$project$Page$Writer$SaveTimerTicked = function (a) {
 	return {$: 'SaveTimerTicked', a: a};
 };
-var author$project$Page$Writer$TargetTimerTicked = function (a) {
-	return {$: 'TargetTimerTicked', a: a};
-};
 var elm$time$Time$Every = F2(
 	function (a, b) {
 		return {$: 'Every', a: a, b: b};
@@ -6760,12 +6763,7 @@ var elm$time$Time$every = F2(
 			A2(elm$time$Time$Every, interval, tagger));
 	});
 var author$project$Page$Writer$subscriptions = function (_n0) {
-	return elm$core$Platform$Sub$batch(
-		_List_fromArray(
-			[
-				A2(elm$time$Time$every, 1000, author$project$Page$Writer$SaveTimerTicked),
-				A2(elm$time$Time$every, 1000, author$project$Page$Writer$TargetTimerTicked)
-			]));
+	return A2(elm$time$Time$every, 1000, author$project$Page$Writer$SaveTimerTicked);
 };
 var elm$core$Platform$Sub$map = _Platform_map;
 var author$project$Main$subscriptions = function (model) {
@@ -6774,7 +6772,8 @@ var author$project$Main$subscriptions = function (model) {
 			_List_fromArray(
 				[
 					subs,
-					author$project$Ports$incomingMessage(author$project$Main$MessageReceived)
+					author$project$Ports$incomingMessage(author$project$Main$MessageReceived),
+					A2(elm$time$Time$every, 1000, author$project$Main$TargetTimerTicked)
 				]));
 	}(
 		function () {
@@ -7304,22 +7303,44 @@ var author$project$Main$updateTargetSelector = F2(
 			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$Page$Writer$TimeExpired = {$: 'TimeExpired'};
-var author$project$Page$Writer$endFight = F2(
-	function (model, reason) {
-		if (reason.$ === 'TimeExpired') {
-			return 'Time\'s up!';
-		} else {
-			return 'You win!';
-		}
-	});
+var author$project$State$TimeExpired = {$: 'TimeExpired'};
+var author$project$State$endReasonToString = function (reason) {
+	if (reason.$ === 'TimeExpired') {
+		return 'Time\'s up!';
+	} else {
+		return 'You win!';
+	}
+};
+var author$project$Main$updateTargetTimer = function (state) {
+	var _n0 = state.currentTarget;
+	if (_n0.$ === 'Nothing') {
+		return state;
+	} else {
+		var target = _n0.a;
+		return target._new ? _Utils_update(
+			state,
+			{
+				currentTarget: elm$core$Maybe$Just(
+					_Utils_update(
+						target,
+						{_new: false})),
+				currentTargetTimerInSecs: target.minutes * 60
+			}) : ((state.currentTargetTimerInSecs <= 0) ? _Utils_update(
+			state,
+			{
+				endMessage: author$project$State$endReasonToString(author$project$State$TimeExpired)
+			}) : _Utils_update(
+			state,
+			{currentTargetTimerInSecs: state.currentTargetTimerInSecs - 1}));
+	}
+};
 var elm$core$Basics$ge = _Utils_ge;
-var author$project$Page$Writer$calculateProgress = F3(
-	function (model, state, dif) {
+var author$project$Page$Writer$calculateProgress = F2(
+	function (state, dif) {
 		var _n0 = state.currentTarget;
 		if (_n0.$ === 'Just') {
 			var target = _n0.a;
-			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.count) > -1) ? target.count : (model.winProgress + dif)) : model.winProgress;
+			return (dif > 0) ? ((_Utils_cmp(state.winProgress + dif, target.count) > -1) ? target.count : (state.winProgress + dif)) : state.winProgress;
 		} else {
 			return 0;
 		}
@@ -7356,13 +7377,13 @@ var author$project$Page$Writer$countWords = function (document) {
 					' ',
 					A3(elm$core$String$replace, '—', ' ', document)))));
 };
-var author$project$Page$Writer$WordsReached = {$: 'WordsReached'};
-var author$project$Page$Writer$generateEndMessage = F3(
-	function (model, state, dif) {
+var author$project$State$WordsReached = {$: 'WordsReached'};
+var author$project$Page$Writer$generateEndMessage = F2(
+	function (state, dif) {
 		var _n0 = state.currentTarget;
 		if (_n0.$ === 'Just') {
 			var target = _n0.a;
-			return (dif > 0) ? ((_Utils_cmp(model.winProgress + dif, target.count) > -1) ? A2(author$project$Page$Writer$endFight, model, author$project$Page$Writer$WordsReached) : model.endMessage) : model.endMessage;
+			return (dif > 0) ? ((_Utils_cmp(state.winProgress + dif, target.count) > -1) ? author$project$State$endReasonToString(author$project$State$WordsReached) : state.endMessage) : state.endMessage;
 		} else {
 			return '';
 		}
@@ -7379,78 +7400,41 @@ var author$project$Page$Writer$updateCounts = F3(
 			A4(author$project$Page$Writer$updateWrittenCount, state.additiveCount, trimmedWordCount, state, dif),
 			_Utils_update(
 				model,
-				{
-					endMessage: A3(author$project$Page$Writer$generateEndMessage, model, state, dif),
-					touched: true,
-					winProgress: A3(author$project$Page$Writer$calculateProgress, model, state, dif)
-				}),
+				{touched: true}),
 			_Utils_update(
 				state,
-				{actualCount: trimmedWordCount, currentText: document}));
+				{
+					actualCount: trimmedWordCount,
+					currentText: document,
+					endMessage: A2(author$project$Page$Writer$generateEndMessage, state, dif),
+					winProgress: A2(author$project$Page$Writer$calculateProgress, state, dif)
+				}));
 	});
 var author$project$Page$Writer$update = F3(
 	function (msg, model, state) {
-		switch (msg.$) {
-			case 'WordsWritten':
-				var document = msg.a;
-				return function (_n1) {
-					var count = _n1.a;
-					var updatedModel = _n1.b;
-					var newState = _n1.c;
-					return _Utils_Tuple2(
-						_Utils_update(
-							newState,
-							{additiveCount: count}),
-						_Utils_Tuple2(updatedModel, elm$core$Platform$Cmd$none));
-				}(
-					A3(author$project$Page$Writer$updateCounts, document, model, state));
-			case 'SaveTimerTicked':
-				return model.touched ? _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(
-						_Utils_update(
-							model,
-							{touched: false}),
-						A2(author$project$Page$Writer$saveContent, model, state))) : _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-			default:
-				var _n2 = state.currentTarget;
-				if (_n2.$ === 'Nothing') {
-					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-				} else {
-					var target = _n2.a;
-					return target._new ? _Utils_Tuple2(
-						_Utils_update(
-							state,
-							{
-								currentTarget: elm$core$Maybe$Just(
-									_Utils_update(
-										target,
-										{_new: false}))
-							}),
-						_Utils_Tuple2(
-							_Utils_update(
-								model,
-								{currentTargetTimerInSecs: target.minutes * 60}),
-							elm$core$Platform$Cmd$none)) : ((model.currentTargetTimerInSecs <= 0) ? _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(
-							_Utils_update(
-								model,
-								{
-									endMessage: A2(author$project$Page$Writer$endFight, model, author$project$Page$Writer$TimeExpired)
-								}),
-							elm$core$Platform$Cmd$none)) : _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(
-							_Utils_update(
-								model,
-								{currentTargetTimerInSecs: model.currentTargetTimerInSecs - 1}),
-							elm$core$Platform$Cmd$none)));
-				}
+		if (msg.$ === 'WordsWritten') {
+			var document = msg.a;
+			return function (_n1) {
+				var count = _n1.a;
+				var updatedModel = _n1.b;
+				var newState = _n1.c;
+				return _Utils_Tuple2(
+					_Utils_update(
+						newState,
+						{additiveCount: count}),
+					_Utils_Tuple2(updatedModel, elm$core$Platform$Cmd$none));
+			}(
+				A3(author$project$Page$Writer$updateCounts, document, model, state));
+		} else {
+			return model.touched ? _Utils_Tuple2(
+				state,
+				_Utils_Tuple2(
+					_Utils_update(
+						model,
+						{touched: false}),
+					A2(author$project$Page$Writer$saveContent, model, state))) : _Utils_Tuple2(
+				state,
+				_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
 		}
 	});
 var author$project$Main$updateWriter = F2(
@@ -7485,6 +7469,14 @@ var author$project$Main$update = F2(
 			case 'MessageReceived':
 				var msg = message.a;
 				return A2(author$project$Main$updateMessageReceived, msg, model);
+			case 'TargetTimerTicked':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							state: author$project$Main$updateTargetTimer(model.state)
+						}),
+					elm$core$Platform$Cmd$none);
 			case 'GotWriterMsg':
 				var msg = message.a;
 				return A2(author$project$Main$updateWriter, msg, model);
@@ -14254,9 +14246,10 @@ var author$project$Page$Writer$formatSecondsToStringHourCheck = F2(
 var author$project$Page$Writer$formatSecondsToString = function (seconds) {
 	return A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds, false);
 };
-var author$project$Page$Writer$currentTargetFightStatus = function (model) {
-	return '  ' + ((model.endMessage !== '') ? model.endMessage : author$project$Page$Writer$formatSecondsToString(model.currentTargetTimerInSecs));
-};
+var author$project$Page$Writer$currentTargetFightStatus = F2(
+	function (model, state) {
+		return '  ' + ((state.endMessage !== '') ? state.endMessage : author$project$Page$Writer$formatSecondsToString(state.currentTargetTimerInSecs));
+	});
 var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
 var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
 var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
@@ -14272,8 +14265,8 @@ var mdgriffith$elm_ui$Internal$Model$OnRight = {$: 'OnRight'};
 var mdgriffith$elm_ui$Element$onRight = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnRight, element);
 };
-var author$project$Page$Writer$showProgressBar = F2(
-	function (model, target) {
+var author$project$Page$Writer$showProgressBar = F3(
+	function (model, state, target) {
 		return A2(
 			mdgriffith$elm_ui$Element$row,
 			_List_fromArray(
@@ -14312,13 +14305,13 @@ var author$project$Page$Writer$showProgressBar = F2(
 													mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
 												]),
 											mdgriffith$elm_ui$Element$text(
-												A2(author$project$Page$Writer$currentTargetCounts, model.winProgress, target.count))),
+												A2(author$project$Page$Writer$currentTargetCounts, state.winProgress, target.count))),
 											A2(
 											mdgriffith$elm_ui$Element$el,
 											_List_fromArray(
 												[mdgriffith$elm_ui$Element$alignLeft]),
 											mdgriffith$elm_ui$Element$text(
-												author$project$Page$Writer$currentTargetFightStatus(model)))
+												A2(author$project$Page$Writer$currentTargetFightStatus, model, state)))
 										])))
 							]),
 						{description: target.name + ' portrait', src: target.portraitSource}))
@@ -14330,7 +14323,7 @@ var author$project$Page$Writer$showProgressBar = F2(
 					_List_fromArray(
 						[
 							mdgriffith$elm_ui$Element$width(
-							mdgriffith$elm_ui$Element$fillPortion(model.winProgress)),
+							mdgriffith$elm_ui$Element$fillPortion(state.winProgress)),
 							mdgriffith$elm_ui$Element$height(
 							mdgriffith$elm_ui$Element$px(20)),
 							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$progressBarForeground)
@@ -14341,7 +14334,7 @@ var author$project$Page$Writer$showProgressBar = F2(
 					_List_fromArray(
 						[
 							mdgriffith$elm_ui$Element$width(
-							mdgriffith$elm_ui$Element$fillPortion(target.count - model.winProgress)),
+							mdgriffith$elm_ui$Element$fillPortion(target.count - state.winProgress)),
 							mdgriffith$elm_ui$Element$height(
 							mdgriffith$elm_ui$Element$px(20)),
 							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$progressBarBackground)
@@ -14377,7 +14370,7 @@ var author$project$Page$Writer$showBody = F2(
 						return mdgriffith$elm_ui$Element$none;
 					} else {
 						var currentTarget = _n0.a;
-						return A2(author$project$Page$Writer$showProgressBar, model, currentTarget);
+						return A3(author$project$Page$Writer$showProgressBar, model, state, currentTarget);
 					}
 				}(),
 					A2(

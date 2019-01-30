@@ -1,10 +1,12 @@
 module State exposing
     ( CountMethod(..)
+    , EndReason(..)
     , State
     , decodeDimensions
     , decodeLoadedState
     , decodeUser
     , encodeSaveState
+    , endReasonToString
     )
 
 import Browser.Navigation as Nav
@@ -19,6 +21,9 @@ type alias State =
     , actualCount : Int
     , currentText : String
     , currentTarget : Maybe Target
+    , currentTargetTimerInSecs : Int
+    , winProgress : Int
+    , endMessage : String
     , countMethod : CountMethod
     , windowDimensions : Dimensions
     , user : Maybe User
@@ -42,6 +47,25 @@ type alias User =
 type CountMethod
     = Additive
     | Subtractive
+
+
+type EndReason
+    = TimeExpired
+    | WordsReached
+
+
+
+-- Conversion
+
+
+endReasonToString : EndReason -> String
+endReasonToString reason =
+    case reason of
+        TimeExpired ->
+            "Time's up!"
+
+        WordsReached ->
+            "You win!"
 
 
 
