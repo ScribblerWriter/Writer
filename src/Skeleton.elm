@@ -76,7 +76,7 @@ composePage header body =
     Element.layoutWith
         { options = [ Appearance.siteFocusStyle ] }
         [ Font.size Appearance.siteFontSize
-        , Background.color Appearance.siteBackgroundBlue
+        , Background.color Appearance.siteBackgroundDark
         , width fill
         , height fill
         ]

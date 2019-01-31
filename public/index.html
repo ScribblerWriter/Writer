@@ -36,8 +36,10 @@
                     saveToStorage(msg.content);
                 } else if (msg.operation == 'QueryDb') {
                     queryDb(msg.content, msg.returnOperation);
-                } else  if (msg.operation == "SignIn") {
-                    fbauth.login(msg.content);
+                } else if (msg.operation == 'SignIn') {
+                    fbauth.signIn(msg.content);
+                } else if (msg.operation == 'SignOut') {
+                    fbauth.signOut();
                 }
 
             });

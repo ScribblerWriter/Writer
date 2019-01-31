@@ -214,7 +214,7 @@ showProgressBar model state target =
         [ width fill
         , height <| px 38
         , centerY
-        , Background.color Appearance.siteWritingBackground
+        , Background.color Appearance.siteBackgroundLight
         , inFront <|
             image
                 [ width <| px 35

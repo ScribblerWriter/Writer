@@ -96,7 +96,7 @@ showBody model state =
             [ width fill
             , padding 10
             ]
-            [ Input.email
+            [ Input.username
                 [ Input.focusedOnLoad ]
                 { onChange = SignInInputReceived Email
                 , text = model.email
@@ -136,7 +136,7 @@ loginPageButtonAttributes =
     , padding 5
     , Border.width 2
     , Border.rounded 5
-    , Background.color Appearance.siteBackgroundBlue
+    , Background.color Appearance.siteBackgroundDark
     , Font.color Appearance.siteLightFontColor
     ]
 

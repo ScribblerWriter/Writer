@@ -2,11 +2,11 @@ module Appearance exposing
     ( progressBarBackground
     , progressBarForeground
     , siteActionButtonColor
-    , siteBackgroundBlue
+    , siteBackgroundDark
+    , siteBackgroundLight
     , siteFocusStyle
     , siteFontSize
     , siteLightFontColor
-    , siteWritingBackground
     , siteTargetSelectionBackground
     )
 
@@ -14,8 +14,8 @@ import Element exposing (..)
 import Element.Font as Font
 
 
-siteBackgroundBlue : Color
-siteBackgroundBlue =
+siteBackgroundDark : Color
+siteBackgroundDark =
     rgb255 13 70 113
 
 
@@ -24,8 +24,8 @@ siteLightFontColor =
     rgb255 240 240 240
 
 
-siteWritingBackground : Color
-siteWritingBackground =
+siteBackgroundLight : Color
+siteBackgroundLight =
     rgb255 255 255 255
 
 

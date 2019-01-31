@@ -6,6 +6,7 @@ import Html exposing (text)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Page.Authenticator as Authenticator
+import Page.SignerOuter as SignerOuter
 import Page.TargetSelector as TargetSelector
 import Page.Writer as Writer
 import Ports
@@ -40,6 +41,7 @@ type Page
     | Writer Writer.Model
     | TargetSelector TargetSelector.Model
     | Authenticator Authenticator.Model
+    | SignerOuter
 
 
 init : Decode.Value -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -89,6 +91,9 @@ view model =
         Authenticator authenticatorModel ->
             Skeleton.view model.state GotAuthenticatorMsg (Authenticator.view authenticatorModel model.state)
 
+        SignerOuter ->
+            Skeleton.view model.state GotSignerOuterMsg SignerOuter.view
+
 
 
 -- Update
@@ -101,6 +106,7 @@ type Msg
     | GotWriterMsg Writer.Msg
     | GotTargetSelectorMsg TargetSelector.Msg
     | GotAuthenticatorMsg Authenticator.Msg
+    | GotSignerOuterMsg SignerOuter.Msg
     | TargetTimerTicked Time.Posix
 
 
@@ -128,6 +134,9 @@ update message model =
         GotAuthenticatorMsg msg ->
             updateAuthenticator msg model
 
+        GotSignerOuterMsg msg ->
+            updateSignerOuter msg model
+
 
 updateMessageReceived : Ports.InMessage -> Model -> ( Model, Cmd Msg )
 updateMessageReceived message model =
@@ -136,20 +145,32 @@ updateMessageReceived message model =
             ( { model | state = State.decodeLoadedState message.content model.state }, Cmd.none )
 
         Ports.AuthStateChanged ->
-            ( { model | state = updateUser message.content model.state }, Cmd.none )
+            updateUser message.content model
 
         _ ->
             ( model, Cmd.none )
 
 
-updateUser : Maybe Decode.Value -> State -> State
-updateUser value state =
+updateUser : Maybe Decode.Value -> Model -> ( Model, Cmd Msg )
+updateUser value model =
     case value of
         Nothing ->
-            { state | user = Nothing }
+            model.state
+                |> (\state -> { state | user = Nothing })
+                |> (\state ->
+                        ( { model | state = state }
+                        , Nav.pushUrl model.state.key (Url.Builder.absolute [ "signin" ] [])
+                        )
+                   )
 
         Just user ->
-            { state | user = State.decodeUser user }
+            model.state
+                |> (\state -> { state | user = State.decodeUser user })
+                |> (\state ->
+                        ( { model | state = state }
+                        , Nav.pushUrl model.state.key (Url.Builder.absolute [] [])
+                        )
+                   )
 
 
 updateTargetTimer : State -> State
@@ -201,6 +222,9 @@ updatePageLinkClick model =
         Authenticator authenticatorModel ->
             Cmd.none
 
+        SignerOuter ->
+            Cmd.none
+
         NotFound ->
             Cmd.none
 
@@ -238,6 +262,11 @@ updateAuthenticator msg model =
             ( model, Cmd.none )
 
 
+updateSignerOuter : SignerOuter.Msg -> Model -> ( Model, Cmd Msg )
+updateSignerOuter msg model =
+    ( model, Cmd.none )
+
+
 
 -- Routing
 
@@ -263,6 +292,13 @@ stepAuthenticator model ( authenticatorModel, authenticatorCmds ) =
     )
 
 
+stepSignerOuter : Model -> Cmd SignerOuter.Msg -> ( Model, Cmd Msg )
+stepSignerOuter model signerOuterCmd =
+    ( { model | page = SignerOuter }
+    , Cmd.map GotSignerOuterMsg signerOuterCmd
+    )
+
+
 stepUrl : Url.Url -> Model -> ( Model, Cmd Msg )
 stepUrl url model =
     let
@@ -270,12 +306,10 @@ stepUrl url model =
             oneOf
                 [ route top (stepWriter model Writer.init)
                 , route (s "target") (stepTargetSelector model TargetSelector.init)
-                , route (s "authentication") (stepAuthenticator model Authenticator.init)
+                , route (s "signin") (stepAuthenticator model Authenticator.init)
+                , route (s "signout") (stepSignerOuter model SignerOuter.init)
                 ]
     in
-    -- if model.state.user == Nothing then
-    --     stepAuthenticator model Authenticator.init
-    -- else
     case Parser.parse parser url of
         Just result ->
             result
@@ -309,6 +343,9 @@ subscriptions model =
 
         Authenticator authenticatorModel ->
             Sub.map GotAuthenticatorMsg (Authenticator.subscriptions authenticatorModel)
+
+        SignerOuter ->
+            Sub.none
     )
         |> (\subs ->
                 Sub.batch
