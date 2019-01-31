@@ -86,36 +86,32 @@ view model state =
 
 showBody : Model -> State -> Element Msg
 showBody model state =
-    row
+    column
         [ width shrink
-        , height shrink
+        , width shrink
+        , spacing 10
         , centerX
         , centerY
         ]
-        [ column
-            [ width fill
-            , spacing 10
-            ]
-            [ Input.username
-                [ Input.focusedOnLoad ]
-                { onChange = SignInInputReceived Email
-                , text = model.email
-                , placeholder = Just <| Input.placeholder [] (text "Email address")
-                , label = Input.labelHidden "Email address"
-                }
-            , Input.currentPassword []
-                { onChange = SignInInputReceived Password
-                , text = model.password
-                , placeholder = Just <| Input.placeholder [] (text "Password")
-                , label = Input.labelHidden "Password"
-                , show = False
-                }
-            , Input.button
-                loginPageButtonAttributes
-                { onPress = Just SignInButtonClicked
-                , label = text "Sign in"
-                }
-            ]
+        [ Input.username
+            [ Input.focusedOnLoad ]
+            { onChange = SignInInputReceived Email
+            , text = model.email
+            , placeholder = Just <| Input.placeholder [] (text "Email address")
+            , label = Input.labelHidden "Email address"
+            }
+        , Input.currentPassword []
+            { onChange = SignInInputReceived Password
+            , text = model.password
+            , placeholder = Just <| Input.placeholder [] (text "Password")
+            , label = Input.labelHidden "Password"
+            , show = False
+            }
+        , Input.button
+            loginPageButtonAttributes
+            { onPress = Just SignInButtonClicked
+            , label = text "Sign in"
+            }
         ]
 
 

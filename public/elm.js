@@ -12829,30 +12829,6 @@ var mdgriffith$elm_ui$Element$column = F2(
 						attrs))),
 			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
-var mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
-	return {$: 'Fill', a: a};
-};
-var mdgriffith$elm_ui$Element$fill = mdgriffith$elm_ui$Internal$Model$Fill(1);
-var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
-var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
-var mdgriffith$elm_ui$Element$row = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asRow,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
 var mdgriffith$elm_ui$Internal$Flag$spacing = mdgriffith$elm_ui$Internal$Flag$flag(3);
 var mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
 	function (a, b, c) {
@@ -13093,6 +13069,10 @@ var mdgriffith$elm_ui$Element$el = F2(
 				_List_fromArray(
 					[child])));
 	});
+var mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
+	return {$: 'Fill', a: a};
+};
+var mdgriffith$elm_ui$Element$fill = mdgriffith$elm_ui$Internal$Model$Fill(1);
 var mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
 var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
 	function (a, b) {
@@ -13146,6 +13126,8 @@ var mdgriffith$elm_ui$Element$Input$Padding = F4(
 	function (a, b, c, d) {
 		return {$: 'Padding', a: a, b: b, c: c, d: d};
 	});
+var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
+var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
 var mdgriffith$elm_ui$Element$Input$applyLabel = F3(
 	function (attrs, label, input) {
 		if (label.$ === 'HiddenLabel') {
@@ -13820,61 +13802,52 @@ var mdgriffith$elm_ui$Element$Input$username = mdgriffith$elm_ui$Element$Input$t
 var author$project$Page$Authenticator$showBody = F2(
 	function (model, state) {
 		return A2(
-			mdgriffith$elm_ui$Element$row,
+			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+					mdgriffith$elm_ui$Element$spacing(10),
 					mdgriffith$elm_ui$Element$centerX,
 					mdgriffith$elm_ui$Element$centerY
 				]),
 			_List_fromArray(
 				[
 					A2(
-					mdgriffith$elm_ui$Element$column,
+					mdgriffith$elm_ui$Element$Input$username,
 					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-							mdgriffith$elm_ui$Element$spacing(10)
-						]),
-					_List_fromArray(
-						[
+						[mdgriffith$elm_ui$Element$Input$focusedOnLoad]),
+					{
+						label: mdgriffith$elm_ui$Element$Input$labelHidden('Email address'),
+						onChange: author$project$Page$Authenticator$SignInInputReceived(author$project$Page$Authenticator$Email),
+						placeholder: elm$core$Maybe$Just(
 							A2(
-							mdgriffith$elm_ui$Element$Input$username,
-							_List_fromArray(
-								[mdgriffith$elm_ui$Element$Input$focusedOnLoad]),
-							{
-								label: mdgriffith$elm_ui$Element$Input$labelHidden('Email address'),
-								onChange: author$project$Page$Authenticator$SignInInputReceived(author$project$Page$Authenticator$Email),
-								placeholder: elm$core$Maybe$Just(
-									A2(
-										mdgriffith$elm_ui$Element$Input$placeholder,
-										_List_Nil,
-										mdgriffith$elm_ui$Element$text('Email address'))),
-								text: model.email
-							}),
+								mdgriffith$elm_ui$Element$Input$placeholder,
+								_List_Nil,
+								mdgriffith$elm_ui$Element$text('Email address'))),
+						text: model.email
+					}),
+					A2(
+					mdgriffith$elm_ui$Element$Input$currentPassword,
+					_List_Nil,
+					{
+						label: mdgriffith$elm_ui$Element$Input$labelHidden('Password'),
+						onChange: author$project$Page$Authenticator$SignInInputReceived(author$project$Page$Authenticator$Password),
+						placeholder: elm$core$Maybe$Just(
 							A2(
-							mdgriffith$elm_ui$Element$Input$currentPassword,
-							_List_Nil,
-							{
-								label: mdgriffith$elm_ui$Element$Input$labelHidden('Password'),
-								onChange: author$project$Page$Authenticator$SignInInputReceived(author$project$Page$Authenticator$Password),
-								placeholder: elm$core$Maybe$Just(
-									A2(
-										mdgriffith$elm_ui$Element$Input$placeholder,
-										_List_Nil,
-										mdgriffith$elm_ui$Element$text('Password'))),
-								show: false,
-								text: model.password
-							}),
-							A2(
-							mdgriffith$elm_ui$Element$Input$button,
-							author$project$Page$Authenticator$loginPageButtonAttributes,
-							{
-								label: mdgriffith$elm_ui$Element$text('Sign in'),
-								onPress: elm$core$Maybe$Just(author$project$Page$Authenticator$SignInButtonClicked)
-							})
-						]))
+								mdgriffith$elm_ui$Element$Input$placeholder,
+								_List_Nil,
+								mdgriffith$elm_ui$Element$text('Password'))),
+						show: false,
+						text: model.password
+					}),
+					A2(
+					mdgriffith$elm_ui$Element$Input$button,
+					author$project$Page$Authenticator$loginPageButtonAttributes,
+					{
+						label: mdgriffith$elm_ui$Element$text('Sign in'),
+						onPress: elm$core$Maybe$Just(author$project$Page$Authenticator$SignInButtonClicked)
+					})
 				]));
 	});
 var author$project$Page$Authenticator$view = F2(
@@ -14022,6 +13995,24 @@ var author$project$Page$TargetSelector$buildSingleTargetSelector = F2(
 						mdgriffith$elm_ui$Element$text(
 							elm$core$String$fromInt((target.count / target.minutes) | 0) + ' wpm'))
 					])));
+	});
+var mdgriffith$elm_ui$Element$row = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asRow,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
 var author$project$Page$TargetSelector$buildSingleTargetRow = F2(
 	function (imageWidth, targets) {
