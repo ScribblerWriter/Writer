@@ -94,7 +94,7 @@ showBody model state =
         ]
         [ column
             [ width fill
-            , padding 10
+            , spacing 10
             ]
             [ Input.username
                 [ Input.focusedOnLoad ]
@@ -103,17 +103,7 @@ showBody model state =
                 , placeholder = Just <| Input.placeholder [] (text "Email address")
                 , label = Input.labelHidden "Email address"
                 }
-            , Input.button
-                loginPageButtonAttributes
-                { onPress = Just SignInButtonClicked
-                , label = text "Sign in"
-                }
-            ]
-        , column
-            [ width fill
-            , padding 10
-            ]
-            [ Input.newPassword []
+            , Input.currentPassword []
                 { onChange = SignInInputReceived Password
                 , text = model.password
                 , placeholder = Just <| Input.placeholder [] (text "Password")
@@ -122,8 +112,8 @@ showBody model state =
                 }
             , Input.button
                 loginPageButtonAttributes
-                { onPress = Just SignUpButtonClicked
-                , label = text "Sign up"
+                { onPress = Just SignInButtonClicked
+                , label = text "Sign in"
                 }
             ]
         ]

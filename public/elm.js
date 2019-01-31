@@ -7549,7 +7549,6 @@ var author$project$Page$Authenticator$SignInInputReceived = F2(
 	function (a, b) {
 		return {$: 'SignInInputReceived', a: a, b: b};
 	});
-var author$project$Page$Authenticator$SignUpButtonClicked = {$: 'SignUpButtonClicked'};
 var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
 	function (a, b, c, d) {
 		return {$: 'Rgba', a: a, b: b, c: c, d: d};
@@ -12854,6 +12853,25 @@ var mdgriffith$elm_ui$Element$row = F2(
 						attrs))),
 			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
+var mdgriffith$elm_ui$Internal$Flag$spacing = mdgriffith$elm_ui$Internal$Flag$flag(3);
+var mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
+	function (a, b, c) {
+		return {$: 'SpacingStyle', a: a, b: b, c: c};
+	});
+var mdgriffith$elm_ui$Internal$Model$spacingName = F2(
+	function (x, y) {
+		return 'spacing-' + (elm$core$String$fromInt(x) + ('-' + elm$core$String$fromInt(y)));
+	});
+var mdgriffith$elm_ui$Element$spacing = function (x) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$spacing,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$SpacingStyle,
+			A2(mdgriffith$elm_ui$Internal$Model$spacingName, x, x),
+			x,
+			x));
+};
 var mdgriffith$elm_ui$Internal$Model$Text = function (a) {
 	return {$: 'Text', a: a};
 };
@@ -13002,13 +13020,6 @@ var mdgriffith$elm_ui$Element$Input$button = F2(
 				_List_fromArray(
 					[label])));
 	});
-var elm$html$Html$Attributes$autofocus = elm$html$Html$Attributes$boolProperty('autofocus');
-var mdgriffith$elm_ui$Element$Input$focusedOnLoad = mdgriffith$elm_ui$Internal$Model$Attr(
-	elm$html$Html$Attributes$autofocus(true));
-var mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
-	return {$: 'HiddenLabel', a: a};
-};
-var mdgriffith$elm_ui$Element$Input$labelHidden = mdgriffith$elm_ui$Element$Input$HiddenLabel;
 var mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
 	return {$: 'TextInputNode', a: a};
 };
@@ -13120,25 +13131,6 @@ var mdgriffith$elm_ui$Element$paddingEach = function (_n0) {
 			left));
 };
 var mdgriffith$elm_ui$Element$rgba = mdgriffith$elm_ui$Internal$Model$Rgba;
-var mdgriffith$elm_ui$Internal$Flag$spacing = mdgriffith$elm_ui$Internal$Flag$flag(3);
-var mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
-	function (a, b, c) {
-		return {$: 'SpacingStyle', a: a, b: b, c: c};
-	});
-var mdgriffith$elm_ui$Internal$Model$spacingName = F2(
-	function (x, y) {
-		return 'spacing-' + (elm$core$String$fromInt(x) + ('-' + elm$core$String$fromInt(y)));
-	});
-var mdgriffith$elm_ui$Element$spacing = function (x) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$spacing,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$SpacingStyle,
-			A2(mdgriffith$elm_ui$Internal$Model$spacingName, x, x),
-			x,
-			x));
-};
 var mdgriffith$elm_ui$Internal$Flag$borderColor = mdgriffith$elm_ui$Internal$Flag$flag(28);
 var mdgriffith$elm_ui$Element$Border$color = function (clr) {
 	return A2(
@@ -13794,12 +13786,12 @@ var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 			textOptions.label,
 			inputElement);
 	});
-var mdgriffith$elm_ui$Element$Input$newPassword = F2(
+var mdgriffith$elm_ui$Element$Input$currentPassword = F2(
 	function (attrs, pass) {
 		return A3(
 			mdgriffith$elm_ui$Element$Input$textHelper,
 			{
-				autofill: elm$core$Maybe$Just('new-password'),
+				autofill: elm$core$Maybe$Just('current-password'),
 				spellchecked: false,
 				type_: mdgriffith$elm_ui$Element$Input$TextInputNode(
 					pass.show ? 'text' : 'password')
@@ -13807,6 +13799,13 @@ var mdgriffith$elm_ui$Element$Input$newPassword = F2(
 			attrs,
 			{label: pass.label, onChange: pass.onChange, placeholder: pass.placeholder, text: pass.text});
 	});
+var elm$html$Html$Attributes$autofocus = elm$html$Html$Attributes$boolProperty('autofocus');
+var mdgriffith$elm_ui$Element$Input$focusedOnLoad = mdgriffith$elm_ui$Internal$Model$Attr(
+	elm$html$Html$Attributes$autofocus(true));
+var mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
+	return {$: 'HiddenLabel', a: a};
+};
+var mdgriffith$elm_ui$Element$Input$labelHidden = mdgriffith$elm_ui$Element$Input$HiddenLabel;
 var mdgriffith$elm_ui$Element$Input$Placeholder = F2(
 	function (a, b) {
 		return {$: 'Placeholder', a: a, b: b};
@@ -13836,7 +13835,7 @@ var author$project$Page$Authenticator$showBody = F2(
 					_List_fromArray(
 						[
 							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-							mdgriffith$elm_ui$Element$padding(10)
+							mdgriffith$elm_ui$Element$spacing(10)
 						]),
 					_List_fromArray(
 						[
@@ -13855,24 +13854,7 @@ var author$project$Page$Authenticator$showBody = F2(
 								text: model.email
 							}),
 							A2(
-							mdgriffith$elm_ui$Element$Input$button,
-							author$project$Page$Authenticator$loginPageButtonAttributes,
-							{
-								label: mdgriffith$elm_ui$Element$text('Sign in'),
-								onPress: elm$core$Maybe$Just(author$project$Page$Authenticator$SignInButtonClicked)
-							})
-						])),
-					A2(
-					mdgriffith$elm_ui$Element$column,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-							mdgriffith$elm_ui$Element$padding(10)
-						]),
-					_List_fromArray(
-						[
-							A2(
-							mdgriffith$elm_ui$Element$Input$newPassword,
+							mdgriffith$elm_ui$Element$Input$currentPassword,
 							_List_Nil,
 							{
 								label: mdgriffith$elm_ui$Element$Input$labelHidden('Password'),
@@ -13889,8 +13871,8 @@ var author$project$Page$Authenticator$showBody = F2(
 							mdgriffith$elm_ui$Element$Input$button,
 							author$project$Page$Authenticator$loginPageButtonAttributes,
 							{
-								label: mdgriffith$elm_ui$Element$text('Sign up'),
-								onPress: elm$core$Maybe$Just(author$project$Page$Authenticator$SignUpButtonClicked)
+								label: mdgriffith$elm_ui$Element$text('Sign in'),
+								onPress: elm$core$Maybe$Just(author$project$Page$Authenticator$SignInButtonClicked)
 							})
 						]))
 				]));
