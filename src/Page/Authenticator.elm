@@ -3,11 +3,13 @@ module Page.Authenticator exposing (Model, Msg, init, subscriptions, update, vie
 import Appearance
 import Browser
 import Browser.Events
+import CustomHtmlEvents
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Html.Attributes
 import Json.Encode as Encode
 import Ports
 import Skeleton
@@ -17,6 +19,7 @@ import State exposing (State)
 type alias Model =
     { email : String
     , password : String
+    , currentSignUpPage : SignUpPage
     }
 
 
@@ -25,11 +28,26 @@ type InputType
     | Password
 
 
+type SignUpPage
+    = None
+    | UserPass
+
+
 type Msg
     = SignInInputReceived InputType String
     | SignInButtonClicked
     | SignUpButtonClicked
-    | SignOutButtonClicked
+    | CreateUserButtonClicked
+    | ReturnToSignInButtonClicked
+
+
+type alias FieldValues =
+    { buttonText : String
+    , clickEvent : Msg
+    , underText : String
+    , underClickEvent : Msg
+    , underButtonText : String
+    }
 
 
 
@@ -38,93 +56,149 @@ type Msg
 
 init : ( Model, Cmd Msg )
 init =
-    ( { email = "", password = "" }, Cmd.none )
+    ( { email = ""
+      , password = ""
+      , currentSignUpPage = None
+      }
+    , Cmd.none
+    )
 
 
 
 -- update
 
 
-update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
-update msg model state =
+update : Msg -> Model -> ( Model, Cmd msg )
+update msg model =
     case msg of
         SignInInputReceived inputType value ->
             case inputType of
                 Email ->
-                    ( state, ( { model | email = value }, Cmd.none ) )
+                    ( { model | email = value }, Cmd.none )
 
                 Password ->
-                    ( state, ( { model | password = value }, Cmd.none ) )
+                    ( { model | password = value }, Cmd.none )
 
         SignInButtonClicked ->
-            ( state
-            , ( model
-              , Ports.sendMessageWithJustContent
-                    Ports.SignIn
-                    (emailPassEncoder model.email model.password)
-              )
+            ( model
+            , Ports.sendMessageWithJustContent
+                Ports.SignIn
+                (emailPassEncoder model.email model.password)
             )
 
         SignUpButtonClicked ->
-            ( state, ( model, Cmd.none ) )
+            ( { email = ""
+              , password = ""
+              , currentSignUpPage = UserPass
+              }
+            , Cmd.none
+            )
 
-        SignOutButtonClicked ->
-            ( state, ( model, Cmd.none ) )
+        ReturnToSignInButtonClicked ->
+            ( { email = ""
+              , password = ""
+              , currentSignUpPage = None
+              }
+            , Cmd.none
+            )
+
+        CreateUserButtonClicked ->
+            ( model
+            , Ports.sendMessageWithJustContent
+                Ports.SignUp
+                (emailPassEncoder model.email model.password)
+            )
 
 
 
 -- View
 
 
-view : Model -> State -> Skeleton.PageData Msg
-view model state =
+view : Model -> Skeleton.PageData Msg
+view model =
     { title = "Sign In"
     , headerSettings = Nothing
-    , body = showBody model state
+    , body = showBody model
     }
 
 
-showBody : Model -> State -> Element Msg
-showBody model state =
+showBody : Model -> Element Msg
+showBody model =
+    case model.currentSignUpPage of
+        None ->
+            showDetails model
+                { buttonText = "Sign in!"
+                , clickEvent = SignInButtonClicked
+                , underText = "Don't have an account yet? "
+                , underClickEvent = SignUpButtonClicked
+                , underButtonText = "Sign up!"
+                }
+
+        UserPass ->
+            showDetails model
+                { buttonText = "Sign up!"
+                , clickEvent = CreateUserButtonClicked
+                , underText = "Oops, I already have an account! "
+                , underClickEvent = ReturnToSignInButtonClicked
+                , underButtonText = "Go back!"
+                }
+
+
+showDetails : Model -> FieldValues -> Element Msg
+showDetails model fieldValues =
     column
         [ width shrink
         , width shrink
         , spacing 10
         , centerX
         , centerY
+        , CustomHtmlEvents.onEnter fieldValues.clickEvent
         ]
         [ Input.username
-            [ Input.focusedOnLoad ]
+            [ Input.focusedOnLoad
+            , htmlAttribute <| Html.Attributes.placeholder "Email Address"
+            ]
             { onChange = SignInInputReceived Email
             , text = model.email
-            , placeholder = Just <| Input.placeholder [] (text "Email address")
+            , placeholder = Nothing
             , label = Input.labelHidden "Email address"
             }
-        , Input.currentPassword []
+        , Input.currentPassword
+            [ htmlAttribute <| Html.Attributes.placeholder "Password"
+            ]
             { onChange = SignInInputReceived Password
             , text = model.password
-            , placeholder = Just <| Input.placeholder [] (text "Password")
+            , placeholder = Nothing
             , label = Input.labelHidden "Password"
             , show = False
             }
         , Input.button
-            loginPageButtonAttributes
-            { onPress = Just SignInButtonClicked
-            , label = text "Sign in"
+            [ centerX
+            , height shrink
+            , padding 5
+            , Border.width 2
+            , Border.rounded 5
+            , Background.color Appearance.siteBackgroundDark
+            , Font.color Appearance.siteLightFontColor
+            ]
+            { onPress = Just fieldValues.clickEvent
+            , label = text fieldValues.buttonText
             }
+        , el []
+            none
+        , row
+            [ Font.color Appearance.siteLightFontColor ]
+            [ el [] <|
+                text fieldValues.underText
+            , Input.button
+                [ Font.bold
+                , Font.underline
+                ]
+                { onPress = Just fieldValues.underClickEvent
+                , label = text fieldValues.underButtonText
+                }
+            ]
         ]
-
-
-loginPageButtonAttributes : List (Attribute msg)
-loginPageButtonAttributes =
-    [ centerX
-    , height shrink
-    , padding 5
-    , Border.width 2
-    , Border.rounded 5
-    , Background.color Appearance.siteBackgroundDark
-    , Font.color Appearance.siteLightFontColor
-    ]
 
 
 

@@ -5074,10 +5074,11 @@ var author$project$Main$stepWriter = F2(
 				}),
 			A2(elm$core$Platform$Cmd$map, author$project$Main$GotWriterMsg, writerCmds));
 	});
+var author$project$Page$Authenticator$None = {$: 'None'};
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Page$Authenticator$init = _Utils_Tuple2(
-	{email: '', password: ''},
+	{currentSignUpPage: author$project$Page$Authenticator$None, email: '', password: ''},
 	elm$core$Platform$Cmd$none);
 var author$project$Ports$SignOut = {$: 'SignOut'};
 var author$project$Ports$inOperationToString = function (operation) {
@@ -6825,6 +6826,7 @@ var author$project$Main$subscriptions = function (model) {
 			}
 		}());
 };
+var author$project$Page$Authenticator$UserPass = {$: 'UserPass'};
 var author$project$Page$Authenticator$emailPassEncoder = F2(
 	function (email, pass) {
 		return elm$json$Json$Encode$object(
@@ -6839,6 +6841,7 @@ var author$project$Page$Authenticator$emailPassEncoder = F2(
 				]));
 	});
 var author$project$Ports$SignIn = {$: 'SignIn'};
+var author$project$Ports$SignUp = {$: 'SignUp'};
 var author$project$Ports$sendMessageWithJustContent = F2(
 	function (operation, content) {
 		return A3(
@@ -6847,46 +6850,47 @@ var author$project$Ports$sendMessageWithJustContent = F2(
 			elm$core$Maybe$Just(content),
 			elm$core$Maybe$Nothing);
 	});
-var author$project$Page$Authenticator$update = F3(
-	function (msg, model, state) {
+var author$project$Page$Authenticator$update = F2(
+	function (msg, model) {
 		switch (msg.$) {
 			case 'SignInInputReceived':
 				var inputType = msg.a;
 				var value = msg.b;
 				if (inputType.$ === 'Email') {
 					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(
-							_Utils_update(
-								model,
-								{email: value}),
-							elm$core$Platform$Cmd$none));
+						_Utils_update(
+							model,
+							{email: value}),
+						elm$core$Platform$Cmd$none);
 				} else {
 					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(
-							_Utils_update(
-								model,
-								{password: value}),
-							elm$core$Platform$Cmd$none));
+						_Utils_update(
+							model,
+							{password: value}),
+						elm$core$Platform$Cmd$none);
 				}
 			case 'SignInButtonClicked':
 				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(
-						model,
-						A2(
-							author$project$Ports$sendMessageWithJustContent,
-							author$project$Ports$SignIn,
-							A2(author$project$Page$Authenticator$emailPassEncoder, model.email, model.password))));
+					model,
+					A2(
+						author$project$Ports$sendMessageWithJustContent,
+						author$project$Ports$SignIn,
+						A2(author$project$Page$Authenticator$emailPassEncoder, model.email, model.password)));
 			case 'SignUpButtonClicked':
 				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+					{currentSignUpPage: author$project$Page$Authenticator$UserPass, email: '', password: ''},
+					elm$core$Platform$Cmd$none);
+			case 'ReturnToSignInButtonClicked':
+				return _Utils_Tuple2(
+					{currentSignUpPage: author$project$Page$Authenticator$None, email: '', password: ''},
+					elm$core$Platform$Cmd$none);
 			default:
 				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+					model,
+					A2(
+						author$project$Ports$sendMessageWithJustContent,
+						author$project$Ports$SignUp,
+						A2(author$project$Page$Authenticator$emailPassEncoder, model.email, model.password)));
 		}
 	});
 var author$project$Main$updateAuthenticator = F2(
@@ -6894,17 +6898,10 @@ var author$project$Main$updateAuthenticator = F2(
 		var _n0 = model.page;
 		if (_n0.$ === 'Authenticator') {
 			var authenticatorModel = _n0.a;
-			return function (_n1) {
-				var state = _n1.a;
-				var data = _n1.b;
-				return A2(
-					author$project$Main$stepAuthenticator,
-					_Utils_update(
-						model,
-						{state: state}),
-					data);
+			return function (data) {
+				return A2(author$project$Main$stepAuthenticator, model, data);
 			}(
-				A3(author$project$Page$Authenticator$update, msg, authenticatorModel, model.state));
+				A2(author$project$Page$Authenticator$update, msg, authenticatorModel));
 		} else {
 			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
@@ -7542,13 +7539,10 @@ var author$project$Main$update = F2(
 				return A2(author$project$Main$updateSignerOuter, msg, model);
 		}
 	});
-var author$project$Page$Authenticator$Email = {$: 'Email'};
-var author$project$Page$Authenticator$Password = {$: 'Password'};
+var author$project$Page$Authenticator$CreateUserButtonClicked = {$: 'CreateUserButtonClicked'};
+var author$project$Page$Authenticator$ReturnToSignInButtonClicked = {$: 'ReturnToSignInButtonClicked'};
 var author$project$Page$Authenticator$SignInButtonClicked = {$: 'SignInButtonClicked'};
-var author$project$Page$Authenticator$SignInInputReceived = F2(
-	function (a, b) {
-		return {$: 'SignInInputReceived', a: a, b: b};
-	});
+var author$project$Page$Authenticator$SignUpButtonClicked = {$: 'SignUpButtonClicked'};
 var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
 	function (a, b, c, d) {
 		return {$: 'Rgba', a: a, b: b, c: c, d: d};
@@ -7559,133 +7553,70 @@ var mdgriffith$elm_ui$Element$rgb255 = F3(
 	});
 var author$project$Appearance$siteBackgroundDark = A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113);
 var author$project$Appearance$siteLightFontColor = A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240);
+var author$project$CustomHtmlEvents$enterPressedDecoder = function (msg) {
+	return A2(
+		elm$json$Json$Decode$andThen,
+		function (key) {
+			if (key === 'Enter') {
+				return elm$json$Json$Decode$succeed(msg);
+			} else {
+				return elm$json$Json$Decode$fail('Not Enter');
+			}
+		},
+		A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+};
+var elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var mdgriffith$elm_ui$Internal$Model$Attr = function (a) {
+	return {$: 'Attr', a: a};
+};
+var mdgriffith$elm_ui$Element$htmlAttribute = mdgriffith$elm_ui$Internal$Model$Attr;
+var author$project$CustomHtmlEvents$onEnter = function (msg) {
+	return mdgriffith$elm_ui$Element$htmlAttribute(
+		A2(
+			elm$html$Html$Events$on,
+			'keydown',
+			author$project$CustomHtmlEvents$enterPressedDecoder(msg)));
+};
+var author$project$Page$Authenticator$Email = {$: 'Email'};
+var author$project$Page$Authenticator$Password = {$: 'Password'};
+var author$project$Page$Authenticator$SignInInputReceived = F2(
+	function (a, b) {
+		return {$: 'SignInInputReceived', a: a, b: b};
+	});
+var elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$string(string));
+	});
+var elm$html$Html$Attributes$placeholder = elm$html$Html$Attributes$stringProperty('placeholder');
 var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 	return {$: 'AlignX', a: a};
 };
 var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
 var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
-var mdgriffith$elm_ui$Internal$Model$Height = function (a) {
-	return {$: 'Height', a: a};
-};
-var mdgriffith$elm_ui$Element$height = mdgriffith$elm_ui$Internal$Model$Height;
-var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
-var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
-	return {$: 'Flag', a: a};
-};
-var mdgriffith$elm_ui$Internal$Flag$Second = function (a) {
-	return {$: 'Second', a: a};
-};
-var mdgriffith$elm_ui$Internal$Flag$flag = function (i) {
-	return (i > 31) ? mdgriffith$elm_ui$Internal$Flag$Second(1 << (i - 32)) : mdgriffith$elm_ui$Internal$Flag$Flag(1 << i);
-};
-var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
-var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
-	function (a, b, c, d, e) {
-		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
-	});
-var mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
-	function (a, b) {
-		return {$: 'StyleClass', a: a, b: b};
-	});
-var mdgriffith$elm_ui$Element$padding = function (x) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			'p-' + elm$core$String$fromInt(x),
-			x,
-			x,
-			x,
-			x));
-};
-var mdgriffith$elm_ui$Internal$Model$Content = {$: 'Content'};
-var mdgriffith$elm_ui$Element$shrink = mdgriffith$elm_ui$Internal$Model$Content;
-var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
-var mdgriffith$elm_ui$Internal$Model$Colored = F3(
-	function (a, b, c) {
-		return {$: 'Colored', a: a, b: b, c: c};
-	});
-var elm$core$Basics$round = _Basics_round;
-var mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
-	return elm$core$String$fromInt(
-		elm$core$Basics$round(x * 255));
-};
-var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
-	var red = _n0.a;
-	var green = _n0.b;
-	var blue = _n0.c;
-	var alpha = _n0.d;
-	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
-};
-var mdgriffith$elm_ui$Element$Background$color = function (clr) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$bgColor,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Colored,
-			'bg-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
-			'background-color',
-			clr));
-};
-var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
-var mdgriffith$elm_ui$Internal$Model$Single = F3(
-	function (a, b, c) {
-		return {$: 'Single', a: a, b: b, c: c};
-	});
-var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderRound,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Single,
-			'br-' + elm$core$String$fromInt(radius),
-			'border-radius',
-			elm$core$String$fromInt(radius) + 'px'));
-};
-var mdgriffith$elm_ui$Internal$Flag$borderWidth = mdgriffith$elm_ui$Internal$Flag$flag(27);
-var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
-	function (a, b, c, d, e) {
-		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
-	});
-var mdgriffith$elm_ui$Element$Border$width = function (v) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderWidth,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$BorderWidth,
-			'b-' + elm$core$String$fromInt(v),
-			v,
-			v,
-			v,
-			v));
-};
-var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
-var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontColor,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Colored,
-			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
-			'color',
-			fontColor));
-};
-var author$project$Page$Authenticator$loginPageButtonAttributes = _List_fromArray(
-	[
-		mdgriffith$elm_ui$Element$centerX,
-		mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-		mdgriffith$elm_ui$Element$padding(5),
-		mdgriffith$elm_ui$Element$Border$width(2),
-		mdgriffith$elm_ui$Element$Border$rounded(5),
-		mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundDark),
-		mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-	]);
 var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
 	return {$: 'AlignY', a: a};
 };
 var mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
 var mdgriffith$elm_ui$Element$centerY = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$CenterY);
+var mdgriffith$elm_ui$Internal$Model$Height = function (a) {
+	return {$: 'Height', a: a};
+};
+var mdgriffith$elm_ui$Element$height = mdgriffith$elm_ui$Internal$Model$Height;
+var mdgriffith$elm_ui$Internal$Model$Content = {$: 'Content'};
+var mdgriffith$elm_ui$Element$shrink = mdgriffith$elm_ui$Internal$Model$Content;
 var mdgriffith$elm_ui$Internal$Model$Width = function (a) {
 	return {$: 'Width', a: a};
 };
@@ -7816,13 +7747,6 @@ var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$p = _VirtualDom_node('p');
 var elm$html$Html$s = _VirtualDom_node('s');
 var elm$html$Html$u = _VirtualDom_node('u');
-var elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$string(string));
-	});
 var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
 var elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 	return _VirtualDom_keyedNode(
@@ -7831,6 +7755,16 @@ var elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 var elm$virtual_dom$VirtualDom$node = function (tag) {
 	return _VirtualDom_node(
 		_VirtualDom_noScript(tag));
+};
+var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
+	return {$: 'Flag', a: a};
+};
+var mdgriffith$elm_ui$Internal$Flag$Second = function (a) {
+	return {$: 'Second', a: a};
+};
+var mdgriffith$elm_ui$Internal$Flag$flag = function (i) {
+	return (i > 31) ? mdgriffith$elm_ui$Internal$Flag$Second(1 << (i - 32)) : mdgriffith$elm_ui$Internal$Flag$Flag(1 << i);
 };
 var mdgriffith$elm_ui$Internal$Flag$alignBottom = mdgriffith$elm_ui$Internal$Flag$flag(41);
 var mdgriffith$elm_ui$Internal$Flag$alignRight = mdgriffith$elm_ui$Internal$Flag$flag(40);
@@ -7909,6 +7843,11 @@ var mdgriffith$elm_ui$Internal$Model$lengthClassName = function (x) {
 			var len = x.b;
 			return 'max' + (elm$core$String$fromInt(max) + mdgriffith$elm_ui$Internal$Model$lengthClassName(len));
 	}
+};
+var elm$core$Basics$round = _Basics_round;
+var mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
+	return elm$core$String$fromInt(
+		elm$core$Basics$round(x * 255));
 };
 var mdgriffith$elm_ui$Internal$Model$transformClass = function (transform) {
 	switch (transform.$) {
@@ -11425,6 +11364,10 @@ var mdgriffith$elm_ui$Internal$Model$Embedded = F2(
 var mdgriffith$elm_ui$Internal$Model$NodeName = function (a) {
 	return {$: 'NodeName', a: a};
 };
+var mdgriffith$elm_ui$Internal$Model$Single = F3(
+	function (a, b, c) {
+		return {$: 'Single', a: a, b: b, c: c};
+	});
 var mdgriffith$elm_ui$Internal$Model$Transform = function (a) {
 	return {$: 'Transform', a: a};
 };
@@ -11867,6 +11810,7 @@ var mdgriffith$elm_ui$Internal$Model$renderWidth = function (w) {
 				A2(elm$core$List$cons, style, newStyle));
 	}
 };
+var mdgriffith$elm_ui$Internal$Flag$borderWidth = mdgriffith$elm_ui$Internal$Flag$flag(27);
 var mdgriffith$elm_ui$Internal$Model$skippable = F2(
 	function (flag, style) {
 		if (_Utils_eq(flag, mdgriffith$elm_ui$Internal$Flag$borderWidth)) {
@@ -12804,9 +12748,6 @@ var mdgriffith$elm_ui$Internal$Model$element = F4(
 				mdgriffith$elm_ui$Internal$Model$NoNearbyChildren,
 				elm$core$List$reverse(attributes)));
 	});
-var mdgriffith$elm_ui$Internal$Model$Attr = function (a) {
-	return {$: 'Attr', a: a};
-};
 var mdgriffith$elm_ui$Internal$Model$htmlClass = function (cls) {
 	return mdgriffith$elm_ui$Internal$Model$Attr(
 		elm$html$Html$Attributes$class(cls));
@@ -12826,6 +12767,66 @@ var mdgriffith$elm_ui$Element$column = F2(
 					A2(
 						elm$core$List$cons,
 						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
+var mdgriffith$elm_ui$Element$el = F2(
+	function (attrs, child) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asEl,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					attrs)),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[child])));
+	});
+var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
+var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
+var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
+var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
+	function (a, b, c, d, e) {
+		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
+	});
+var mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
+	function (a, b) {
+		return {$: 'StyleClass', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$padding = function (x) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + elm$core$String$fromInt(x),
+			x,
+			x,
+			x,
+			x));
+};
+var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
+var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
+var mdgriffith$elm_ui$Element$row = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asRow,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
 						attrs))),
 			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
@@ -12854,6 +12855,73 @@ var mdgriffith$elm_ui$Internal$Model$Text = function (a) {
 var mdgriffith$elm_ui$Element$text = function (content) {
 	return mdgriffith$elm_ui$Internal$Model$Text(content);
 };
+var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
+var mdgriffith$elm_ui$Internal$Model$Colored = F3(
+	function (a, b, c) {
+		return {$: 'Colored', a: a, b: b, c: c};
+	});
+var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
+	var red = _n0.a;
+	var green = _n0.b;
+	var blue = _n0.c;
+	var alpha = _n0.d;
+	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
+};
+var mdgriffith$elm_ui$Element$Background$color = function (clr) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$bgColor,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Colored,
+			'bg-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
+			'background-color',
+			clr));
+};
+var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
+var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderRound,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Single,
+			'br-' + elm$core$String$fromInt(radius),
+			'border-radius',
+			elm$core$String$fromInt(radius) + 'px'));
+};
+var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
+	function (a, b, c, d, e) {
+		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
+	});
+var mdgriffith$elm_ui$Element$Border$width = function (v) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderWidth,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$BorderWidth,
+			'b-' + elm$core$String$fromInt(v),
+			v,
+			v,
+			v,
+			v));
+};
+var mdgriffith$elm_ui$Internal$Flag$fontWeight = mdgriffith$elm_ui$Internal$Flag$flag(13);
+var mdgriffith$elm_ui$Internal$Model$Class = F2(
+	function (a, b) {
+		return {$: 'Class', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$Font$bold = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontWeight, mdgriffith$elm_ui$Internal$Style$classes.bold);
+var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
+var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontColor,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Colored,
+			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
+			'color',
+			fontColor));
+};
+var mdgriffith$elm_ui$Element$Font$underline = mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.underline);
 var elm$json$Json$Encode$bool = _Json_wrap;
 var elm$html$Html$Attributes$boolProperty = F2(
 	function (key, bool) {
@@ -12870,22 +12938,7 @@ var elm$html$Html$Attributes$tabindex = function (n) {
 		elm$core$String$fromInt(n));
 };
 var mdgriffith$elm_ui$Internal$Flag$cursor = mdgriffith$elm_ui$Internal$Flag$flag(21);
-var mdgriffith$elm_ui$Internal$Model$Class = F2(
-	function (a, b) {
-		return {$: 'Class', a: a, b: b};
-	});
 var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
-var elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
 var elm$html$Html$Events$onClick = function (msg) {
 	return A2(
 		elm$html$Html$Events$on,
@@ -13052,23 +13105,6 @@ var mdgriffith$elm_ui$Element$alpha = function (o) {
 			'transparency-' + mdgriffith$elm_ui$Internal$Model$floatClass(transparency),
 			transparency));
 };
-var mdgriffith$elm_ui$Element$el = F2(
-	function (attrs, child) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asEl,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-					attrs)),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[child])));
-	});
 var mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
 	return {$: 'Fill', a: a};
 };
@@ -13126,8 +13162,6 @@ var mdgriffith$elm_ui$Element$Input$Padding = F4(
 	function (a, b, c, d) {
 		return {$: 'Padding', a: a, b: b, c: c, d: d};
 	});
-var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
-var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
 var mdgriffith$elm_ui$Element$Input$applyLabel = F3(
 	function (attrs, label, input) {
 		if (label.$ === 'HiddenLabel') {
@@ -13788,19 +13822,14 @@ var mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
 	return {$: 'HiddenLabel', a: a};
 };
 var mdgriffith$elm_ui$Element$Input$labelHidden = mdgriffith$elm_ui$Element$Input$HiddenLabel;
-var mdgriffith$elm_ui$Element$Input$Placeholder = F2(
-	function (a, b) {
-		return {$: 'Placeholder', a: a, b: b};
-	});
-var mdgriffith$elm_ui$Element$Input$placeholder = mdgriffith$elm_ui$Element$Input$Placeholder;
 var mdgriffith$elm_ui$Element$Input$username = mdgriffith$elm_ui$Element$Input$textHelper(
 	{
 		autofill: elm$core$Maybe$Just('username'),
 		spellchecked: false,
 		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
 	});
-var author$project$Page$Authenticator$showBody = F2(
-	function (model, state) {
+var author$project$Page$Authenticator$showDetails = F2(
+	function (model, fieldValues) {
 		return A2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
@@ -13809,55 +13838,100 @@ var author$project$Page$Authenticator$showBody = F2(
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
 					mdgriffith$elm_ui$Element$spacing(10),
 					mdgriffith$elm_ui$Element$centerX,
-					mdgriffith$elm_ui$Element$centerY
+					mdgriffith$elm_ui$Element$centerY,
+					author$project$CustomHtmlEvents$onEnter(fieldValues.clickEvent)
 				]),
 			_List_fromArray(
 				[
 					A2(
 					mdgriffith$elm_ui$Element$Input$username,
 					_List_fromArray(
-						[mdgriffith$elm_ui$Element$Input$focusedOnLoad]),
+						[
+							mdgriffith$elm_ui$Element$Input$focusedOnLoad,
+							mdgriffith$elm_ui$Element$htmlAttribute(
+							elm$html$Html$Attributes$placeholder('Email Address'))
+						]),
 					{
 						label: mdgriffith$elm_ui$Element$Input$labelHidden('Email address'),
 						onChange: author$project$Page$Authenticator$SignInInputReceived(author$project$Page$Authenticator$Email),
-						placeholder: elm$core$Maybe$Just(
-							A2(
-								mdgriffith$elm_ui$Element$Input$placeholder,
-								_List_Nil,
-								mdgriffith$elm_ui$Element$text('Email address'))),
+						placeholder: elm$core$Maybe$Nothing,
 						text: model.email
 					}),
 					A2(
 					mdgriffith$elm_ui$Element$Input$currentPassword,
-					_List_Nil,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$htmlAttribute(
+							elm$html$Html$Attributes$placeholder('Password'))
+						]),
 					{
 						label: mdgriffith$elm_ui$Element$Input$labelHidden('Password'),
 						onChange: author$project$Page$Authenticator$SignInInputReceived(author$project$Page$Authenticator$Password),
-						placeholder: elm$core$Maybe$Just(
-							A2(
-								mdgriffith$elm_ui$Element$Input$placeholder,
-								_List_Nil,
-								mdgriffith$elm_ui$Element$text('Password'))),
+						placeholder: elm$core$Maybe$Nothing,
 						show: false,
 						text: model.password
 					}),
 					A2(
 					mdgriffith$elm_ui$Element$Input$button,
-					author$project$Page$Authenticator$loginPageButtonAttributes,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$centerX,
+							mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+							mdgriffith$elm_ui$Element$padding(5),
+							mdgriffith$elm_ui$Element$Border$width(2),
+							mdgriffith$elm_ui$Element$Border$rounded(5),
+							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundDark),
+							mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+						]),
 					{
-						label: mdgriffith$elm_ui$Element$text('Sign in'),
-						onPress: elm$core$Maybe$Just(author$project$Page$Authenticator$SignInButtonClicked)
-					})
+						label: mdgriffith$elm_ui$Element$text(fieldValues.buttonText),
+						onPress: elm$core$Maybe$Just(fieldValues.clickEvent)
+					}),
+					A2(mdgriffith$elm_ui$Element$el, _List_Nil, mdgriffith$elm_ui$Element$none),
+					A2(
+					mdgriffith$elm_ui$Element$row,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+						]),
+					_List_fromArray(
+						[
+							A2(
+							mdgriffith$elm_ui$Element$el,
+							_List_Nil,
+							mdgriffith$elm_ui$Element$text(fieldValues.underText)),
+							A2(
+							mdgriffith$elm_ui$Element$Input$button,
+							_List_fromArray(
+								[mdgriffith$elm_ui$Element$Font$bold, mdgriffith$elm_ui$Element$Font$underline]),
+							{
+								label: mdgriffith$elm_ui$Element$text(fieldValues.underButtonText),
+								onPress: elm$core$Maybe$Just(fieldValues.underClickEvent)
+							})
+						]))
 				]));
 	});
-var author$project$Page$Authenticator$view = F2(
-	function (model, state) {
-		return {
-			body: A2(author$project$Page$Authenticator$showBody, model, state),
-			headerSettings: elm$core$Maybe$Nothing,
-			title: 'Sign In'
-		};
-	});
+var author$project$Page$Authenticator$showBody = function (model) {
+	var _n0 = model.currentSignUpPage;
+	if (_n0.$ === 'None') {
+		return A2(
+			author$project$Page$Authenticator$showDetails,
+			model,
+			{buttonText: 'Sign in!', clickEvent: author$project$Page$Authenticator$SignInButtonClicked, underButtonText: 'Sign up!', underClickEvent: author$project$Page$Authenticator$SignUpButtonClicked, underText: 'Don\'t have an account yet? '});
+	} else {
+		return A2(
+			author$project$Page$Authenticator$showDetails,
+			model,
+			{buttonText: 'Sign up!', clickEvent: author$project$Page$Authenticator$CreateUserButtonClicked, underButtonText: 'Go back!', underClickEvent: author$project$Page$Authenticator$ReturnToSignInButtonClicked, underText: 'Oops, I already have an account! '});
+	}
+};
+var author$project$Page$Authenticator$view = function (model) {
+	return {
+		body: author$project$Page$Authenticator$showBody(model),
+		headerSettings: elm$core$Maybe$Nothing,
+		title: 'Sign In'
+	};
+};
 var author$project$Appearance$siteBackgroundLight = A3(mdgriffith$elm_ui$Element$rgb255, 255, 255, 255);
 var author$project$Page$SignerOuter$view = {
 	body: A2(
@@ -13995,24 +14069,6 @@ var author$project$Page$TargetSelector$buildSingleTargetSelector = F2(
 						mdgriffith$elm_ui$Element$text(
 							elm$core$String$fromInt((target.count / target.minutes) | 0) + ' wpm'))
 					])));
-	});
-var mdgriffith$elm_ui$Element$row = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asRow,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
 var author$project$Page$TargetSelector$buildSingleTargetRow = F2(
 	function (imageWidth, targets) {
@@ -14304,8 +14360,6 @@ var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$Align
 var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
 var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
 var mdgriffith$elm_ui$Element$fillPortion = mdgriffith$elm_ui$Internal$Model$Fill;
-var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
-var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
 var mdgriffith$elm_ui$Internal$Model$OnLeft = {$: 'OnLeft'};
 var mdgriffith$elm_ui$Element$onLeft = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnLeft, element);
@@ -14391,8 +14445,6 @@ var author$project$Page$Writer$showProgressBar = F3(
 					mdgriffith$elm_ui$Element$none)
 				]));
 	});
-var elm$html$Html$Attributes$placeholder = elm$html$Html$Attributes$stringProperty('placeholder');
-var mdgriffith$elm_ui$Element$htmlAttribute = mdgriffith$elm_ui$Internal$Model$Attr;
 var mdgriffith$elm_ui$Element$Input$TextArea = {$: 'TextArea'};
 var mdgriffith$elm_ui$Element$Input$multiline = F2(
 	function (attrs, multi) {
@@ -14996,7 +15048,7 @@ var author$project$Main$view = function (model) {
 				author$project$Skeleton$view,
 				model.state,
 				author$project$Main$GotAuthenticatorMsg,
-				A2(author$project$Page$Authenticator$view, authenticatorModel, model.state));
+				author$project$Page$Authenticator$view(authenticatorModel));
 		default:
 			return A3(author$project$Skeleton$view, model.state, author$project$Main$GotSignerOuterMsg, author$project$Page$SignerOuter$view);
 	}

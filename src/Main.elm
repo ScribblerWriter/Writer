@@ -89,7 +89,7 @@ view model =
             Skeleton.view model.state GotTargetSelectorMsg (TargetSelector.view targetSelectorModel model.state)
 
         Authenticator authenticatorModel ->
-            Skeleton.view model.state GotAuthenticatorMsg (Authenticator.view authenticatorModel model.state)
+            Skeleton.view model.state GotAuthenticatorMsg (Authenticator.view authenticatorModel)
 
         SignerOuter ->
             Skeleton.view model.state GotSignerOuterMsg SignerOuter.view
@@ -255,8 +255,8 @@ updateAuthenticator : Authenticator.Msg -> Model -> ( Model, Cmd Msg )
 updateAuthenticator msg model =
     case model.page of
         Authenticator authenticatorModel ->
-            Authenticator.update msg authenticatorModel model.state
-                |> (\( state, data ) -> stepAuthenticator { model | state = state } data)
+            Authenticator.update msg authenticatorModel
+                |> (\data -> stepAuthenticator model data)
 
         _ ->
             ( model, Cmd.none )

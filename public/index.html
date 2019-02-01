@@ -40,6 +40,8 @@
                     fbauth.signIn(msg.content);
                 } else if (msg.operation == 'SignOut') {
                     fbauth.signOut();
+                } else if (msg.operation == 'SignUp') {
+                    fbauth.signUp(msg.content);
                 }
 
             });
