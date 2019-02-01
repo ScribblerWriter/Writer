@@ -86,8 +86,6 @@ getHeaderSettings : State -> Skeleton.HeaderSettings
 getHeaderSettings state =
     { actionButtonSettings =
         Just { action = "/", label = "CANCEL" }
-    , signOutButtonSettings =
-        Just { action = "/signout", label = "Sign Out" }
     }
 
 

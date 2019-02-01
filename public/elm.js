@@ -13958,9 +13958,7 @@ var author$project$Page$SignerOuter$view = {
 var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
 	return {
 		actionButtonSettings: elm$core$Maybe$Just(
-			{action: '/', label: 'CANCEL'}),
-		signOutButtonSettings: elm$core$Maybe$Just(
-			{action: '/signout', label: 'Sign Out'})
+			{action: '/', label: 'CANCEL'})
 	};
 };
 var author$project$Appearance$siteTargetSelectionBackground = A3(mdgriffith$elm_ui$Element$rgb255, 108, 160, 229);
@@ -14296,9 +14294,7 @@ var author$project$Page$TargetSelector$view = F2(
 var author$project$Page$Writer$getHeaderSettings = function (state) {
 	return {
 		actionButtonSettings: elm$core$Maybe$Just(
-			{action: '/target', label: 'TARGET'}),
-		signOutButtonSettings: elm$core$Maybe$Just(
-			{action: '/signout', label: 'Sign Out'})
+			{action: '/target', label: 'TARGET'})
 	};
 };
 var author$project$Page$Writer$WordsWritten = function (a) {
@@ -14582,21 +14578,19 @@ var author$project$Skeleton$buildActionButton = function (settings) {
 			url: settings.action
 		});
 };
-var author$project$Skeleton$buildSignOutButton = function (settings) {
-	return A2(
-		mdgriffith$elm_ui$Element$link,
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$padding(10),
-				mdgriffith$elm_ui$Element$centerY,
-				mdgriffith$elm_ui$Element$alignRight,
-				mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-			]),
-		{
-			label: mdgriffith$elm_ui$Element$text(settings.label),
-			url: settings.action
-		});
-};
+var author$project$Skeleton$buildSignOutButton = A2(
+	mdgriffith$elm_ui$Element$link,
+	_List_fromArray(
+		[
+			mdgriffith$elm_ui$Element$padding(10),
+			mdgriffith$elm_ui$Element$centerY,
+			mdgriffith$elm_ui$Element$alignRight,
+			mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+		]),
+	{
+		label: mdgriffith$elm_ui$Element$text('Sign Out'),
+		url: '/signout'
+	});
 var author$project$Skeleton$buildHeader = F2(
 	function (state, headerSettings) {
 		if (headerSettings.$ === 'Nothing') {
@@ -14642,15 +14636,7 @@ var author$project$Skeleton$buildHeader = F2(
 								mdgriffith$elm_ui$Element$alignRight,
 								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
 							]),
-						function () {
-							var _n2 = settings.signOutButtonSettings;
-							if (_n2.$ === 'Nothing') {
-								return mdgriffith$elm_ui$Element$none;
-							} else {
-								var buttonSettings = _n2.a;
-								return author$project$Skeleton$buildSignOutButton(buttonSettings);
-							}
-						}())
+						author$project$Skeleton$buildSignOutButton)
 					]));
 		}
 	});

@@ -27,9 +27,7 @@ type alias PageData msg =
 
 
 type alias HeaderSettings =
-    { actionButtonSettings : Maybe LinkSettings
-    , signOutButtonSettings : Maybe LinkSettings
-    }
+    { actionButtonSettings : Maybe LinkSettings }
 
 
 type alias LinkSettings =
@@ -152,12 +150,7 @@ buildHeader state headerSettings =
                     , Font.color Appearance.siteLightFontColor
                     ]
                   <|
-                    case settings.signOutButtonSettings of
-                        Nothing ->
-                            none
-
-                        Just buttonSettings ->
-                            buildSignOutButton buttonSettings
+                    buildSignOutButton
                 ]
 
 
@@ -177,14 +170,14 @@ buildActionButton settings =
         }
 
 
-buildSignOutButton : LinkSettings -> Element msg
-buildSignOutButton settings =
+buildSignOutButton : Element msg
+buildSignOutButton =
     link
         [ padding 10
         , centerY
         , alignRight
         , Font.color Appearance.siteLightFontColor
         ]
-        { url = settings.action
-        , label = text settings.label
+        { url = "/signout"
+        , label = text "Sign Out"
         }
