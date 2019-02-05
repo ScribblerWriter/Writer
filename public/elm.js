@@ -4417,6 +4417,8 @@ var author$project$Main$UrlChanged = function (a) {
 	return {$: 'UrlChanged', a: a};
 };
 var author$project$Main$NotFound = {$: 'NotFound'};
+var author$project$Main$ToWriter = {$: 'ToWriter'};
+var author$project$Main$ToTargetSelector = {$: 'ToTargetSelector'};
 var elm$core$Basics$apL = F2(
 	function (f, x) {
 		return f(x);
@@ -5899,7 +5901,12 @@ var author$project$Main$stepUrl = F2(
 					A2(
 					author$project$Main$route,
 					elm$url$Url$Parser$s('target'),
-					A2(author$project$Main$stepTargetSelector, model, author$project$Page$TargetSelector$init)),
+					A2(
+						author$project$Main$stepTargetSelector,
+						_Utils_update(
+							model,
+							{returnPage: author$project$Main$ToTargetSelector}),
+						author$project$Page$TargetSelector$init)),
 					A2(
 					author$project$Main$route,
 					elm$url$Url$Parser$s('signin'),
@@ -5986,6 +5993,7 @@ var author$project$Main$init = F3(
 				url,
 				{
 					page: author$project$Main$NotFound,
+					returnPage: author$project$Main$ToWriter,
 					state: {
 						actualCount: 0,
 						additiveCount: 0,
@@ -7030,6 +7038,21 @@ var author$project$Main$updateLinkClick = F2(
 				elm$browser$Browser$Navigation$load(href));
 		}
 	});
+var author$project$Main$pageToReturnPage = function (page) {
+	if (page.$ === 'TargetSelector') {
+		var modelTargetSelector = page.a;
+		return author$project$Main$ToTargetSelector;
+	} else {
+		return author$project$Main$ToWriter;
+	}
+};
+var author$project$Main$returnPageToUrlString = function (page) {
+	if (page.$ === 'ToTargetSelector') {
+		return 'target';
+	} else {
+		return '';
+	}
+};
 var elm$json$Json$Decode$fail = _Json_fail;
 var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder = F3(
 	function (pathDecoder, valDecoder, fallback) {
@@ -7127,7 +7150,10 @@ var author$project$Main$updateUser = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{state: state}),
+						{
+							returnPage: author$project$Main$pageToReturnPage(model.page),
+							state: state
+						}),
 					A2(
 						elm$browser$Browser$Navigation$pushUrl,
 						model.state.key,
@@ -7152,7 +7178,13 @@ var author$project$Main$updateUser = F2(
 					A2(
 						elm$browser$Browser$Navigation$pushUrl,
 						model.state.key,
-						A2(elm$url$Url$Builder$absolute, _List_Nil, _List_Nil)));
+						A2(
+							elm$url$Url$Builder$absolute,
+							_List_fromArray(
+								[
+									author$project$Main$returnPageToUrlString(model.returnPage)
+								]),
+							_List_Nil)));
 			}(
 				function (state) {
 					return _Utils_update(

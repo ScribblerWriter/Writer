@@ -33,6 +33,7 @@ main =
 type alias Model =
     { page : Page
     , state : State
+    , returnPage : ReturnPage
     }
 
 
@@ -44,10 +45,16 @@ type Page
     | SignerOuter
 
 
+type ReturnPage
+    = ToWriter
+    | ToTargetSelector
+
+
 init : Decode.Value -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     stepUrl url
         { page = NotFound
+        , returnPage = ToWriter
         , state =
             { additiveCount = 0
             , actualCount = 0
@@ -158,7 +165,7 @@ updateUser value model =
             model.state
                 |> (\state -> { state | user = Nothing })
                 |> (\state ->
-                        ( { model | state = state }
+                        ( { model | state = state, returnPage = pageToReturnPage model.page }
                         , Nav.pushUrl model.state.key (Url.Builder.absolute [ "signin" ] [])
                         )
                    )
@@ -168,9 +175,29 @@ updateUser value model =
                 |> (\state -> { state | user = State.decodeUser user })
                 |> (\state ->
                         ( { model | state = state }
-                        , Nav.pushUrl model.state.key (Url.Builder.absolute [] [])
+                        , Nav.pushUrl model.state.key (Url.Builder.absolute [ returnPageToUrlString model.returnPage ] [])
                         )
                    )
+
+
+pageToReturnPage : Page -> ReturnPage
+pageToReturnPage page =
+    case page of
+        TargetSelector modelTargetSelector ->
+            ToTargetSelector
+
+        _ ->
+            ToWriter
+
+
+returnPageToUrlString : ReturnPage -> String
+returnPageToUrlString page =
+    case page of
+        ToTargetSelector ->
+            "target"
+
+        _ ->
+            ""
 
 
 updateTargetTimer : State -> State
@@ -305,7 +332,7 @@ stepUrl url model =
         parser =
             oneOf
                 [ route top (stepWriter model Writer.init)
-                , route (s "target") (stepTargetSelector model TargetSelector.init)
+                , route (s "target") (stepTargetSelector { model | returnPage = ToTargetSelector } TargetSelector.init)
                 , route (s "signin") (stepAuthenticator model Authenticator.init)
                 , route (s "signout") (stepSignerOuter model SignerOuter.init)
                 ]

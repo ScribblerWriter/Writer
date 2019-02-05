@@ -69,7 +69,6 @@
 
             function messageCallback(message) {
                 try {
-                    console.log(message);
                     appElm.ports.incomingMessage.send(message);
                 }
                 catch (error) {

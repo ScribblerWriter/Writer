@@ -3,12 +3,6 @@ const fbauth = (function(messageCallback) {
 	const auth = firebase.auth();
 
 	auth.onAuthStateChanged(user => {
-		if (user) {
-			console.log(user);
-		} else {
-			console.log('Not logged in.');
-		}
-
 		messageCallback({
 			operation : "AuthStateChanged",
 			content : user
