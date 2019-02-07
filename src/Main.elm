@@ -62,7 +62,7 @@ init flags url key =
             , currentTarget = Nothing
             , currentTargetTimerInSecs = 0
             , winProgress = 0
-            , endMessage = ""
+            , ended = State.No
             , countMethod = State.Additive
             , windowDimensions = State.decodeDimensions flags
             , user = Nothing
@@ -211,10 +211,15 @@ updateTargetTimer state =
                 { state
                     | currentTarget = Just { target | new = False }
                     , currentTargetTimerInSecs = target.minutes * 60
+                    , winProgress = 0
+                    , ended = State.No
                 }
 
-            else if state.currentTargetTimerInSecs <= 0 then
-                { state | endMessage = State.endReasonToString State.TimeExpired }
+            else if state.currentTargetTimerInSecs <= 0 && state.ended /= State.WordsReached then
+                { state | ended = State.TimeExpired }
+
+            else if state.winProgress >= target.count then
+                { state | ended = State.WordsReached }
 
             else
                 { state | currentTargetTimerInSecs = state.currentTargetTimerInSecs - 1 }

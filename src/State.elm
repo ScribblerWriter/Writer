@@ -1,6 +1,6 @@
 module State exposing
     ( CountMethod(..)
-    , EndReason(..)
+    , Ended(..)
     , State
     , decodeDimensions
     , decodeLoadedState
@@ -23,7 +23,7 @@ type alias State =
     , currentTarget : Maybe Target
     , currentTargetTimerInSecs : Int
     , winProgress : Int
-    , endMessage : String
+    , ended : Ended
     , countMethod : CountMethod
     , windowDimensions : Dimensions
     , user : Maybe User
@@ -49,8 +49,9 @@ type CountMethod
     | Subtractive
 
 
-type EndReason
-    = TimeExpired
+type Ended
+    = No
+    | TimeExpired
     | WordsReached
 
 
@@ -58,9 +59,12 @@ type EndReason
 -- Conversion
 
 
-endReasonToString : EndReason -> String
-endReasonToString reason =
-    case reason of
+endReasonToString : Ended -> String
+endReasonToString ended =
+    case ended of
+        No ->
+            ""
+
         TimeExpired ->
             "Time's up!"
 

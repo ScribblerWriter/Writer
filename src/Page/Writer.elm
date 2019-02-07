@@ -95,7 +95,6 @@ updateCounts document model state =
         | currentText = document
         , actualCount = trimmedWordCount
         , winProgress = calculateProgress state dif
-        , endMessage = generateEndMessage state dif
       }
     )
 
@@ -116,7 +115,7 @@ calculateProgress : State -> Int -> Int
 calculateProgress state dif =
     case state.currentTarget of
         Just target ->
-            if dif > 0 then
+            if dif > 0 && state.ended == State.No then
                 if state.winProgress + dif >= target.count then
                     target.count
 
@@ -127,25 +126,7 @@ calculateProgress state dif =
                 state.winProgress
 
         Nothing ->
-            0
-
-
-generateEndMessage : State -> Int -> String
-generateEndMessage state dif =
-    case state.currentTarget of
-        Just target ->
-            if dif > 0 then
-                if state.winProgress + dif >= target.count then
-                    State.endReasonToString State.WordsReached
-
-                else
-                    state.endMessage
-
-            else
-                state.endMessage
-
-        Nothing ->
-            ""
+            -1
 
 
 countWords : String -> Int
@@ -267,8 +248,8 @@ currentTargetCounts winProgress winCount =
 currentTargetFightStatus : Model -> State -> String
 currentTargetFightStatus model state =
     "  "
-        ++ (if state.endMessage /= "" then
-                state.endMessage
+        ++ (if state.ended /= State.No then
+                State.endReasonToString state.ended
 
             else
                 formatSecondsToString state.currentTargetTimerInSecs

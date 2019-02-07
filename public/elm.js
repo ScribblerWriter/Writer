@@ -5939,6 +5939,7 @@ var author$project$Ports$sendMessageWithJustResponse = F2(
 			elm$core$Maybe$Just(returnOperation));
 	});
 var author$project$State$Additive = {$: 'Additive'};
+var author$project$State$No = {$: 'No'};
 var elm$json$Json$Decode$map2 = _Json_map2;
 var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
 var elm$json$Json$Decode$field = _Json_decodeField;
@@ -6001,7 +6002,7 @@ var author$project$Main$init = F3(
 						currentTarget: elm$core$Maybe$Nothing,
 						currentTargetTimerInSecs: 0,
 						currentText: '',
-						endMessage: '',
+						ended: author$project$State$No,
 						key: key,
 						user: elm$core$Maybe$Nothing,
 						winProgress: 0,
@@ -7384,13 +7385,9 @@ var author$project$Main$updateTargetSelector = F2(
 		}
 	});
 var author$project$State$TimeExpired = {$: 'TimeExpired'};
-var author$project$State$endReasonToString = function (reason) {
-	if (reason.$ === 'TimeExpired') {
-		return 'Time\'s up!';
-	} else {
-		return 'You win!';
-	}
-};
+var author$project$State$WordsReached = {$: 'WordsReached'};
+var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Basics$neq = _Utils_notEqual;
 var author$project$Main$updateTargetTimer = function (state) {
 	var _n0 = state.currentTarget;
 	if (_n0.$ === 'Nothing') {
@@ -7404,25 +7401,29 @@ var author$project$Main$updateTargetTimer = function (state) {
 					_Utils_update(
 						target,
 						{_new: false})),
-				currentTargetTimerInSecs: target.minutes * 60
-			}) : ((state.currentTargetTimerInSecs <= 0) ? _Utils_update(
+				currentTargetTimerInSecs: target.minutes * 60,
+				ended: author$project$State$No,
+				winProgress: 0
+			}) : (((state.currentTargetTimerInSecs <= 0) && (!_Utils_eq(state.ended, author$project$State$WordsReached))) ? _Utils_update(
 			state,
-			{
-				endMessage: author$project$State$endReasonToString(author$project$State$TimeExpired)
-			}) : _Utils_update(
+			{ended: author$project$State$TimeExpired}) : ((_Utils_cmp(state.winProgress, target.count) > -1) ? _Utils_update(
 			state,
-			{currentTargetTimerInSecs: state.currentTargetTimerInSecs - 1}));
+			{ended: author$project$State$WordsReached}) : _Utils_update(
+			state,
+			{currentTargetTimerInSecs: state.currentTargetTimerInSecs - 1})));
 	}
 };
-var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
 var author$project$Page$Writer$calculateProgress = F2(
 	function (state, dif) {
 		var _n0 = state.currentTarget;
 		if (_n0.$ === 'Just') {
 			var target = _n0.a;
-			return (dif > 0) ? ((_Utils_cmp(state.winProgress + dif, target.count) > -1) ? target.count : (state.winProgress + dif)) : state.winProgress;
+			return ((dif > 0) && _Utils_eq(state.ended, author$project$State$No)) ? ((_Utils_cmp(state.winProgress + dif, target.count) > -1) ? target.count : (state.winProgress + dif)) : state.winProgress;
 		} else {
-			return 0;
+			return -1;
 		}
 	});
 var elm$core$List$filter = F2(
@@ -7457,17 +7458,6 @@ var author$project$Page$Writer$countWords = function (document) {
 					' ',
 					A3(elm$core$String$replace, '—', ' ', document)))));
 };
-var author$project$State$WordsReached = {$: 'WordsReached'};
-var author$project$Page$Writer$generateEndMessage = F2(
-	function (state, dif) {
-		var _n0 = state.currentTarget;
-		if (_n0.$ === 'Just') {
-			var target = _n0.a;
-			return (dif > 0) ? ((_Utils_cmp(state.winProgress + dif, target.count) > -1) ? author$project$State$endReasonToString(author$project$State$WordsReached) : state.endMessage) : state.endMessage;
-		} else {
-			return '';
-		}
-	});
 var author$project$Page$Writer$updateWrittenCount = F4(
 	function (writtenCount, trimmedWordCount, state, dif) {
 		return (dif > 0) ? (writtenCount + dif) : (_Utils_eq(state.countMethod, author$project$State$Additive) ? writtenCount : trimmedWordCount);
@@ -7486,7 +7476,6 @@ var author$project$Page$Writer$updateCounts = F3(
 				{
 					actualCount: trimmedWordCount,
 					currentText: document,
-					endMessage: A2(author$project$Page$Writer$generateEndMessage, state, dif),
 					winProgress: A2(author$project$Page$Writer$calculateProgress, state, dif)
 				}));
 	});
@@ -10012,9 +10001,6 @@ var elm$core$Basics$min = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) < 0) ? x : y;
 	});
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
 var elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -10143,7 +10129,6 @@ var mdgriffith$elm_ui$Internal$Model$renderNullAdjustmentRule = F2(
 						]))
 				]));
 	});
-var elm$core$Basics$neq = _Utils_notEqual;
 var elm$core$List$maximum = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -14379,9 +14364,19 @@ var author$project$Page$Writer$formatSecondsToStringHourCheck = F2(
 var author$project$Page$Writer$formatSecondsToString = function (seconds) {
 	return A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds, false);
 };
+var author$project$State$endReasonToString = function (ended) {
+	switch (ended.$) {
+		case 'No':
+			return '';
+		case 'TimeExpired':
+			return 'Time\'s up!';
+		default:
+			return 'You win!';
+	}
+};
 var author$project$Page$Writer$currentTargetFightStatus = F2(
 	function (model, state) {
-		return '  ' + ((state.endMessage !== '') ? state.endMessage : author$project$Page$Writer$formatSecondsToString(state.currentTargetTimerInSecs));
+		return '  ' + ((!_Utils_eq(state.ended, author$project$State$No)) ? author$project$State$endReasonToString(state.ended) : author$project$Page$Writer$formatSecondsToString(state.currentTargetTimerInSecs));
 	});
 var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
 var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
