@@ -35,7 +35,9 @@ port incomingMessage : (InMessage -> msg) -> Sub msg
 type OutOperation
     = SaveContent
     | LoadContent
-    | QueryDb
+    | QueryDbMultiple
+    | QueryDbSingle
+    | SaveToDb
     | SignIn
     | SignOut
     | SignUp
@@ -46,6 +48,8 @@ type InOperation
     | ContentLoaded
     | TargetListReturned
     | AuthStateChanged
+    | SettingsLoaded
+    | SettingsSaved
 
 
 
@@ -100,8 +104,11 @@ outOperationToString operation =
         LoadContent ->
             "LoadContent"
 
-        QueryDb ->
-            "QueryDb"
+        QueryDbMultiple ->
+            "QueryDbMultiple"
+
+        QueryDbSingle ->
+            "QueryDbSingle"
 
         SignIn ->
             "SignIn"
@@ -111,6 +118,9 @@ outOperationToString operation =
 
         SignUp ->
             "SignUp"
+
+        SaveToDb ->
+            "SaveToDb"
 
 
 inOperationToString : InOperation -> String
@@ -128,6 +138,12 @@ inOperationToString operation =
         AuthStateChanged ->
             "AuthStateChanged"
 
+        SettingsLoaded ->
+            "SettingsLoaded"
+
+        SettingsSaved ->
+            "SettingsSaved"
+
 
 stringToInOperation : String -> InOperation
 stringToInOperation operation =
@@ -140,6 +156,12 @@ stringToInOperation operation =
 
         "AuthStateChanged" ->
             AuthStateChanged
+
+        "SettingsLoaded" ->
+            SettingsLoaded
+
+        "SettingsSaved" ->
+            SettingsSaved
 
         _ ->
             Unknown

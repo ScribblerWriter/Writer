@@ -25,7 +25,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { targets = Dict.empty }
     , Ports.sendMessageWithContentAndResponse
-        Ports.QueryDb
+        Ports.QueryDbMultiple
         encodeGetTargetsQuery
         Ports.TargetListReturned
     )
@@ -101,7 +101,7 @@ showBody model state =
             state.windowDimensions.width // (imageWidth + 10)
     in
     column
-        [ Background.color Appearance.siteTargetSelectionBackground
+        [ Background.color Appearance.siteBackgroundTargetSelection
         , width fill
         , height fill
         , padding 25

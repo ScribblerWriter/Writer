@@ -1,11 +1,15 @@
 module State exposing
     ( CountMethod(..)
     , Ended(..)
+    , Settings
     , State
+    , User
     , decodeDimensions
     , decodeLoadedState
+    , decodeSettings
     , decodeUser
     , encodeSaveState
+    , encodeSettings
     , endReasonToString
     )
 
@@ -14,6 +18,7 @@ import Data.Target exposing (Target)
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (optional, required)
 import Json.Encode as Encode
+import Maybe.Extra
 
 
 type alias State =
@@ -27,6 +32,7 @@ type alias State =
     , countMethod : CountMethod
     , windowDimensions : Dimensions
     , user : Maybe User
+    , settings : Maybe Settings
     , key : Nav.Key
     }
 
@@ -40,8 +46,11 @@ type alias Dimensions =
 type alias User =
     { email : String
     , uid : String
-    , displayName : String
     }
+
+
+type alias Settings =
+    { displayName : Maybe String }
 
 
 type CountMethod
@@ -108,7 +117,6 @@ userDecoder =
     Decode.succeed User
         |> required "email" Decode.string
         |> required "uid" Decode.string
-        |> optional "displayName" Decode.string ""
 
 
 decodeLoadedState : Maybe Decode.Value -> State -> State
@@ -124,6 +132,22 @@ decodeLoadedState content state =
 
         Nothing ->
             state
+
+
+decodeSettings : Decode.Value -> Maybe Settings
+decodeSettings value =
+    case Decode.decodeValue settingsDecoder value of
+        Ok settings ->
+            Just settings
+
+        Err _ ->
+            Nothing
+
+
+settingsDecoder : Decode.Decoder Settings
+settingsDecoder =
+    Decode.succeed Settings
+        |> optional "displayName" (Decode.maybe Decode.string) Nothing
 
 
 getValue : Decode.Decoder a -> Decode.Value -> a -> a
@@ -180,6 +204,17 @@ encodeSaveState state =
         , ( "method", methodEncoder state.countMethod )
         , ( "actualCount", Encode.int state.actualCount )
         ]
+
+
+encodeSettings : Settings -> List ( String, Encode.Value )
+encodeSettings settings =
+    [ encodeSetting "displayName" settings.displayName Encode.string ]
+        |> Maybe.Extra.values
+
+
+encodeSetting : String -> Maybe a -> (a -> Encode.Value) -> Maybe ( String, Encode.Value )
+encodeSetting name setting encoder =
+    setting |> Maybe.map (\value -> ( name, encoder value ))
 
 
 methodEncoder : CountMethod -> Encode.Value

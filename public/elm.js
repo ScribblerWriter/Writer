@@ -4418,6 +4418,7 @@ var author$project$Main$UrlChanged = function (a) {
 };
 var author$project$Main$NotFound = {$: 'NotFound'};
 var author$project$Main$ToWriter = {$: 'ToWriter'};
+var author$project$Main$ToSettings = {$: 'ToSettings'};
 var author$project$Main$ToTargetSelector = {$: 'ToTargetSelector'};
 var elm$core$Basics$apL = F2(
 	function (f, x) {
@@ -5028,6 +5029,24 @@ var author$project$Main$stepAuthenticator = F2(
 				}),
 			A2(elm$core$Platform$Cmd$map, author$project$Main$GotAuthenticatorMsg, authenticatorCmds));
 	});
+var author$project$Main$GotSettingsMsg = function (a) {
+	return {$: 'GotSettingsMsg', a: a};
+};
+var author$project$Main$Settings = function (a) {
+	return {$: 'Settings', a: a};
+};
+var author$project$Main$stepSettings = F2(
+	function (model, _n0) {
+		var settingsModel = _n0.a;
+		var settingsCmds = _n0.b;
+		return _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{
+					page: author$project$Main$Settings(settingsModel)
+				}),
+			A2(elm$core$Platform$Cmd$map, author$project$Main$GotSettingsMsg, settingsCmds));
+	});
 var author$project$Main$GotSignerOuterMsg = function (a) {
 	return {$: 'GotSignerOuterMsg', a: a};
 };
@@ -5082,6 +5101,9 @@ var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Page$Authenticator$init = _Utils_Tuple2(
 	{currentSignUpPage: author$project$Page$Authenticator$None, email: '', password: ''},
 	elm$core$Platform$Cmd$none);
+var author$project$Page$Settings$init = _Utils_Tuple2(
+	{displayName: elm$core$Maybe$Nothing},
+	elm$core$Platform$Cmd$none);
 var author$project$Ports$SignOut = {$: 'SignOut'};
 var author$project$Ports$inOperationToString = function (operation) {
 	switch (operation.$) {
@@ -5091,8 +5113,12 @@ var author$project$Ports$inOperationToString = function (operation) {
 			return 'Unknown';
 		case 'TargetListReturned':
 			return 'TargetListReturned';
-		default:
+		case 'AuthStateChanged':
 			return 'AuthStateChanged';
+		case 'SettingsLoaded':
+			return 'SettingsLoaded';
+		default:
+			return 'SettingsSaved';
 	}
 };
 var author$project$Ports$outOperationToString = function (operation) {
@@ -5101,14 +5127,18 @@ var author$project$Ports$outOperationToString = function (operation) {
 			return 'SaveContent';
 		case 'LoadContent':
 			return 'LoadContent';
-		case 'QueryDb':
-			return 'QueryDb';
+		case 'QueryDbMultiple':
+			return 'QueryDbMultiple';
+		case 'QueryDbSingle':
+			return 'QueryDbSingle';
 		case 'SignIn':
 			return 'SignIn';
 		case 'SignOut':
 			return 'SignOut';
-		default:
+		case 'SignUp':
 			return 'SignUp';
+		default:
+			return 'SaveToDb';
 	}
 };
 var elm$core$Maybe$destruct = F3(
@@ -5184,7 +5214,7 @@ var author$project$Page$TargetSelector$encodeGetTargetsQuery = elm$json$Json$Enc
 			'collection',
 			elm$json$Json$Encode$string('targets'))
 		]));
-var author$project$Ports$QueryDb = {$: 'QueryDb'};
+var author$project$Ports$QueryDbMultiple = {$: 'QueryDbMultiple'};
 var author$project$Ports$TargetListReturned = {$: 'TargetListReturned'};
 var author$project$Ports$sendMessageWithContentAndResponse = F3(
 	function (operation, content, returnOperation) {
@@ -5198,7 +5228,7 @@ var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var author$project$Page$TargetSelector$init = _Utils_Tuple2(
 	{targets: elm$core$Dict$empty},
-	A3(author$project$Ports$sendMessageWithContentAndResponse, author$project$Ports$QueryDb, author$project$Page$TargetSelector$encodeGetTargetsQuery, author$project$Ports$TargetListReturned));
+	A3(author$project$Ports$sendMessageWithContentAndResponse, author$project$Ports$QueryDbMultiple, author$project$Page$TargetSelector$encodeGetTargetsQuery, author$project$Ports$TargetListReturned));
 var author$project$Page$Writer$init = _Utils_Tuple2(
 	{touched: false},
 	elm$core$Platform$Cmd$none);
@@ -5914,7 +5944,16 @@ var author$project$Main$stepUrl = F2(
 					A2(
 					author$project$Main$route,
 					elm$url$Url$Parser$s('signout'),
-					A2(author$project$Main$stepSignerOuter, model, author$project$Page$SignerOuter$init))
+					A2(author$project$Main$stepSignerOuter, model, author$project$Page$SignerOuter$init)),
+					A2(
+					author$project$Main$route,
+					elm$url$Url$Parser$s('settings'),
+					A2(
+						author$project$Main$stepSettings,
+						_Utils_update(
+							model,
+							{returnPage: author$project$Main$ToSettings}),
+						author$project$Page$Settings$init))
 				]));
 		var _n0 = A2(elm$url$Url$Parser$parse, parser, url);
 		if (_n0.$ === 'Just') {
@@ -6004,14 +6043,15 @@ var author$project$Main$init = F3(
 						currentText: '',
 						ended: author$project$State$No,
 						key: key,
+						settings: elm$core$Maybe$Nothing,
 						user: elm$core$Maybe$Nothing,
 						winProgress: 0,
 						windowDimensions: author$project$State$decodeDimensions(flags)
 					}
 				}));
 	});
-var author$project$Main$MessageReceived = function (a) {
-	return {$: 'MessageReceived', a: a};
+var author$project$Main$PortMessageReceived = function (a) {
+	return {$: 'PortMessageReceived', a: a};
 };
 var author$project$Main$TargetTimerTicked = function (a) {
 	return {$: 'TargetTimerTicked', a: a};
@@ -6019,6 +6059,9 @@ var author$project$Main$TargetTimerTicked = function (a) {
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
 var author$project$Page$Authenticator$subscriptions = function (model) {
+	return elm$core$Platform$Sub$none;
+};
+var author$project$Page$Settings$subscriptions = function (_n0) {
 	return elm$core$Platform$Sub$none;
 };
 var author$project$Page$TargetSelector$MessageReceived = function (a) {
@@ -6803,7 +6846,7 @@ var author$project$Main$subscriptions = function (model) {
 			_List_fromArray(
 				[
 					subs,
-					author$project$Ports$incomingMessage(author$project$Main$MessageReceived),
+					author$project$Ports$incomingMessage(author$project$Main$PortMessageReceived),
 					A2(elm$time$Time$every, 1000, author$project$Main$TargetTimerTicked)
 				]));
 	}(
@@ -6830,8 +6873,14 @@ var author$project$Main$subscriptions = function (model) {
 						elm$core$Platform$Sub$map,
 						author$project$Main$GotAuthenticatorMsg,
 						author$project$Page$Authenticator$subscriptions(authenticatorModel));
-				default:
+				case 'SignerOuter':
 					return elm$core$Platform$Sub$none;
+				default:
+					var settingsModel = _n0.a;
+					return A2(
+						elm$core$Platform$Sub$map,
+						author$project$Main$GotSettingsMsg,
+						author$project$Page$Settings$subscriptions(settingsModel));
 			}
 		}());
 };
@@ -6967,6 +7016,9 @@ var author$project$Main$updatePageLinkClick = function (model) {
 			return elm$core$Platform$Cmd$none;
 		case 'SignerOuter':
 			return elm$core$Platform$Cmd$none;
+		case 'Settings':
+			var settingsModel = _n0.a;
+			return elm$core$Platform$Cmd$none;
 		default:
 			return elm$core$Platform$Cmd$none;
 	}
@@ -7039,21 +7091,6 @@ var author$project$Main$updateLinkClick = F2(
 				elm$browser$Browser$Navigation$load(href));
 		}
 	});
-var author$project$Main$pageToReturnPage = function (page) {
-	if (page.$ === 'TargetSelector') {
-		var modelTargetSelector = page.a;
-		return author$project$Main$ToTargetSelector;
-	} else {
-		return author$project$Main$ToWriter;
-	}
-};
-var author$project$Main$returnPageToUrlString = function (page) {
-	if (page.$ === 'ToTargetSelector') {
-		return 'target';
-	} else {
-		return '';
-	}
-};
 var elm$json$Json$Decode$fail = _Json_fail;
 var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder = F3(
 	function (pathDecoder, valDecoder, fallback) {
@@ -7098,24 +7135,116 @@ var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional = F4(
 				fallback),
 			decoder);
 	});
-var author$project$State$User = F3(
-	function (email, uid, displayName) {
-		return {displayName: displayName, email: email, uid: uid};
-	});
-var author$project$State$userDecoder = A4(
+var author$project$State$Settings = function (displayName) {
+	return {displayName: displayName};
+};
+var elm$json$Json$Decode$maybe = function (decoder) {
+	return elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, decoder),
+				elm$json$Json$Decode$succeed(elm$core$Maybe$Nothing)
+			]));
+};
+var author$project$State$settingsDecoder = A4(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
 	'displayName',
+	elm$json$Json$Decode$maybe(elm$json$Json$Decode$string),
+	elm$core$Maybe$Nothing,
+	elm$json$Json$Decode$succeed(author$project$State$Settings));
+var author$project$State$decodeSettings = function (value) {
+	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$settingsDecoder, value);
+	if (_n0.$ === 'Ok') {
+		var settings = _n0.a;
+		return elm$core$Maybe$Just(settings);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Main$updateNewSettings = F2(
+	function (value, model) {
+		if (value.$ === 'Just') {
+			var settings = value.a;
+			return function (state) {
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{state: state}),
+					elm$core$Platform$Cmd$none);
+			}(
+				function (state) {
+					return _Utils_update(
+						state,
+						{
+							settings: author$project$State$decodeSettings(settings)
+						});
+				}(model.state));
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
+	});
+var author$project$Ports$QueryDbSingle = {$: 'QueryDbSingle'};
+var author$project$Ports$SettingsLoaded = {$: 'SettingsLoaded'};
+var author$project$Main$encodeSettingsLoad = function (user) {
+	if (user.$ === 'Just') {
+		var user_ = user.a;
+		return A3(
+			author$project$Ports$sendMessageWithContentAndResponse,
+			author$project$Ports$QueryDbSingle,
+			elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'collection',
+						elm$json$Json$Encode$string('users')),
+						_Utils_Tuple2(
+						'doc',
+						elm$json$Json$Encode$string(user_.uid))
+					])),
+			author$project$Ports$SettingsLoaded);
+	} else {
+		return elm$core$Platform$Cmd$none;
+	}
+};
+var author$project$Main$pageToReturnPage = function (page) {
+	switch (page.$) {
+		case 'TargetSelector':
+			return author$project$Main$ToTargetSelector;
+		case 'Settings':
+			return author$project$Main$ToSettings;
+		case 'Writer':
+			return author$project$Main$ToWriter;
+		case 'Authenticator':
+			return author$project$Main$ToWriter;
+		case 'SignerOuter':
+			return author$project$Main$ToWriter;
+		default:
+			return author$project$Main$ToWriter;
+	}
+};
+var author$project$Main$returnPageToUrlString = function (page) {
+	switch (page.$) {
+		case 'ToTargetSelector':
+			return 'target';
+		case 'ToSettings':
+			return 'settings';
+		default:
+			return '';
+	}
+};
+var author$project$State$User = F2(
+	function (email, uid) {
+		return {email: email, uid: uid};
+	});
+var author$project$State$userDecoder = A3(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'uid',
 	elm$json$Json$Decode$string,
-	'',
 	A3(
 		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'uid',
+		'email',
 		elm$json$Json$Decode$string,
-		A3(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-			'email',
-			elm$json$Json$Decode$string,
-			elm$json$Json$Decode$succeed(author$project$State$User))));
+		elm$json$Json$Decode$succeed(author$project$State$User)));
 var author$project$State$decodeUser = function (value) {
 	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$userDecoder, value);
 	if (_n0.$ === 'Ok') {
@@ -7176,16 +7305,21 @@ var author$project$Main$updateUser = F2(
 					_Utils_update(
 						model,
 						{state: state}),
-					A2(
-						elm$browser$Browser$Navigation$pushUrl,
-						model.state.key,
-						A2(
-							elm$url$Url$Builder$absolute,
-							_List_fromArray(
-								[
-									author$project$Main$returnPageToUrlString(model.returnPage)
-								]),
-							_List_Nil)));
+					elm$core$Platform$Cmd$batch(
+						_List_fromArray(
+							[
+								A2(
+								elm$browser$Browser$Navigation$pushUrl,
+								model.state.key,
+								A2(
+									elm$url$Url$Builder$absolute,
+									_List_fromArray(
+										[
+											author$project$Main$returnPageToUrlString(model.returnPage)
+										]),
+									_List_Nil)),
+								author$project$Main$encodeSettingsLoad(state.user)
+							])));
 			}(
 				function (state) {
 					return _Utils_update(
@@ -7197,6 +7331,7 @@ var author$project$Main$updateUser = F2(
 		}
 	});
 var author$project$Ports$AuthStateChanged = {$: 'AuthStateChanged'};
+var author$project$Ports$SettingsSaved = {$: 'SettingsSaved'};
 var author$project$Ports$Unknown = {$: 'Unknown'};
 var author$project$Ports$stringToInOperation = function (operation) {
 	switch (operation) {
@@ -7206,6 +7341,10 @@ var author$project$Ports$stringToInOperation = function (operation) {
 			return author$project$Ports$TargetListReturned;
 		case 'AuthStateChanged':
 			return author$project$Ports$AuthStateChanged;
+		case 'SettingsLoaded':
+			return author$project$Ports$SettingsLoaded;
+		case 'SettingsSaved':
+			return author$project$Ports$SettingsSaved;
 		default:
 			return author$project$Ports$Unknown;
 	}
@@ -7268,8 +7407,122 @@ var author$project$Main$updateMessageReceived = F2(
 					elm$core$Platform$Cmd$none);
 			case 'AuthStateChanged':
 				return A2(author$project$Main$updateUser, message.content, model);
+			case 'SettingsLoaded':
+				return A2(author$project$Main$updateNewSettings, message.content, model);
 			default:
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
+	});
+var elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var author$project$Page$Settings$encodeSettings = function (model) {
+	var liftMaybe = function (_n0) {
+		var first = _n0.a;
+		var second = _n0.b;
+		return A2(
+			elm$core$Maybe$map,
+			function (second_) {
+				return _Utils_Tuple2(first, second_);
+			},
+			second);
+	};
+	var encodeField = F2(
+		function (selector, encoder) {
+			return A2(
+				elm$core$Maybe$map,
+				encoder,
+				selector(model));
+		});
+	var fields = _List_fromArray(
+		[
+			_Utils_Tuple2(
+			'displayName',
+			A2(
+				encodeField,
+				function ($) {
+					return $.displayName;
+				},
+				elm$json$Json$Encode$string))
+		]);
+	return elm$json$Json$Encode$object(
+		A2(elm$core$List$filterMap, liftMaybe, fields));
+};
+var author$project$Page$Settings$encodeSave = F2(
+	function (userId, model) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'collection',
+					elm$json$Json$Encode$string('users')),
+					_Utils_Tuple2(
+					'doc',
+					elm$json$Json$Encode$string(userId)),
+					_Utils_Tuple2(
+					'data',
+					author$project$Page$Settings$encodeSettings(model))
+				]));
+	});
+var author$project$Ports$SaveToDb = {$: 'SaveToDb'};
+var author$project$Page$Settings$update = F3(
+	function (msg, model, state) {
+		if (msg.$ === 'DisplayNameInputRecived') {
+			var text = msg.a;
+			return _Utils_Tuple2(
+				state,
+				_Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							displayName: elm$core$Maybe$Just(text)
+						}),
+					elm$core$Platform$Cmd$none));
+		} else {
+			var _n1 = state.user;
+			if (_n1.$ === 'Just') {
+				var user = _n1.a;
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(
+						model,
+						A3(
+							author$project$Ports$sendMessageWithContentAndResponse,
+							author$project$Ports$SaveToDb,
+							A2(author$project$Page$Settings$encodeSave, user.uid, model),
+							author$project$Ports$SettingsSaved)));
+			} else {
+				return _Utils_Tuple2(
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+			}
+		}
+	});
+var author$project$Main$updateSettings = F2(
+	function (msg, model) {
+		var _n0 = model.page;
+		if (_n0.$ === 'Settings') {
+			var settingsModel = _n0.a;
+			return function (_n1) {
+				var state = _n1.a;
+				var data = _n1.b;
+				return A2(
+					author$project$Main$stepSettings,
+					_Utils_update(
+						model,
+						{state: state}),
+					data);
+			}(
+				A3(author$project$Page$Settings$update, msg, settingsModel, model.state));
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
 var author$project$Main$updateSignerOuter = F2(
@@ -7535,7 +7788,7 @@ var author$project$Main$update = F2(
 			case 'UrlChanged':
 				var url = message.a;
 				return A2(author$project$Main$stepUrl, url, model);
-			case 'MessageReceived':
+			case 'PortMessageReceived':
 				var msg = message.a;
 				return A2(author$project$Main$updateMessageReceived, msg, model);
 			case 'TargetTimerTicked':
@@ -7555,9 +7808,12 @@ var author$project$Main$update = F2(
 			case 'GotAuthenticatorMsg':
 				var msg = message.a;
 				return A2(author$project$Main$updateAuthenticator, msg, model);
-			default:
+			case 'GotSignerOuterMsg':
 				var msg = message.a;
 				return A2(author$project$Main$updateSignerOuter, msg, model);
+			default:
+				var msg = message.a;
+				return A2(author$project$Main$updateSettings, msg, model);
 		}
 	});
 var author$project$Page$Authenticator$CreateUserButtonClicked = {$: 'CreateUserButtonClicked'};
@@ -7998,16 +8254,6 @@ var mdgriffith$elm_ui$Internal$Model$reduceStyles = F2(
 		return A2(elm$core$Set$member, styleName, cache) ? nevermind : _Utils_Tuple2(
 			A2(elm$core$Set$insert, styleName, cache),
 			A2(elm$core$List$cons, style, existing));
-	});
-var elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return elm$core$Maybe$Nothing;
-		}
 	});
 var elm$core$Tuple$mapFirst = F2(
 	function (func, _n0) {
@@ -13949,6 +14195,110 @@ var author$project$Page$Authenticator$view = function (model) {
 		title: 'Sign In'
 	};
 };
+var author$project$Appearance$siteBackgroundTargetSelection = A3(mdgriffith$elm_ui$Element$rgb255, 108, 160, 229);
+var author$project$Page$Settings$DisplayNameInputRecived = function (a) {
+	return {$: 'DisplayNameInputRecived', a: a};
+};
+var mdgriffith$elm_ui$Element$fillPortion = mdgriffith$elm_ui$Internal$Model$Fill;
+var mdgriffith$elm_ui$Internal$Model$Paragraph = {$: 'Paragraph'};
+var mdgriffith$elm_ui$Element$paragraph = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asParagraph,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$Paragraph),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$spacing(5),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
+var mdgriffith$elm_ui$Element$Input$Label = F3(
+	function (a, b, c) {
+		return {$: 'Label', a: a, b: b, c: c};
+	});
+var mdgriffith$elm_ui$Element$Input$OnLeft = {$: 'OnLeft'};
+var mdgriffith$elm_ui$Element$Input$labelLeft = mdgriffith$elm_ui$Element$Input$Label(mdgriffith$elm_ui$Element$Input$OnLeft);
+var mdgriffith$elm_ui$Element$Input$Placeholder = F2(
+	function (a, b) {
+		return {$: 'Placeholder', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$Input$placeholder = mdgriffith$elm_ui$Element$Input$Placeholder;
+var mdgriffith$elm_ui$Element$Input$text = mdgriffith$elm_ui$Element$Input$textHelper(
+	{
+		autofill: elm$core$Maybe$Nothing,
+		spellchecked: false,
+		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
+	});
+var author$project$Page$Settings$displayName = function (model) {
+	return A2(
+		mdgriffith$elm_ui$Element$Input$text,
+		_List_Nil,
+		{
+			label: A2(
+				mdgriffith$elm_ui$Element$Input$labelLeft,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$width(
+						mdgriffith$elm_ui$Element$fillPortion(5))
+					]),
+				A2(
+					mdgriffith$elm_ui$Element$paragraph,
+					_List_Nil,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$text('Your Display Name is your identity on GameYourWords.com. This name will be how you are seen by anyone else in the GameYourWords community. Please choose a name that isn\'t obscene or offensive.')
+						]))),
+			onChange: author$project$Page$Settings$DisplayNameInputRecived,
+			placeholder: elm$core$Maybe$Just(
+				A2(
+					mdgriffith$elm_ui$Element$Input$placeholder,
+					_List_Nil,
+					mdgriffith$elm_ui$Element$text('Display Name'))),
+			text: A2(elm$core$Maybe$withDefault, '', model.displayName)
+		});
+};
+var author$project$Page$Settings$SaveButtonPressed = {$: 'SaveButtonPressed'};
+var author$project$Page$Settings$saveSettings = A2(
+	mdgriffith$elm_ui$Element$Input$button,
+	_List_Nil,
+	{
+		label: mdgriffith$elm_ui$Element$text('Save settings'),
+		onPress: elm$core$Maybe$Just(author$project$Page$Settings$SaveButtonPressed)
+	});
+var author$project$Page$Settings$showBody = F2(
+	function (model, state) {
+		return A2(
+			mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundTargetSelection),
+					mdgriffith$elm_ui$Element$padding(10),
+					mdgriffith$elm_ui$Element$spacing(10)
+				]),
+			_List_fromArray(
+				[
+					author$project$Page$Settings$displayName(model),
+					author$project$Page$Settings$saveSettings
+				]));
+	});
+var author$project$Page$Settings$view = F2(
+	function (model, state) {
+		return {
+			body: A2(author$project$Page$Settings$showBody, model, state),
+			headerSettings: elm$core$Maybe$Just(
+				{actionButtonSettings: elm$core$Maybe$Nothing}),
+			title: 'Settings'
+		};
+	});
 var author$project$Appearance$siteBackgroundLight = A3(mdgriffith$elm_ui$Element$rgb255, 255, 255, 255);
 var author$project$Page$SignerOuter$view = {
 	body: A2(
@@ -13978,7 +14328,6 @@ var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
 			{action: '/', label: 'CANCEL'})
 	};
 };
-var author$project$Appearance$siteTargetSelectionBackground = A3(mdgriffith$elm_ui$Element$rgb255, 108, 160, 229);
 var author$project$Page$TargetSelector$TargetButtonClicked = function (a) {
 	return {$: 'TargetButtonClicked', a: a};
 };
@@ -14287,7 +14636,7 @@ var author$project$Page$TargetSelector$showBody = F2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
-					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteTargetSelectionBackground),
+					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundTargetSelection),
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$padding(25),
@@ -14382,7 +14731,6 @@ var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
 var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
 var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
 var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
-var mdgriffith$elm_ui$Element$fillPortion = mdgriffith$elm_ui$Internal$Model$Fill;
 var mdgriffith$elm_ui$Internal$Model$OnLeft = {$: 'OnLeft'};
 var mdgriffith$elm_ui$Element$onLeft = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnLeft, element);
@@ -14609,7 +14957,6 @@ var author$project$Skeleton$buildSignOutButton = A2(
 	mdgriffith$elm_ui$Element$link,
 	_List_fromArray(
 		[
-			mdgriffith$elm_ui$Element$padding(10),
 			mdgriffith$elm_ui$Element$centerY,
 			mdgriffith$elm_ui$Element$alignRight,
 			mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
@@ -14618,6 +14965,20 @@ var author$project$Skeleton$buildSignOutButton = A2(
 		label: mdgriffith$elm_ui$Element$text('Sign Out'),
 		url: '/signout'
 	});
+var author$project$Skeleton$showDisplayName = function (settings) {
+	if (settings.$ === 'Just') {
+		var settings_ = settings.a;
+		var _n1 = settings_.displayName;
+		if (_n1.$ === 'Just') {
+			var name = _n1.a;
+			return name;
+		} else {
+			return '';
+		}
+	} else {
+		return '';
+	}
+};
 var author$project$Skeleton$buildHeader = F2(
 	function (state, headerSettings) {
 		if (headerSettings.$ === 'Nothing') {
@@ -14654,6 +15015,17 @@ var author$project$Skeleton$buildHeader = F2(
 							]),
 						mdgriffith$elm_ui$Element$text(
 							'Written so far: ' + elm$core$String$fromInt(state.additiveCount))),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$padding(10),
+								mdgriffith$elm_ui$Element$centerY,
+								mdgriffith$elm_ui$Element$alignRight,
+								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+							]),
+						mdgriffith$elm_ui$Element$text(
+							author$project$Skeleton$showDisplayName(state.settings))),
 						A2(
 						mdgriffith$elm_ui$Element$el,
 						_List_fromArray(
@@ -15062,8 +15434,15 @@ var author$project$Main$view = function (model) {
 				model.state,
 				author$project$Main$GotAuthenticatorMsg,
 				author$project$Page$Authenticator$view(authenticatorModel));
-		default:
+		case 'SignerOuter':
 			return A3(author$project$Skeleton$view, model.state, author$project$Main$GotSignerOuterMsg, author$project$Page$SignerOuter$view);
+		default:
+			var settingsModel = _n0.a;
+			return A3(
+				author$project$Skeleton$view,
+				model.state,
+				author$project$Main$GotSettingsMsg,
+				A2(author$project$Page$Settings$view, settingsModel, model.state));
 	}
 };
 var elm$browser$Browser$application = _Browser_application;

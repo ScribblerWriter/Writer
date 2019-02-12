@@ -6,6 +6,7 @@ import Html exposing (text)
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Page.Authenticator as Authenticator
+import Page.Settings as Settings
 import Page.SignerOuter as SignerOuter
 import Page.TargetSelector as TargetSelector
 import Page.Writer as Writer
@@ -43,11 +44,13 @@ type Page
     | TargetSelector TargetSelector.Model
     | Authenticator Authenticator.Model
     | SignerOuter
+    | Settings Settings.Model
 
 
 type ReturnPage
     = ToWriter
     | ToTargetSelector
+    | ToSettings
 
 
 init : Decode.Value -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -66,6 +69,7 @@ init flags url key =
             , countMethod = State.Additive
             , windowDimensions = State.decodeDimensions flags
             , user = Nothing
+            , settings = Nothing
             , key = key
             }
         }
@@ -101,6 +105,9 @@ view model =
         SignerOuter ->
             Skeleton.view model.state GotSignerOuterMsg SignerOuter.view
 
+        Settings settingsModel ->
+            Skeleton.view model.state GotSettingsMsg (Settings.view settingsModel model.state)
+
 
 
 -- Update
@@ -109,11 +116,12 @@ view model =
 type Msg
     = UrlChanged Url.Url
     | LinkClicked Browser.UrlRequest
-    | MessageReceived Ports.InMessage
+    | PortMessageReceived Ports.InMessage
     | GotWriterMsg Writer.Msg
     | GotTargetSelectorMsg TargetSelector.Msg
     | GotAuthenticatorMsg Authenticator.Msg
     | GotSignerOuterMsg SignerOuter.Msg
+    | GotSettingsMsg Settings.Msg
     | TargetTimerTicked Time.Posix
 
 
@@ -126,7 +134,7 @@ update message model =
         UrlChanged url ->
             stepUrl url model
 
-        MessageReceived msg ->
+        PortMessageReceived msg ->
             updateMessageReceived msg model
 
         TargetTimerTicked _ ->
@@ -144,6 +152,9 @@ update message model =
         GotSignerOuterMsg msg ->
             updateSignerOuter msg model
 
+        GotSettingsMsg msg ->
+            updateSettings msg model
+
 
 updateMessageReceived : Ports.InMessage -> Model -> ( Model, Cmd Msg )
 updateMessageReceived message model =
@@ -153,6 +164,9 @@ updateMessageReceived message model =
 
         Ports.AuthStateChanged ->
             updateUser message.content model
+
+        Ports.SettingsLoaded ->
+            updateNewSettings message.content model
 
         _ ->
             ( model, Cmd.none )
@@ -175,18 +189,50 @@ updateUser value model =
                 |> (\state -> { state | user = State.decodeUser user })
                 |> (\state ->
                         ( { model | state = state }
-                        , Nav.pushUrl model.state.key (Url.Builder.absolute [ returnPageToUrlString model.returnPage ] [])
+                        , Cmd.batch
+                            [ Nav.pushUrl model.state.key (Url.Builder.absolute [ returnPageToUrlString model.returnPage ] [])
+                            , encodeSettingsLoad state.user
+                            ]
                         )
                    )
+
+
+encodeSettingsLoad : Maybe State.User -> Cmd Msg
+encodeSettingsLoad user =
+    case user of
+        Just user_ ->
+            Ports.sendMessageWithContentAndResponse
+                Ports.QueryDbSingle
+                (Encode.object
+                    [ ( "collection", Encode.string "users" )
+                    , ( "doc", Encode.string user_.uid )
+                    ]
+                )
+                Ports.SettingsLoaded
+
+        Nothing ->
+            Cmd.none
 
 
 pageToReturnPage : Page -> ReturnPage
 pageToReturnPage page =
     case page of
-        TargetSelector modelTargetSelector ->
+        TargetSelector _ ->
             ToTargetSelector
 
-        _ ->
+        Settings _ ->
+            ToSettings
+
+        Writer _ ->
+            ToWriter
+
+        Authenticator _ ->
+            ToWriter
+
+        SignerOuter ->
+            ToWriter
+
+        NotFound ->
             ToWriter
 
 
@@ -196,8 +242,23 @@ returnPageToUrlString page =
         ToTargetSelector ->
             "target"
 
-        _ ->
+        ToSettings ->
+            "settings"
+
+        ToWriter ->
             ""
+
+
+updateNewSettings : Maybe Decode.Value -> Model -> ( Model, Cmd Msg )
+updateNewSettings value model =
+    case value of
+        Just settings ->
+            model.state
+                |> (\state -> { state | settings = State.decodeSettings settings })
+                |> (\state -> ( { model | state = state }, Cmd.none ))
+
+        Nothing ->
+            ( model, Cmd.none )
 
 
 updateTargetTimer : State -> State
@@ -257,6 +318,9 @@ updatePageLinkClick model =
         SignerOuter ->
             Cmd.none
 
+        Settings settingsModel ->
+            Cmd.none
+
         NotFound ->
             Cmd.none
 
@@ -299,6 +363,17 @@ updateSignerOuter msg model =
     ( model, Cmd.none )
 
 
+updateSettings : Settings.Msg -> Model -> ( Model, Cmd Msg )
+updateSettings msg model =
+    case model.page of
+        Settings settingsModel ->
+            Settings.update msg settingsModel model.state
+                |> (\( state, data ) -> stepSettings { model | state = state } data)
+
+        _ ->
+            ( model, Cmd.none )
+
+
 
 -- Routing
 
@@ -331,6 +406,13 @@ stepSignerOuter model signerOuterCmd =
     )
 
 
+stepSettings : Model -> ( Settings.Model, Cmd Settings.Msg ) -> ( Model, Cmd Msg )
+stepSettings model ( settingsModel, settingsCmds ) =
+    ( { model | page = Settings settingsModel }
+    , Cmd.map GotSettingsMsg settingsCmds
+    )
+
+
 stepUrl : Url.Url -> Model -> ( Model, Cmd Msg )
 stepUrl url model =
     let
@@ -340,6 +422,7 @@ stepUrl url model =
                 , route (s "target") (stepTargetSelector { model | returnPage = ToTargetSelector } TargetSelector.init)
                 , route (s "signin") (stepAuthenticator model Authenticator.init)
                 , route (s "signout") (stepSignerOuter model SignerOuter.init)
+                , route (s "settings") (stepSettings { model | returnPage = ToSettings } Settings.init)
                 ]
     in
     case Parser.parse parser url of
@@ -378,11 +461,14 @@ subscriptions model =
 
         SignerOuter ->
             Sub.none
+
+        Settings settingsModel ->
+            Sub.map GotSettingsMsg (Settings.subscriptions settingsModel)
     )
         |> (\subs ->
                 Sub.batch
                     [ subs
-                    , Ports.incomingMessage MessageReceived
+                    , Ports.incomingMessage PortMessageReceived
                     , Time.every 1000 TargetTimerTicked
                     ]
            )

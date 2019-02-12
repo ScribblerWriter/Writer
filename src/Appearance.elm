@@ -4,10 +4,10 @@ module Appearance exposing
     , siteActionButtonColor
     , siteBackgroundDark
     , siteBackgroundLight
+    , siteBackgroundTargetSelection
     , siteFocusStyle
     , siteFontSize
     , siteLightFontColor
-    , siteTargetSelectionBackground
     )
 
 import Element exposing (..)
@@ -19,19 +19,19 @@ siteBackgroundDark =
     rgb255 13 70 113
 
 
-siteLightFontColor : Color
-siteLightFontColor =
-    rgb255 240 240 240
-
-
 siteBackgroundLight : Color
 siteBackgroundLight =
     rgb255 255 255 255
 
 
-siteTargetSelectionBackground : Color
-siteTargetSelectionBackground =
+siteBackgroundTargetSelection : Color
+siteBackgroundTargetSelection =
     rgb255 108 160 229
+
+
+siteLightFontColor : Color
+siteLightFontColor =
+    rgb255 240 240 240
 
 
 siteFocusStyle : Option

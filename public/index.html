@@ -30,19 +30,28 @@
             });
 
             appElm.ports.outgoingMessage.subscribe( msg => {
+
+                console.log('msg:', msg)
                 if (msg.operation == 'LoadContent') {
                     loadFromStorage(msg.returnOperation);
                 } else if (msg.operation == 'SaveContent') {
                     saveToStorage(msg.content);
-                } else if (msg.operation == 'QueryDb') {
-                    queryDb(msg.content, msg.returnOperation);
+                } else if (msg.operation == 'QueryDbSingle') {
+                    queryDbSingle(msg.content, msg.returnOperation);
+                } else if (msg.operation == 'QueryDbMultiple') {
+                    queryDbMultiple(msg.content, msg.returnOperation);
                 } else if (msg.operation == 'SignIn') {
                     fbauth.signIn(msg.content);
                 } else if (msg.operation == 'SignOut') {
                     fbauth.signOut();
                 } else if (msg.operation == 'SignUp') {
                     fbauth.signUp(msg.content);
+                } else if (msg.operation == 'SaveToDb') {
+                    saveToDb(msg.content, msg.returnOperation);
+                } else {
+                    console.log('Unknown operation: ', msg.operation);
                 }
+
 
             });
 
@@ -56,15 +65,30 @@
                 localStorage.setItem('settings', JSON.stringify(content));
             }
 
-            function queryDb(content, returnOperation) {
-                fbdb.queryDb(content)
+            function queryDbSingle(content, returnOperation) {
+                fbdb.queryDbSingle(content)
+                .then(doc => {
+                    const message = { operation: returnOperation, content: doc };
+                    appElm.ports.incomingMessage.send(message);
+                })
+                .catch(error => {
+                    console.log ("Couldn't send to port: ", error);
+                })
+            }
+
+            function queryDbMultiple(content, returnOperation) {
+                fbdb.queryDbMultiple(content)
                 .then(result => {
-                    const message = { operation: returnOperation, content: result }
+                    const message = { operation: returnOperation, content: result };
                     appElm.ports.incomingMessage.send(message);
                 })
                 .catch(error => {
                     console.log ("Couldn't send to port: ", error);
                 });
+            }
+
+            function saveToDb(content, returnOperation) {
+                fbdb.saveToDb(content);
             }
 
             function messageCallback(message) {

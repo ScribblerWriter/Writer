@@ -150,8 +150,32 @@ buildHeader state headerSettings =
                     , Font.color Appearance.siteLightFontColor
                     ]
                   <|
+                    text <|
+                        showDisplayName state.settings
+                , el
+                    [ padding 10
+                    , centerY
+                    , alignRight
+                    , Font.color Appearance.siteLightFontColor
+                    ]
+                  <|
                     buildSignOutButton
                 ]
+
+
+showDisplayName : Maybe State.Settings -> String
+showDisplayName settings =
+    case settings of
+        Just settings_ ->
+            case settings_.displayName of
+                Just name ->
+                    name
+
+                Nothing ->
+                    ""
+
+        Nothing ->
+            ""
 
 
 buildActionButton : LinkSettings -> Element msg
@@ -173,8 +197,7 @@ buildActionButton settings =
 buildSignOutButton : Element msg
 buildSignOutButton =
     link
-        [ padding 10
-        , centerY
+        [ centerY
         , alignRight
         , Font.color Appearance.siteLightFontColor
         ]

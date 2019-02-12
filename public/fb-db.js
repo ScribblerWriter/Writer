@@ -4,7 +4,7 @@ const fbdb = (function() {
 
 	// Return functions for db operations
 	return {
-		queryDb: query => {
+		queryDbMultiple: query => {
 			return db.collection(query.collection)
  				.get()
 				.then(querySnapshot => {
@@ -17,7 +17,35 @@ const fbdb = (function() {
 					return data;
 				})
 				.catch(error => {
-					consol.log("Error getting documents: ", error);
+					console.log("Error getting documents: ", error);
+				});
+		},
+
+		queryDbSingle: query => {
+			return db.collection(query.collection).doc(query.doc)
+				.get()
+				.then(doc => {
+					if(doc.exists) {
+						return doc.data();
+					} else {
+						console.log("No such document: ", query.doc);
+					}
+				})
+				.catch(error => {
+					console.log("Error getting document: ", error);
+				});
+
+		},
+
+		saveToDb: data => {
+			db.collection(data.collection)
+				.doc(data.doc)
+				.set(data.data, { merge: true })
+				.then(function() {
+					console.log('Data successfully written');
+				})
+				.catch(error => {
+					console.log('Error writing document', error);
 				});
 		}
 	};
