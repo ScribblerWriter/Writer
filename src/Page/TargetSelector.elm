@@ -1,7 +1,6 @@
 module Page.TargetSelector exposing (Model, Msg, init, subscriptions, update, view)
 
 import Appearance
-import Browser.Events
 import Browser.Navigation as Nav
 import Data.Target exposing (Target)
 import Dict exposing (Dict)
@@ -38,7 +37,6 @@ init =
 type Msg
     = TargetButtonClicked Target
     | MessageReceived Ports.InMessage
-    | WindowResized Int Int
 
 
 update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
@@ -63,11 +61,6 @@ update msg model state =
 
                 _ ->
                     ( state, ( model, Cmd.none ) )
-
-        WindowResized width height ->
-            ( { state | windowDimensions = { width = width, height = height } }
-            , ( model, Cmd.none )
-            )
 
 
 
@@ -194,6 +187,4 @@ targetDecoder =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ Ports.incomingMessage MessageReceived
-        , Browser.Events.onResize WindowResized
-        ]
+        [ Ports.incomingMessage MessageReceived ]

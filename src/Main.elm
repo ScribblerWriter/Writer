@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Browser.Events
 import Browser.Navigation as Nav
 import Html exposing (text)
 import Json.Decode as Decode
@@ -123,6 +124,7 @@ type Msg
     | GotSignerOuterMsg SignerOuter.Msg
     | GotSettingsMsg Settings.Msg
     | TargetTimerTicked Time.Posix
+    | WindowResized Int Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -154,6 +156,11 @@ update message model =
 
         GotSettingsMsg msg ->
             updateSettings msg model
+
+        WindowResized width height ->
+            model.state
+                |> (\state -> { state | windowDimensions = { width = width, height = height } })
+                |> (\state -> ( { model | state = state }, Cmd.none ))
 
 
 updateMessageReceived : Ports.InMessage -> Model -> ( Model, Cmd Msg )
@@ -470,5 +477,6 @@ subscriptions model =
                     [ subs
                     , Ports.incomingMessage PortMessageReceived
                     , Time.every 1000 TargetTimerTicked
+                    , Browser.Events.onResize WindowResized
                     ]
            )
