@@ -242,16 +242,6 @@ showCheckBox leftValue rightValue checked =
         ]
 
 
-settingHeader : String -> Element msg
-settingHeader title =
-    el
-        [ Font.size Appearance.siteHeaderSize
-        , paddingEach { defaultPadding | bottom = 10 }
-        ]
-    <|
-        text title
-
-
 defaultPadding : { top : Int, bottom : Int, left : Int, right : Int }
 defaultPadding =
     { top = 0
