@@ -8,9 +8,10 @@ module State exposing
     , decodeLoadedState
     , decodeSettings
     , decodeUser
+    , defaultSettings
     , encodeSaveState
-    , encodeSettings
     , endReasonToString
+    , methodEncoder
     )
 
 import Browser.Navigation as Nav
@@ -29,10 +30,9 @@ type alias State =
     , currentTargetTimerInSecs : Int
     , winProgress : Int
     , ended : Ended
-    , countMethod : CountMethod
     , windowDimensions : Dimensions
     , user : Maybe User
-    , settings : Maybe Settings
+    , settings : Settings
     , key : Nav.Key
     }
 
@@ -50,7 +50,9 @@ type alias User =
 
 
 type alias Settings =
-    { displayName : Maybe String }
+    { displayName : String
+    , countMethod : CountMethod
+    }
 
 
 type CountMethod
@@ -126,7 +128,6 @@ decodeLoadedState content state =
             { state
                 | additiveCount = getValue wordCountDecoder data 0
                 , currentText = getValue textDecoder data ""
-                , countMethod = getValue methodDecoder data Additive
                 , actualCount = getValue actualCountDecoder data 0
             }
 
@@ -134,20 +135,28 @@ decodeLoadedState content state =
             state
 
 
-decodeSettings : Decode.Value -> Maybe Settings
+decodeSettings : Decode.Value -> Settings
 decodeSettings value =
     case Decode.decodeValue settingsDecoder value of
         Ok settings ->
-            Just settings
+            settings
 
         Err _ ->
-            Nothing
+            defaultSettings
 
 
 settingsDecoder : Decode.Decoder Settings
 settingsDecoder =
     Decode.succeed Settings
-        |> optional "displayName" (Decode.maybe Decode.string) Nothing
+        |> optional "displayName" Decode.string defaultSettings.displayName
+        |> optional "countMethod" methodNewDecoder defaultSettings.countMethod
+
+
+defaultSettings : Settings
+defaultSettings =
+    { displayName = ""
+    , countMethod = Additive
+    }
 
 
 getValue : Decode.Decoder a -> Decode.Value -> a -> a
@@ -175,9 +184,9 @@ actualCountDecoder =
     Decode.field "actualCount" Decode.int
 
 
-methodDecoder : Decode.Decoder CountMethod
-methodDecoder =
-    Decode.field "method" Decode.string
+methodNewDecoder : Decode.Decoder CountMethod
+methodNewDecoder =
+    Decode.string
         |> Decode.andThen
             (\str ->
                 case str of
@@ -201,20 +210,8 @@ encodeSaveState state =
     Encode.object
         [ ( "count", Encode.int state.additiveCount )
         , ( "text", Encode.string state.currentText )
-        , ( "method", methodEncoder state.countMethod )
         , ( "actualCount", Encode.int state.actualCount )
         ]
-
-
-encodeSettings : Settings -> List ( String, Encode.Value )
-encodeSettings settings =
-    [ encodeSetting "displayName" settings.displayName Encode.string ]
-        |> Maybe.Extra.values
-
-
-encodeSetting : String -> Maybe a -> (a -> Encode.Value) -> Maybe ( String, Encode.Value )
-encodeSetting name setting encoder =
-    setting |> Maybe.map (\value -> ( name, encoder value ))
 
 
 methodEncoder : CountMethod -> Encode.Value

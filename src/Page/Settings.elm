@@ -10,6 +10,8 @@ module Page.Settings exposing
 import Appearance
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
 import Element.Input as Input
 import Json.Encode as Encode
 import Ports
@@ -19,16 +21,23 @@ import State exposing (State)
 
 type Msg
     = DisplayNameInputRecived String
+    | CountMethodChanged Bool
     | SaveButtonPressed
 
 
 type alias Model =
-    { displayName : Maybe String }
+    { displayName : Maybe String
+    , countMethod : Maybe State.CountMethod
+    }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { displayName = Nothing }, Cmd.none )
+    ( { displayName = Nothing
+      , countMethod = Nothing
+      }
+    , Cmd.none
+    )
 
 
 
@@ -40,12 +49,20 @@ update msg model state =
     case msg of
         DisplayNameInputRecived text ->
             ( state
-            , ( { model
-                    | displayName = Just text
-                }
+            , ( { model | displayName = Just text }
               , Cmd.none
               )
             )
+
+        CountMethodChanged checked ->
+            countMethodFromBool checked
+                |> (\method ->
+                        ( state
+                        , ( { model | countMethod = Just method }
+                          , Cmd.none
+                          )
+                        )
+                   )
 
         SaveButtonPressed ->
             case state.user of
@@ -61,6 +78,25 @@ update msg model state =
 
                 Nothing ->
                     ( state, ( model, Cmd.none ) )
+
+
+countMethodFromBool : Bool -> State.CountMethod
+countMethodFromBool bool =
+    if bool then
+        State.Additive
+
+    else
+        State.Subtractive
+
+
+countMethodToBool : State.CountMethod -> Bool
+countMethodToBool method =
+    case method of
+        State.Additive ->
+            True
+
+        State.Subtractive ->
+            False
 
 
 
@@ -80,32 +116,149 @@ showBody model state =
     column
         [ width fill
         , height fill
-        , Background.color Appearance.siteBackgroundTargetSelection
+        , Background.color Appearance.siteBackgroundMediumDark
         , padding 10
         , spacing 10
+        , Font.color Appearance.siteLightFontColor
         ]
-        [ displayName model
-        , saveSettings
+        [ displayName <| touchedOrState .displayName model .displayName state.settings
+        , countMethod <| touchedOrState .countMethod model .countMethod state.settings
+        , saveSettingsButton
         ]
 
 
-displayName : Model -> Element Msg
-displayName model =
-    Input.text []
-        { onChange = DisplayNameInputRecived
-        , text = Maybe.withDefault "" model.displayName
-        , placeholder = Just <| Input.placeholder [] <| text "Display Name"
-        , label =
-            Input.labelLeft [ width <| fillPortion 5 ] <|
-                paragraph
-                    []
+touchedOrState : (Model -> Maybe a) -> Model -> (State.Settings -> a) -> State.Settings -> a
+touchedOrState modelSelector model settingsSelector settings =
+    case modelSelector model of
+        Just setting ->
+            setting
+
+        Nothing ->
+            settingsSelector settings
+
+
+displayName : String -> Element Msg
+displayName name =
+    column []
+        [ settingHeader "Display Name"
+        , row []
+            [ el
+                [ width <| fillPortion 4
+                , paddingEach { defaultPadding | left = 10, right = 10 }
+                , alignTop
+                ]
+              <|
+                paragraph []
                     [ text "Your Display Name is your identity on GameYourWords.com. This name will be how you are seen by anyone else in the GameYourWords community. Please choose a name that isn't obscene or offensive." ]
-        }
+            , Input.text
+                [ width <| fillPortion 1
+                , Font.color Appearance.black
+                , alignTop
+                ]
+                { onChange = DisplayNameInputRecived
+                , text = name
+                , placeholder = Just <| Input.placeholder [] <| text "Display Name"
+                , label = Input.labelHidden "Display Name"
+                }
+            ]
+        ]
 
 
-saveSettings : Element Msg
-saveSettings =
-    Input.button []
+countMethod : State.CountMethod -> Element Msg
+countMethod method =
+    column []
+        [ settingHeader "Counting Method"
+        , row []
+            [ el
+                [ width <| fillPortion 4
+                , alignTop
+                , paddingEach { defaultPadding | left = 10, right = 10 }
+                ]
+              <|
+                paragraph [ alignTop ]
+                    [ text "Your words can be counted in two different ways, depending on your preference. 'New words' means that every word you type will be added to your word count. 'Actual words' means that if you delete words, they will also be removed from your word count. This only affects your daily word count. Progress towards completing a target will always count every word written." ]
+            , Input.checkbox
+                [ width <| fillPortion 1
+                , centerX
+                , alignTop
+                ]
+                { onChange = CountMethodChanged
+                , icon = showCheckBox "New words" "Actual words"
+                , checked = countMethodToBool method
+                , label = Input.labelHidden "Counting Method"
+                }
+            ]
+        ]
+
+
+showCheckBox : String -> String -> Bool -> Element msg
+showCheckBox leftValue rightValue checked =
+    let
+        ( leftColor, rightColor ) =
+            if checked then
+                ( Appearance.siteActionButtonColor, Appearance.mediumGray )
+
+            else
+                ( Appearance.mediumGray, Appearance.siteActionButtonColor )
+    in
+    row
+        [ Border.color Appearance.siteLightFontColor
+        , width shrink
+        , centerX
+        , centerY
+        , pointer
+        ]
+        [ el
+            [ centerX
+            , centerY
+            , Background.color leftColor
+            , Border.roundEach { topLeft = 5, bottomLeft = 5, topRight = 0, bottomRight = 0 }
+            , Border.width 2
+            , padding 10
+            ]
+          <|
+            text leftValue
+        , el
+            [ centerX
+            , centerY
+            , Background.color rightColor
+            , Border.roundEach { topLeft = 0, bottomLeft = 0, topRight = 5, bottomRight = 5 }
+            , Border.widthEach { left = 0, top = 2, bottom = 2, right = 2 }
+            , padding 10
+            ]
+          <|
+            text rightValue
+        ]
+
+
+settingHeader : String -> Element msg
+settingHeader title =
+    el
+        [ Font.size Appearance.siteHeaderSize
+        , paddingEach { defaultPadding | bottom = 10 }
+        ]
+    <|
+        text title
+
+
+defaultPadding : { top : Int, bottom : Int, left : Int, right : Int }
+defaultPadding =
+    { top = 0
+    , bottom = 0
+    , left = 0
+    , right = 0
+    }
+
+
+saveSettingsButton : Element Msg
+saveSettingsButton =
+    Input.button
+        [ Border.color Appearance.siteLightFontColor
+        , Border.width 2
+        , Border.rounded 5
+        , Background.color Appearance.siteActionButtonColor
+        , padding 10
+        ]
         { onPress = Just SaveButtonPressed
         , label = text "Save settings"
         }
@@ -130,6 +283,7 @@ encodeSettings model =
         fields : List ( String, Maybe Encode.Value )
         fields =
             [ ( "displayName", encodeField .displayName Encode.string )
+            , ( "countMethod", encodeField .countMethod State.methodEncoder )
             ]
 
         encodeField : (Model -> Maybe a) -> (a -> Encode.Value) -> Maybe Encode.Value

@@ -5102,7 +5102,7 @@ var author$project$Page$Authenticator$init = _Utils_Tuple2(
 	{currentSignUpPage: author$project$Page$Authenticator$None, email: '', password: ''},
 	elm$core$Platform$Cmd$none);
 var author$project$Page$Settings$init = _Utils_Tuple2(
-	{displayName: elm$core$Maybe$Nothing},
+	{countMethod: elm$core$Maybe$Nothing, displayName: elm$core$Maybe$Nothing},
 	elm$core$Platform$Cmd$none);
 var author$project$Ports$SignOut = {$: 'SignOut'};
 var author$project$Ports$inOperationToString = function (operation) {
@@ -5977,7 +5977,6 @@ var author$project$Ports$sendMessageWithJustResponse = F2(
 			elm$core$Maybe$Nothing,
 			elm$core$Maybe$Just(returnOperation));
 	});
-var author$project$State$Additive = {$: 'Additive'};
 var author$project$State$No = {$: 'No'};
 var elm$json$Json$Decode$map2 = _Json_map2;
 var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
@@ -6014,6 +6013,8 @@ var author$project$State$decodeDimensions = function (value) {
 		return {height: 600, width: 800};
 	}
 };
+var author$project$State$Additive = {$: 'Additive'};
+var author$project$State$defaultSettings = {countMethod: author$project$State$Additive, displayName: ''};
 var author$project$Main$init = F3(
 	function (flags, url, key) {
 		return function (_n0) {
@@ -6037,13 +6038,12 @@ var author$project$Main$init = F3(
 					state: {
 						actualCount: 0,
 						additiveCount: 0,
-						countMethod: author$project$State$Additive,
 						currentTarget: elm$core$Maybe$Nothing,
 						currentTargetTimerInSecs: 0,
 						currentText: '',
 						ended: author$project$State$No,
 						key: key,
-						settings: elm$core$Maybe$Nothing,
+						settings: author$project$State$defaultSettings,
 						user: elm$core$Maybe$Nothing,
 						winProgress: 0,
 						windowDimensions: author$project$State$decodeDimensions(flags)
@@ -6965,13 +6965,6 @@ var author$project$Main$updateAuthenticator = F2(
 		}
 	});
 var author$project$Ports$SaveContent = {$: 'SaveContent'};
-var author$project$State$methodEncoder = function (method) {
-	if (method.$ === 'Additive') {
-		return elm$json$Json$Encode$string('additive');
-	} else {
-		return elm$json$Json$Encode$string('subtractive');
-	}
-};
 var elm$json$Json$Encode$int = _Json_wrap;
 var author$project$State$encodeSaveState = function (state) {
 	return elm$json$Json$Encode$object(
@@ -6983,9 +6976,6 @@ var author$project$State$encodeSaveState = function (state) {
 				_Utils_Tuple2(
 				'text',
 				elm$json$Json$Encode$string(state.currentText)),
-				_Utils_Tuple2(
-				'method',
-				author$project$State$methodEncoder(state.countMethod)),
 				_Utils_Tuple2(
 				'actualCount',
 				elm$json$Json$Encode$int(state.actualCount))
@@ -7091,6 +7081,29 @@ var author$project$Main$updateLinkClick = F2(
 				elm$browser$Browser$Navigation$load(href));
 		}
 	});
+var author$project$Ports$QueryDbSingle = {$: 'QueryDbSingle'};
+var author$project$Ports$SettingsLoaded = {$: 'SettingsLoaded'};
+var author$project$Main$loadSettings = function (user) {
+	if (user.$ === 'Just') {
+		var user_ = user.a;
+		return A3(
+			author$project$Ports$sendMessageWithContentAndResponse,
+			author$project$Ports$QueryDbSingle,
+			elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'collection',
+						elm$json$Json$Encode$string('users')),
+						_Utils_Tuple2(
+						'doc',
+						elm$json$Json$Encode$string(user_.uid))
+					])),
+			author$project$Ports$SettingsLoaded);
+	} else {
+		return elm$core$Platform$Cmd$none;
+	}
+};
 var elm$json$Json$Decode$fail = _Json_fail;
 var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder = F3(
 	function (pathDecoder, valDecoder, fallback) {
@@ -7135,30 +7148,43 @@ var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional = F4(
 				fallback),
 			decoder);
 	});
-var author$project$State$Settings = function (displayName) {
-	return {displayName: displayName};
-};
-var elm$json$Json$Decode$maybe = function (decoder) {
-	return elm$json$Json$Decode$oneOf(
-		_List_fromArray(
-			[
-				A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, decoder),
-				elm$json$Json$Decode$succeed(elm$core$Maybe$Nothing)
-			]));
-};
+var author$project$State$Settings = F2(
+	function (displayName, countMethod) {
+		return {countMethod: countMethod, displayName: displayName};
+	});
+var author$project$State$Subtractive = {$: 'Subtractive'};
+var author$project$State$methodNewDecoder = A2(
+	elm$json$Json$Decode$andThen,
+	function (str) {
+		switch (str) {
+			case 'additive':
+				return elm$json$Json$Decode$succeed(author$project$State$Additive);
+			case 'subtractive':
+				return elm$json$Json$Decode$succeed(author$project$State$Subtractive);
+			default:
+				var wrongValue = str;
+				return elm$json$Json$Decode$fail('Count method decoding failed. Value: ' + wrongValue);
+		}
+	},
+	elm$json$Json$Decode$string);
 var author$project$State$settingsDecoder = A4(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
-	'displayName',
-	elm$json$Json$Decode$maybe(elm$json$Json$Decode$string),
-	elm$core$Maybe$Nothing,
-	elm$json$Json$Decode$succeed(author$project$State$Settings));
+	'countMethod',
+	author$project$State$methodNewDecoder,
+	author$project$State$defaultSettings.countMethod,
+	A4(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+		'displayName',
+		elm$json$Json$Decode$string,
+		author$project$State$defaultSettings.displayName,
+		elm$json$Json$Decode$succeed(author$project$State$Settings)));
 var author$project$State$decodeSettings = function (value) {
 	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$settingsDecoder, value);
 	if (_n0.$ === 'Ok') {
 		var settings = _n0.a;
-		return elm$core$Maybe$Just(settings);
+		return settings;
 	} else {
-		return elm$core$Maybe$Nothing;
+		return author$project$State$defaultSettings;
 	}
 };
 var author$project$Main$updateNewSettings = F2(
@@ -7183,29 +7209,6 @@ var author$project$Main$updateNewSettings = F2(
 			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$Ports$QueryDbSingle = {$: 'QueryDbSingle'};
-var author$project$Ports$SettingsLoaded = {$: 'SettingsLoaded'};
-var author$project$Main$encodeSettingsLoad = function (user) {
-	if (user.$ === 'Just') {
-		var user_ = user.a;
-		return A3(
-			author$project$Ports$sendMessageWithContentAndResponse,
-			author$project$Ports$QueryDbSingle,
-			elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'collection',
-						elm$json$Json$Encode$string('users')),
-						_Utils_Tuple2(
-						'doc',
-						elm$json$Json$Encode$string(user_.uid))
-					])),
-			author$project$Ports$SettingsLoaded);
-	} else {
-		return elm$core$Platform$Cmd$none;
-	}
-};
 var author$project$Main$pageToReturnPage = function (page) {
 	switch (page.$) {
 		case 'TargetSelector':
@@ -7318,7 +7321,7 @@ var author$project$Main$updateUser = F2(
 											author$project$Main$returnPageToUrlString(model.returnPage)
 										]),
 									_List_Nil)),
-								author$project$Main$encodeSettingsLoad(state.user)
+								author$project$Main$loadSettings(state.user)
 							])));
 			}(
 				function (state) {
@@ -7360,21 +7363,6 @@ var author$project$State$getValue = F3(
 			return value;
 		}
 	});
-var author$project$State$Subtractive = {$: 'Subtractive'};
-var author$project$State$methodDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (str) {
-		switch (str) {
-			case 'additive':
-				return elm$json$Json$Decode$succeed(author$project$State$Additive);
-			case 'subtractive':
-				return elm$json$Json$Decode$succeed(author$project$State$Subtractive);
-			default:
-				var wrongValue = str;
-				return elm$json$Json$Decode$fail('Count method decoding failed. Value: ' + wrongValue);
-		}
-	},
-	A2(elm$json$Json$Decode$field, 'method', elm$json$Json$Decode$string));
 var author$project$State$textDecoder = A2(elm$json$Json$Decode$field, 'text', elm$json$Json$Decode$string);
 var author$project$State$wordCountDecoder = A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int);
 var author$project$State$decodeLoadedState = F2(
@@ -7386,7 +7374,6 @@ var author$project$State$decodeLoadedState = F2(
 				{
 					actualCount: A3(author$project$State$getValue, author$project$State$actualCountDecoder, data, 0),
 					additiveCount: A3(author$project$State$getValue, author$project$State$wordCountDecoder, data, 0),
-					countMethod: A3(author$project$State$getValue, author$project$State$methodDecoder, data, author$project$State$Additive),
 					currentText: A3(author$project$State$getValue, author$project$State$textDecoder, data, '')
 				});
 		} else {
@@ -7409,10 +7396,24 @@ var author$project$Main$updateMessageReceived = F2(
 				return A2(author$project$Main$updateUser, message.content, model);
 			case 'SettingsLoaded':
 				return A2(author$project$Main$updateNewSettings, message.content, model);
+			case 'SettingsSaved':
+				return _Utils_Tuple2(
+					model,
+					author$project$Main$loadSettings(model.state.user));
 			default:
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
+var author$project$Page$Settings$countMethodFromBool = function (bool) {
+	return bool ? author$project$State$Additive : author$project$State$Subtractive;
+};
+var author$project$State$methodEncoder = function (method) {
+	if (method.$ === 'Additive') {
+		return elm$json$Json$Encode$string('additive');
+	} else {
+		return elm$json$Json$Encode$string('subtractive');
+	}
+};
 var elm$core$Maybe$map = F2(
 	function (f, maybe) {
 		if (maybe.$ === 'Just') {
@@ -7450,7 +7451,15 @@ var author$project$Page$Settings$encodeSettings = function (model) {
 				function ($) {
 					return $.displayName;
 				},
-				elm$json$Json$Encode$string))
+				elm$json$Json$Encode$string)),
+			_Utils_Tuple2(
+			'countMethod',
+			A2(
+				encodeField,
+				function ($) {
+					return $.countMethod;
+				},
+				author$project$State$methodEncoder))
 		]);
 	return elm$json$Json$Encode$object(
 		A2(elm$core$List$filterMap, liftMaybe, fields));
@@ -7474,35 +7483,50 @@ var author$project$Page$Settings$encodeSave = F2(
 var author$project$Ports$SaveToDb = {$: 'SaveToDb'};
 var author$project$Page$Settings$update = F3(
 	function (msg, model, state) {
-		if (msg.$ === 'DisplayNameInputRecived') {
-			var text = msg.a;
-			return _Utils_Tuple2(
-				state,
-				_Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							displayName: elm$core$Maybe$Just(text)
-						}),
-					elm$core$Platform$Cmd$none));
-		} else {
-			var _n1 = state.user;
-			if (_n1.$ === 'Just') {
-				var user = _n1.a;
+		switch (msg.$) {
+			case 'DisplayNameInputRecived':
+				var text = msg.a;
 				return _Utils_Tuple2(
 					state,
 					_Utils_Tuple2(
-						model,
-						A3(
-							author$project$Ports$sendMessageWithContentAndResponse,
-							author$project$Ports$SaveToDb,
-							A2(author$project$Page$Settings$encodeSave, user.uid, model),
-							author$project$Ports$SettingsSaved)));
-			} else {
-				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-			}
+						_Utils_update(
+							model,
+							{
+								displayName: elm$core$Maybe$Just(text)
+							}),
+						elm$core$Platform$Cmd$none));
+			case 'CountMethodChanged':
+				var checked = msg.a;
+				return function (method) {
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									countMethod: elm$core$Maybe$Just(method)
+								}),
+							elm$core$Platform$Cmd$none));
+				}(
+					author$project$Page$Settings$countMethodFromBool(checked));
+			default:
+				var _n1 = state.user;
+				if (_n1.$ === 'Just') {
+					var user = _n1.a;
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(
+							model,
+							A3(
+								author$project$Ports$sendMessageWithContentAndResponse,
+								author$project$Ports$SaveToDb,
+								A2(author$project$Page$Settings$encodeSave, user.uid, model),
+								author$project$Ports$SettingsSaved)));
+				} else {
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+				}
 		}
 	});
 var author$project$Main$updateSettings = F2(
@@ -7702,7 +7726,7 @@ var author$project$Page$Writer$countWords = function (document) {
 };
 var author$project$Page$Writer$updateWrittenCount = F4(
 	function (writtenCount, trimmedWordCount, state, dif) {
-		return (dif > 0) ? (writtenCount + dif) : (_Utils_eq(state.countMethod, author$project$State$Additive) ? writtenCount : trimmedWordCount);
+		return (dif > 0) ? (writtenCount + dif) : (_Utils_eq(state.settings.countMethod, author$project$State$Additive) ? writtenCount : trimmedWordCount);
 	});
 var author$project$Page$Writer$updateCounts = F3(
 	function (document, model, state) {
@@ -14201,10 +14225,135 @@ var author$project$Page$Authenticator$view = function (model) {
 		title: 'Sign In'
 	};
 };
-var author$project$Appearance$siteBackgroundTargetSelection = A3(mdgriffith$elm_ui$Element$rgb255, 108, 160, 229);
-var author$project$Page$Settings$DisplayNameInputRecived = function (a) {
-	return {$: 'DisplayNameInputRecived', a: a};
+var author$project$Appearance$siteBackgroundMediumDark = A3(mdgriffith$elm_ui$Element$rgb255, 23, 80, 123);
+var author$project$Page$Settings$CountMethodChanged = function (a) {
+	return {$: 'CountMethodChanged', a: a};
 };
+var author$project$Page$Settings$countMethodToBool = function (method) {
+	if (method.$ === 'Additive') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var author$project$Page$Settings$defaultPadding = {bottom: 0, left: 0, right: 0, top: 0};
+var author$project$Appearance$siteHeaderSize = 18;
+var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
+var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
+	return {$: 'FontSize', a: a};
+};
+var mdgriffith$elm_ui$Element$Font$size = function (i) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontSize,
+		mdgriffith$elm_ui$Internal$Model$FontSize(i));
+};
+var author$project$Page$Settings$settingHeader = function (title) {
+	return A2(
+		mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$Font$size(author$project$Appearance$siteHeaderSize),
+				mdgriffith$elm_ui$Element$paddingEach(
+				_Utils_update(
+					author$project$Page$Settings$defaultPadding,
+					{bottom: 10}))
+			]),
+		mdgriffith$elm_ui$Element$text(title));
+};
+var author$project$Appearance$mediumGray = A3(mdgriffith$elm_ui$Element$rgb255, 110, 110, 110);
+var author$project$Appearance$siteActionButtonColor = A3(mdgriffith$elm_ui$Element$rgb255, 78, 160, 37);
+var mdgriffith$elm_ui$Element$Border$roundEach = function (_n0) {
+	var topLeft = _n0.topLeft;
+	var topRight = _n0.topRight;
+	var bottomLeft = _n0.bottomLeft;
+	var bottomRight = _n0.bottomRight;
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderRound,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Single,
+			'br-' + (elm$core$String$fromInt(topLeft) + ('-' + (elm$core$String$fromInt(topRight) + (elm$core$String$fromInt(bottomLeft) + ('-' + elm$core$String$fromInt(bottomRight)))))),
+			'border-radius',
+			elm$core$String$fromInt(topLeft) + ('px ' + (elm$core$String$fromInt(topRight) + ('px ' + (elm$core$String$fromInt(bottomRight) + ('px ' + (elm$core$String$fromInt(bottomLeft) + 'px'))))))));
+};
+var mdgriffith$elm_ui$Element$Border$widthXY = F2(
+	function (x, y) {
+		return A2(
+			mdgriffith$elm_ui$Internal$Model$StyleClass,
+			mdgriffith$elm_ui$Internal$Flag$borderWidth,
+			A5(
+				mdgriffith$elm_ui$Internal$Model$BorderWidth,
+				'b-' + (elm$core$String$fromInt(x) + ('-' + elm$core$String$fromInt(y))),
+				y,
+				x,
+				y,
+				x));
+	});
+var mdgriffith$elm_ui$Element$Border$widthEach = function (_n0) {
+	var bottom = _n0.bottom;
+	var top = _n0.top;
+	var left = _n0.left;
+	var right = _n0.right;
+	return (_Utils_eq(top, bottom) && _Utils_eq(left, right)) ? (_Utils_eq(top, right) ? mdgriffith$elm_ui$Element$Border$width(top) : A2(mdgriffith$elm_ui$Element$Border$widthXY, left, top)) : A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderWidth,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$BorderWidth,
+			'b-' + (elm$core$String$fromInt(top) + ('-' + (elm$core$String$fromInt(right) + ('-' + (elm$core$String$fromInt(bottom) + ('-' + elm$core$String$fromInt(left))))))),
+			top,
+			right,
+			bottom,
+			left));
+};
+var author$project$Page$Settings$showCheckBox = F3(
+	function (leftValue, rightValue, checked) {
+		var _n0 = checked ? _Utils_Tuple2(author$project$Appearance$siteActionButtonColor, author$project$Appearance$mediumGray) : _Utils_Tuple2(author$project$Appearance$mediumGray, author$project$Appearance$siteActionButtonColor);
+		var leftColor = _n0.a;
+		var rightColor = _n0.b;
+		return A2(
+			mdgriffith$elm_ui$Element$row,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$Border$color(author$project$Appearance$siteLightFontColor),
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+					mdgriffith$elm_ui$Element$centerX,
+					mdgriffith$elm_ui$Element$centerY,
+					mdgriffith$elm_ui$Element$pointer
+				]),
+			_List_fromArray(
+				[
+					A2(
+					mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$centerX,
+							mdgriffith$elm_ui$Element$centerY,
+							mdgriffith$elm_ui$Element$Background$color(leftColor),
+							mdgriffith$elm_ui$Element$Border$roundEach(
+							{bottomLeft: 5, bottomRight: 0, topLeft: 5, topRight: 0}),
+							mdgriffith$elm_ui$Element$Border$width(2),
+							mdgriffith$elm_ui$Element$padding(10)
+						]),
+					mdgriffith$elm_ui$Element$text(leftValue)),
+					A2(
+					mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$centerX,
+							mdgriffith$elm_ui$Element$centerY,
+							mdgriffith$elm_ui$Element$Background$color(rightColor),
+							mdgriffith$elm_ui$Element$Border$roundEach(
+							{bottomLeft: 0, bottomRight: 5, topLeft: 0, topRight: 5}),
+							mdgriffith$elm_ui$Element$Border$widthEach(
+							{bottom: 2, left: 0, right: 2, top: 2}),
+							mdgriffith$elm_ui$Element$padding(10)
+						]),
+					mdgriffith$elm_ui$Element$text(rightValue))
+				]));
+	});
+var mdgriffith$elm_ui$Internal$Model$Top = {$: 'Top'};
+var mdgriffith$elm_ui$Element$alignTop = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$Top);
 var mdgriffith$elm_ui$Element$fillPortion = mdgriffith$elm_ui$Internal$Model$Fill;
 var mdgriffith$elm_ui$Internal$Model$Paragraph = {$: 'Paragraph'};
 var mdgriffith$elm_ui$Element$paragraph = F2(
@@ -14225,12 +14374,135 @@ var mdgriffith$elm_ui$Element$paragraph = F2(
 						attrs))),
 			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
-var mdgriffith$elm_ui$Element$Input$Label = F3(
-	function (a, b, c) {
-		return {$: 'Label', a: a, b: b, c: c};
+var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
+var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
+var mdgriffith$elm_ui$Element$Input$onKeyLookup = function (lookup) {
+	var decode = function (code) {
+		var _n0 = lookup(code);
+		if (_n0.$ === 'Nothing') {
+			return elm$json$Json$Decode$fail('No key matched');
+		} else {
+			var msg = _n0.a;
+			return elm$json$Json$Decode$succeed(msg);
+		}
+	};
+	var isKey = A2(
+		elm$json$Json$Decode$andThen,
+		decode,
+		A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+	return mdgriffith$elm_ui$Internal$Model$Attr(
+		A2(elm$html$Html$Events$on, 'keyup', isKey));
+};
+var mdgriffith$elm_ui$Element$Input$space = ' ';
+var mdgriffith$elm_ui$Element$Input$tabindex = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$tabindex);
+var mdgriffith$elm_ui$Element$Input$checkbox = F2(
+	function (attrs, _n0) {
+		var label = _n0.label;
+		var icon = _n0.icon;
+		var checked = _n0.checked;
+		var onChange = _n0.onChange;
+		var attributes = _Utils_ap(
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$Input$isHiddenLabel(label) ? mdgriffith$elm_ui$Internal$Model$NoAttribute : mdgriffith$elm_ui$Element$spacing(6),
+					mdgriffith$elm_ui$Internal$Model$Attr(
+					elm$html$Html$Events$onClick(
+						onChange(!checked))),
+					mdgriffith$elm_ui$Element$Region$announce,
+					mdgriffith$elm_ui$Element$Input$onKeyLookup(
+					function (code) {
+						return _Utils_eq(code, mdgriffith$elm_ui$Element$Input$enter) ? elm$core$Maybe$Just(
+							onChange(!checked)) : (_Utils_eq(code, mdgriffith$elm_ui$Element$Input$space) ? elm$core$Maybe$Just(
+							onChange(!checked)) : elm$core$Maybe$Nothing);
+					}),
+					mdgriffith$elm_ui$Element$Input$tabindex(0),
+					mdgriffith$elm_ui$Element$pointer,
+					mdgriffith$elm_ui$Element$alignLeft,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+				]),
+			attrs);
+		return A3(
+			mdgriffith$elm_ui$Element$Input$applyLabel,
+			attributes,
+			label,
+			A4(
+				mdgriffith$elm_ui$Internal$Model$element,
+				mdgriffith$elm_ui$Internal$Model$asEl,
+				mdgriffith$elm_ui$Internal$Model$div,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Internal$Model$Attr(
+						A2(elm$html$Html$Attributes$attribute, 'role', 'checkbox')),
+						mdgriffith$elm_ui$Internal$Model$Attr(
+						A2(
+							elm$html$Html$Attributes$attribute,
+							'aria-checked',
+							checked ? 'true' : 'false')),
+						mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute(label),
+						mdgriffith$elm_ui$Element$centerY,
+						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
+					]),
+				mdgriffith$elm_ui$Internal$Model$Unkeyed(
+					_List_fromArray(
+						[
+							icon(checked)
+						]))));
 	});
-var mdgriffith$elm_ui$Element$Input$OnLeft = {$: 'OnLeft'};
-var mdgriffith$elm_ui$Element$Input$labelLeft = mdgriffith$elm_ui$Element$Input$Label(mdgriffith$elm_ui$Element$Input$OnLeft);
+var author$project$Page$Settings$countMethod = function (method) {
+	return A2(
+		mdgriffith$elm_ui$Element$column,
+		_List_Nil,
+		_List_fromArray(
+			[
+				author$project$Page$Settings$settingHeader('Counting Method'),
+				A2(
+				mdgriffith$elm_ui$Element$row,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$width(
+								mdgriffith$elm_ui$Element$fillPortion(4)),
+								mdgriffith$elm_ui$Element$alignTop,
+								mdgriffith$elm_ui$Element$paddingEach(
+								_Utils_update(
+									author$project$Page$Settings$defaultPadding,
+									{left: 10, right: 10}))
+							]),
+						A2(
+							mdgriffith$elm_ui$Element$paragraph,
+							_List_fromArray(
+								[mdgriffith$elm_ui$Element$alignTop]),
+							_List_fromArray(
+								[
+									mdgriffith$elm_ui$Element$text('Your words can be counted in two different ways, depending on your preference. \'New words\' means that every word you type will be added to your word count. \'Actual words\' means that if you delete words, they will also be removed from your word count. This only affects your daily word count. Progress towards completing a target will always count every word written.')
+								]))),
+						A2(
+						mdgriffith$elm_ui$Element$Input$checkbox,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$width(
+								mdgriffith$elm_ui$Element$fillPortion(1)),
+								mdgriffith$elm_ui$Element$centerX,
+								mdgriffith$elm_ui$Element$alignTop
+							]),
+						{
+							checked: author$project$Page$Settings$countMethodToBool(method),
+							icon: A2(author$project$Page$Settings$showCheckBox, 'New words', 'Actual words'),
+							label: mdgriffith$elm_ui$Element$Input$labelHidden('Counting Method'),
+							onChange: author$project$Page$Settings$CountMethodChanged
+						})
+					]))
+			]));
+};
+var author$project$Appearance$black = A3(mdgriffith$elm_ui$Element$rgb255, 0, 0, 0);
+var author$project$Page$Settings$DisplayNameInputRecived = function (a) {
+	return {$: 'DisplayNameInputRecived', a: a};
+};
 var mdgriffith$elm_ui$Element$Input$Placeholder = F2(
 	function (a, b) {
 		return {$: 'Placeholder', a: a, b: b};
@@ -14242,41 +14514,83 @@ var mdgriffith$elm_ui$Element$Input$text = mdgriffith$elm_ui$Element$Input$textH
 		spellchecked: false,
 		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
 	});
-var author$project$Page$Settings$displayName = function (model) {
+var author$project$Page$Settings$displayName = function (name) {
 	return A2(
-		mdgriffith$elm_ui$Element$Input$text,
+		mdgriffith$elm_ui$Element$column,
 		_List_Nil,
-		{
-			label: A2(
-				mdgriffith$elm_ui$Element$Input$labelLeft,
+		_List_fromArray(
+			[
+				author$project$Page$Settings$settingHeader('Display Name'),
+				A2(
+				mdgriffith$elm_ui$Element$row,
+				_List_Nil,
 				_List_fromArray(
 					[
-						mdgriffith$elm_ui$Element$width(
-						mdgriffith$elm_ui$Element$fillPortion(5))
-					]),
-				A2(
-					mdgriffith$elm_ui$Element$paragraph,
-					_List_Nil,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$text('Your Display Name is your identity on GameYourWords.com. This name will be how you are seen by anyone else in the GameYourWords community. Please choose a name that isn\'t obscene or offensive.')
-						]))),
-			onChange: author$project$Page$Settings$DisplayNameInputRecived,
-			placeholder: elm$core$Maybe$Just(
-				A2(
-					mdgriffith$elm_ui$Element$Input$placeholder,
-					_List_Nil,
-					mdgriffith$elm_ui$Element$text('Display Name'))),
-			text: A2(elm$core$Maybe$withDefault, '', model.displayName)
-		});
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$width(
+								mdgriffith$elm_ui$Element$fillPortion(4)),
+								mdgriffith$elm_ui$Element$paddingEach(
+								_Utils_update(
+									author$project$Page$Settings$defaultPadding,
+									{left: 10, right: 10})),
+								mdgriffith$elm_ui$Element$alignTop
+							]),
+						A2(
+							mdgriffith$elm_ui$Element$paragraph,
+							_List_Nil,
+							_List_fromArray(
+								[
+									mdgriffith$elm_ui$Element$text('Your Display Name is your identity on GameYourWords.com. This name will be how you are seen by anyone else in the GameYourWords community. Please choose a name that isn\'t obscene or offensive.')
+								]))),
+						A2(
+						mdgriffith$elm_ui$Element$Input$text,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$width(
+								mdgriffith$elm_ui$Element$fillPortion(1)),
+								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$black),
+								mdgriffith$elm_ui$Element$alignTop
+							]),
+						{
+							label: mdgriffith$elm_ui$Element$Input$labelHidden('Display Name'),
+							onChange: author$project$Page$Settings$DisplayNameInputRecived,
+							placeholder: elm$core$Maybe$Just(
+								A2(
+									mdgriffith$elm_ui$Element$Input$placeholder,
+									_List_Nil,
+									mdgriffith$elm_ui$Element$text('Display Name'))),
+							text: name
+						})
+					]))
+			]));
 };
 var author$project$Page$Settings$SaveButtonPressed = {$: 'SaveButtonPressed'};
-var author$project$Page$Settings$saveSettings = A2(
+var author$project$Page$Settings$saveSettingsButton = A2(
 	mdgriffith$elm_ui$Element$Input$button,
-	_List_Nil,
+	_List_fromArray(
+		[
+			mdgriffith$elm_ui$Element$Border$color(author$project$Appearance$siteLightFontColor),
+			mdgriffith$elm_ui$Element$Border$width(2),
+			mdgriffith$elm_ui$Element$Border$rounded(5),
+			mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteActionButtonColor),
+			mdgriffith$elm_ui$Element$padding(10)
+		]),
 	{
 		label: mdgriffith$elm_ui$Element$text('Save settings'),
 		onPress: elm$core$Maybe$Just(author$project$Page$Settings$SaveButtonPressed)
+	});
+var author$project$Page$Settings$touchedOrState = F4(
+	function (modelSelector, model, settingsSelector, settings) {
+		var _n0 = modelSelector(model);
+		if (_n0.$ === 'Just') {
+			var setting = _n0.a;
+			return setting;
+		} else {
+			return settingsSelector(settings);
+		}
 	});
 var author$project$Page$Settings$showBody = F2(
 	function (model, state) {
@@ -14286,14 +14600,36 @@ var author$project$Page$Settings$showBody = F2(
 				[
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundTargetSelection),
+					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundMediumDark),
 					mdgriffith$elm_ui$Element$padding(10),
-					mdgriffith$elm_ui$Element$spacing(10)
+					mdgriffith$elm_ui$Element$spacing(10),
+					mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
 				]),
 			_List_fromArray(
 				[
-					author$project$Page$Settings$displayName(model),
-					author$project$Page$Settings$saveSettings
+					author$project$Page$Settings$displayName(
+					A4(
+						author$project$Page$Settings$touchedOrState,
+						function ($) {
+							return $.displayName;
+						},
+						model,
+						function ($) {
+							return $.displayName;
+						},
+						state.settings)),
+					author$project$Page$Settings$countMethod(
+					A4(
+						author$project$Page$Settings$touchedOrState,
+						function ($) {
+							return $.countMethod;
+						},
+						model,
+						function ($) {
+							return $.countMethod;
+						},
+						state.settings)),
+					author$project$Page$Settings$saveSettingsButton
 				]));
 	});
 var author$project$Page$Settings$view = F2(
@@ -14334,6 +14670,7 @@ var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
 			{action: '/', label: 'CANCEL'})
 	};
 };
+var author$project$Appearance$siteBackgroundTargetSelection = A3(mdgriffith$elm_ui$Element$rgb255, 108, 160, 229);
 var author$project$Page$TargetSelector$TargetButtonClicked = function (a) {
 	return {$: 'TargetButtonClicked', a: a};
 };
@@ -14733,8 +15070,6 @@ var author$project$Page$Writer$currentTargetFightStatus = F2(
 	function (model, state) {
 		return '  ' + ((!_Utils_eq(state.ended, author$project$State$No)) ? author$project$State$endReasonToString(state.ended) : author$project$Page$Writer$formatSecondsToString(state.currentTargetTimerInSecs));
 	});
-var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
-var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
 var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
 var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
 var mdgriffith$elm_ui$Internal$Model$OnLeft = {$: 'OnLeft'};
@@ -14903,7 +15238,6 @@ var author$project$Skeleton$noPageFound = {
 	headerSettings: elm$core$Maybe$Nothing,
 	title: 'No page found!'
 };
-var author$project$Appearance$siteActionButtonColor = A3(mdgriffith$elm_ui$Element$rgb255, 78, 185, 37);
 var elm$html$Html$Attributes$href = function (url) {
 	return A2(
 		elm$html$Html$Attributes$stringProperty,
@@ -14941,7 +15275,7 @@ var mdgriffith$elm_ui$Element$link = F2(
 				_List_fromArray(
 					[label])));
 	});
-var author$project$Skeleton$buildActionButton = function (settings) {
+var author$project$Skeleton$actionButton = function (settings) {
 	return A2(
 		mdgriffith$elm_ui$Element$link,
 		_List_fromArray(
@@ -14959,7 +15293,31 @@ var author$project$Skeleton$buildActionButton = function (settings) {
 			url: settings.action
 		});
 };
-var author$project$Skeleton$buildSignOutButton = A2(
+var author$project$Skeleton$homeButton = A2(
+	mdgriffith$elm_ui$Element$link,
+	_List_fromArray(
+		[
+			mdgriffith$elm_ui$Element$centerY,
+			mdgriffith$elm_ui$Element$alignRight,
+			mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+		]),
+	{
+		label: mdgriffith$elm_ui$Element$text('Home'),
+		url: '/'
+	});
+var author$project$Skeleton$settingsButton = A2(
+	mdgriffith$elm_ui$Element$link,
+	_List_fromArray(
+		[
+			mdgriffith$elm_ui$Element$centerY,
+			mdgriffith$elm_ui$Element$alignRight,
+			mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+		]),
+	{
+		label: mdgriffith$elm_ui$Element$text('Settings'),
+		url: '/settings'
+	});
+var author$project$Skeleton$signOutButton = A2(
 	mdgriffith$elm_ui$Element$link,
 	_List_fromArray(
 		[
@@ -14971,20 +15329,6 @@ var author$project$Skeleton$buildSignOutButton = A2(
 		label: mdgriffith$elm_ui$Element$text('Sign Out'),
 		url: '/signout'
 	});
-var author$project$Skeleton$showDisplayName = function (settings) {
-	if (settings.$ === 'Just') {
-		var settings_ = settings.a;
-		var _n1 = settings_.displayName;
-		if (_n1.$ === 'Just') {
-			var name = _n1.a;
-			return name;
-		} else {
-			return '';
-		}
-	} else {
-		return '';
-	}
-};
 var author$project$Skeleton$buildHeader = F2(
 	function (state, headerSettings) {
 		if (headerSettings.$ === 'Nothing') {
@@ -15005,7 +15349,7 @@ var author$project$Skeleton$buildHeader = F2(
 								return mdgriffith$elm_ui$Element$none;
 							} else {
 								var buttonSettings = _n1.a;
-								return author$project$Skeleton$buildActionButton(buttonSettings);
+								return author$project$Skeleton$actionButton(buttonSettings);
 							}
 						}())
 					]),
@@ -15030,8 +15374,7 @@ var author$project$Skeleton$buildHeader = F2(
 								mdgriffith$elm_ui$Element$alignRight,
 								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
 							]),
-						mdgriffith$elm_ui$Element$text(
-							author$project$Skeleton$showDisplayName(state.settings))),
+						mdgriffith$elm_ui$Element$text(state.settings.displayName)),
 						A2(
 						mdgriffith$elm_ui$Element$el,
 						_List_fromArray(
@@ -15041,7 +15384,27 @@ var author$project$Skeleton$buildHeader = F2(
 								mdgriffith$elm_ui$Element$alignRight,
 								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
 							]),
-						author$project$Skeleton$buildSignOutButton)
+						author$project$Skeleton$homeButton),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$padding(10),
+								mdgriffith$elm_ui$Element$centerY,
+								mdgriffith$elm_ui$Element$alignRight,
+								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+							]),
+						author$project$Skeleton$settingsButton),
+						A2(
+						mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$padding(10),
+								mdgriffith$elm_ui$Element$centerY,
+								mdgriffith$elm_ui$Element$alignRight,
+								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+							]),
+						author$project$Skeleton$signOutButton)
 					]));
 		}
 	});
@@ -15215,14 +15578,10 @@ var mdgriffith$elm_ui$Internal$Model$renderRoot = F3(
 						[child]))));
 	});
 var mdgriffith$elm_ui$Internal$Flag$fontFamily = mdgriffith$elm_ui$Internal$Flag$flag(5);
-var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
 var mdgriffith$elm_ui$Internal$Model$FontFamily = F2(
 	function (a, b) {
 		return {$: 'FontFamily', a: a, b: b};
 	});
-var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
-	return {$: 'FontSize', a: a};
-};
 var mdgriffith$elm_ui$Internal$Model$SansSerif = {$: 'SansSerif'};
 var mdgriffith$elm_ui$Internal$Model$Typeface = function (a) {
 	return {$: 'Typeface', a: a};
@@ -15324,12 +15683,6 @@ var mdgriffith$elm_ui$Element$layoutWith = F3(
 			child);
 	});
 var mdgriffith$elm_ui$Element$scrollbars = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$overflow, mdgriffith$elm_ui$Internal$Style$classes.scrollbars);
-var mdgriffith$elm_ui$Element$Font$size = function (i) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontSize,
-		mdgriffith$elm_ui$Internal$Model$FontSize(i));
-};
 var author$project$Skeleton$composePage = F2(
 	function (header, body) {
 		return A3(

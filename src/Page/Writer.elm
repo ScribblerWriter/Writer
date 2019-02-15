@@ -104,7 +104,7 @@ updateWrittenCount writtenCount trimmedWordCount state dif =
     if dif > 0 then
         writtenCount + dif
 
-    else if state.countMethod == State.Additive then
+    else if state.settings.countMethod == State.Additive then
         writtenCount
 
     else

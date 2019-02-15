@@ -1,4 +1,4 @@
-const fbdb = (function() {
+const fbdb = (function(messageCallback) {
 	// Initialize database
 	const db = firebase.firestore();
 
@@ -38,11 +38,11 @@ const fbdb = (function() {
 		},
 
 		saveToDb: data => {
-			db.collection(data.collection)
+			return db.collection(data.collection)
 				.doc(data.doc)
 				.set(data.data, { merge: true })
-				.then(function() {
-					console.log('Data successfully written');
+				.then( function() {
+					return;
 				})
 				.catch(error => {
 					console.log('Error writing document', error);

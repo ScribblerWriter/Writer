@@ -1,12 +1,16 @@
 module Appearance exposing
-    ( progressBarBackground
+    ( black
+    , mediumGray
+    , progressBarBackground
     , progressBarForeground
     , siteActionButtonColor
     , siteBackgroundDark
     , siteBackgroundLight
+    , siteBackgroundMediumDark
     , siteBackgroundTargetSelection
     , siteFocusStyle
     , siteFontSize
+    , siteHeaderSize
     , siteLightFontColor
     )
 
@@ -17,6 +21,11 @@ import Element.Font as Font
 siteBackgroundDark : Color
 siteBackgroundDark =
     rgb255 13 70 113
+
+
+siteBackgroundMediumDark : Color
+siteBackgroundMediumDark =
+    rgb255 23 80 123
 
 
 siteBackgroundLight : Color
@@ -34,6 +43,16 @@ siteLightFontColor =
     rgb255 240 240 240
 
 
+mediumGray : Color
+mediumGray =
+    rgb255 110 110 110
+
+
+black : Color
+black =
+    rgb255 0 0 0
+
+
 siteFocusStyle : Option
 siteFocusStyle =
     Element.focusStyle
@@ -48,9 +67,14 @@ siteFontSize =
     14
 
 
+siteHeaderSize : Int
+siteHeaderSize =
+    18
+
+
 siteActionButtonColor : Color
 siteActionButtonColor =
-    rgb255 78 185 37
+    rgb255 78 160 37
 
 
 progressBarBackground : Color

@@ -88,7 +88,14 @@
             }
 
             function saveToDb(content, returnOperation) {
-                fbdb.saveToDb(content);
+                fbdb.saveToDb(content)
+                .then( function() {
+                    const message = { operation: returnOperation, content: null };
+                    appElm.ports.incomingMessage.send(message);
+                })
+                .catch(error => {
+                    console.log ("Couldn't send to port: ", error);
+                });
             }
 
             function messageCallback(message) {

@@ -67,10 +67,9 @@ init flags url key =
             , currentTargetTimerInSecs = 0
             , winProgress = 0
             , ended = State.No
-            , countMethod = State.Additive
             , windowDimensions = State.decodeDimensions flags
             , user = Nothing
-            , settings = Nothing
+            , settings = State.defaultSettings
             , key = key
             }
         }
@@ -175,6 +174,9 @@ updateMessageReceived message model =
         Ports.SettingsLoaded ->
             updateNewSettings message.content model
 
+        Ports.SettingsSaved ->
+            ( model, loadSettings model.state.user )
+
         _ ->
             ( model, Cmd.none )
 
@@ -198,14 +200,14 @@ updateUser value model =
                         ( { model | state = state }
                         , Cmd.batch
                             [ Nav.pushUrl model.state.key (Url.Builder.absolute [ returnPageToUrlString model.returnPage ] [])
-                            , encodeSettingsLoad state.user
+                            , loadSettings state.user
                             ]
                         )
                    )
 
 
-encodeSettingsLoad : Maybe State.User -> Cmd Msg
-encodeSettingsLoad user =
+loadSettings : Maybe State.User -> Cmd Msg
+loadSettings user =
     case user of
         Just user_ ->
             Ports.sendMessageWithContentAndResponse

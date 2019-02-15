@@ -132,7 +132,7 @@ buildHeader state headerSettings =
                             none
 
                         Just buttonSettings ->
-                            buildActionButton buttonSettings
+                            actionButton buttonSettings
                 ]
                 [ el
                     [ padding 10
@@ -151,7 +151,7 @@ buildHeader state headerSettings =
                     ]
                   <|
                     text <|
-                        showDisplayName state.settings
+                        state.settings.displayName
                 , el
                     [ padding 10
                     , centerY
@@ -159,27 +159,28 @@ buildHeader state headerSettings =
                     , Font.color Appearance.siteLightFontColor
                     ]
                   <|
-                    buildSignOutButton
+                    homeButton
+                , el
+                    [ padding 10
+                    , centerY
+                    , alignRight
+                    , Font.color Appearance.siteLightFontColor
+                    ]
+                  <|
+                    settingsButton
+                , el
+                    [ padding 10
+                    , centerY
+                    , alignRight
+                    , Font.color Appearance.siteLightFontColor
+                    ]
+                  <|
+                    signOutButton
                 ]
 
 
-showDisplayName : Maybe State.Settings -> String
-showDisplayName settings =
-    case settings of
-        Just settings_ ->
-            case settings_.displayName of
-                Just name ->
-                    name
-
-                Nothing ->
-                    ""
-
-        Nothing ->
-            ""
-
-
-buildActionButton : LinkSettings -> Element msg
-buildActionButton settings =
+actionButton : LinkSettings -> Element msg
+actionButton settings =
     link
         [ centerX
         , centerY
@@ -194,8 +195,8 @@ buildActionButton settings =
         }
 
 
-buildSignOutButton : Element msg
-buildSignOutButton =
+signOutButton : Element msg
+signOutButton =
     link
         [ centerY
         , alignRight
@@ -203,4 +204,28 @@ buildSignOutButton =
         ]
         { url = "/signout"
         , label = text "Sign Out"
+        }
+
+
+settingsButton : Element msg
+settingsButton =
+    link
+        [ centerY
+        , alignRight
+        , Font.color Appearance.siteLightFontColor
+        ]
+        { url = "/settings"
+        , label = text "Settings"
+        }
+
+
+homeButton : Element msg
+homeButton =
+    link
+        [ centerY
+        , alignRight
+        , Font.color Appearance.siteLightFontColor
+        ]
+        { url = "/"
+        , label = text "Home"
         }
