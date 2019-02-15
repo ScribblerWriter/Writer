@@ -121,8 +121,8 @@ showBody model state =
         , spacing 10
         , Font.color Appearance.siteLightFontColor
         ]
-        [ displayName <| touchedOrState .displayName model .displayName state.settings
-        , countMethod <| touchedOrState .countMethod model .countMethod state.settings
+        [ showSetting <| displayName <| touchedOrState .displayName model .displayName state.settings
+        , showSetting <| countMethod <| touchedOrState .countMethod model .countMethod state.settings
         , saveSettingsButton
         ]
 
@@ -137,58 +137,69 @@ touchedOrState modelSelector model settingsSelector settings =
             settingsSelector settings
 
 
-displayName : String -> Element Msg
+type alias SettingEntry =
+    { header : String
+    , description : String
+    , input : Element Msg
+    }
+
+
+showSetting : SettingEntry -> Element Msg
+showSetting setting =
+    column []
+        [ el
+            [ Font.size Appearance.siteHeaderSize
+            , paddingEach { defaultPadding | bottom = 10 }
+            ]
+          <|
+            text setting.header
+        , row []
+            [ el
+                [ width <| fillPortion 4
+                , paddingEach { defaultPadding | left = 10, right = 10 }
+                , alignTop
+                ]
+              <|
+                paragraph [] [ text setting.description ]
+            , setting.input
+            ]
+        ]
+
+
+displayName : String -> SettingEntry
 displayName name =
-    column []
-        [ settingHeader "Display Name"
-        , row []
-            [ el
-                [ width <| fillPortion 4
-                , paddingEach { defaultPadding | left = 10, right = 10 }
-                , alignTop
-                ]
-              <|
-                paragraph []
-                    [ text "Your Display Name is your identity on GameYourWords.com. This name will be how you are seen by anyone else in the GameYourWords community. Please choose a name that isn't obscene or offensive." ]
-            , Input.text
-                [ width <| fillPortion 1
-                , Font.color Appearance.black
-                , alignTop
-                ]
-                { onChange = DisplayNameInputRecived
-                , text = name
-                , placeholder = Just <| Input.placeholder [] <| text "Display Name"
-                , label = Input.labelHidden "Display Name"
-                }
+    { header = "Display Name"
+    , description = "Your Display Name is your identity on GameYourWords.com. This name will be how you are seen by anyone else in the GameYourWords community. Please choose a name that isn't obscene or offensive."
+    , input =
+        Input.text
+            [ width <| fillPortion 1
+            , Font.color Appearance.black
+            , alignTop
             ]
-        ]
+            { onChange = DisplayNameInputRecived
+            , text = name
+            , placeholder = Just <| Input.placeholder [] <| text "Display Name"
+            , label = Input.labelHidden "Display Name"
+            }
+    }
 
 
-countMethod : State.CountMethod -> Element Msg
+countMethod : State.CountMethod -> SettingEntry
 countMethod method =
-    column []
-        [ settingHeader "Counting Method"
-        , row []
-            [ el
-                [ width <| fillPortion 4
-                , alignTop
-                , paddingEach { defaultPadding | left = 10, right = 10 }
-                ]
-              <|
-                paragraph [ alignTop ]
-                    [ text "Your words can be counted in two different ways, depending on your preference. 'New words' means that every word you type will be added to your word count. 'Actual words' means that if you delete words, they will also be removed from your word count. This only affects your daily word count. Progress towards completing a target will always count every word written." ]
-            , Input.checkbox
-                [ width <| fillPortion 1
-                , centerX
-                , alignTop
-                ]
-                { onChange = CountMethodChanged
-                , icon = showCheckBox "New words" "Actual words"
-                , checked = countMethodToBool method
-                , label = Input.labelHidden "Counting Method"
-                }
+    { header = "Counting Method"
+    , description = "Your words can be counted in two different ways, depending on your preference. 'New words' means that every word you type will be added to your word count. 'Actual words' means that if you delete words, they will also be removed from your word count. This only affects your daily word count. Progress towards completing a target will always count every word written."
+    , input =
+        Input.checkbox
+            [ width <| fillPortion 1
+            , centerX
+            , alignTop
             ]
-        ]
+            { onChange = CountMethodChanged
+            , icon = showCheckBox "New words" "Actual words"
+            , checked = countMethodToBool method
+            , label = Input.labelHidden "Counting Method"
+            }
+    }
 
 
 showCheckBox : String -> String -> Bool -> Element msg
