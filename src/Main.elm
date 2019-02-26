@@ -70,6 +70,7 @@ init flags url key =
             , windowDimensions = State.decodeDimensions flags
             , user = Nothing
             , settings = State.defaultSettings
+            , messages = []
             , key = key
             }
         }
@@ -177,6 +178,11 @@ updateMessageReceived message model =
         Ports.SettingsSaved ->
             ( model, loadSettings model.state.user )
 
+        Ports.DisplayMessageReceived ->
+            model.state
+                |> (\state -> { state | messages = parseMessages message.content state.messages })
+                |> (\state -> ( { model | state = state }, Cmd.none ))
+
         _ ->
             ( model, Cmd.none )
 
@@ -268,6 +274,21 @@ updateNewSettings value model =
 
         Nothing ->
             ( model, Cmd.none )
+
+
+parseMessages : Maybe Decode.Value -> List State.Message -> List State.Message
+parseMessages newMessage oldMessages =
+    case newMessage of
+        Just message ->
+            oldMessages ++ [ State.decodeDisplayMessage message ]
+
+        Nothing ->
+            oldMessages
+                ++ [ { body = "I was told to display a message, but not message was given."
+                     , severity = State.Warning
+                     , source = State.Internal
+                     }
+                   ]
 
 
 updateTargetTimer : State -> State

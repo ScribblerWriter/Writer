@@ -5117,8 +5117,10 @@ var author$project$Ports$inOperationToString = function (operation) {
 			return 'AuthStateChanged';
 		case 'SettingsLoaded':
 			return 'SettingsLoaded';
-		default:
+		case 'SettingsSaved':
 			return 'SettingsSaved';
+		default:
+			return 'DisplayMessageReceived';
 	}
 };
 var author$project$Ports$outOperationToString = function (operation) {
@@ -6043,6 +6045,7 @@ var author$project$Main$init = F3(
 						currentText: '',
 						ended: author$project$State$No,
 						key: key,
+						messages: _List_Nil,
 						settings: author$project$State$defaultSettings,
 						user: elm$core$Maybe$Nothing,
 						winProgress: 0,
@@ -7104,6 +7107,91 @@ var author$project$Main$loadSettings = function (user) {
 		return elm$core$Platform$Cmd$none;
 	}
 };
+var author$project$State$Internal = {$: 'Internal'};
+var author$project$State$Warning = {$: 'Warning'};
+var author$project$State$Message = F3(
+	function (body, severity, source) {
+		return {body: body, severity: severity, source: source};
+	});
+var author$project$State$Error = {$: 'Error'};
+var author$project$State$Info = {$: 'Info'};
+var author$project$State$severityFromString = function (severity) {
+	switch (severity) {
+		case 'error':
+			return author$project$State$Error;
+		case 'warning':
+			return author$project$State$Warning;
+		default:
+			return author$project$State$Info;
+	}
+};
+var author$project$State$severityDecoder = A2(
+	elm$json$Json$Decode$andThen,
+	function (severity) {
+		return elm$json$Json$Decode$succeed(
+			author$project$State$severityFromString(severity));
+	},
+	elm$json$Json$Decode$string);
+var author$project$State$Auth = {$: 'Auth'};
+var author$project$State$Db = {$: 'Db'};
+var author$project$State$sourceFromString = function (source) {
+	switch (source) {
+		case 'db':
+			return author$project$State$Db;
+		case 'auth':
+			return author$project$State$Auth;
+		default:
+			return author$project$State$Internal;
+	}
+};
+var author$project$State$sourceDecoder = A2(
+	elm$json$Json$Decode$andThen,
+	function (source) {
+		return elm$json$Json$Decode$succeed(
+			author$project$State$sourceFromString(source));
+	},
+	elm$json$Json$Decode$string);
+var author$project$State$messageDecoder = A3(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'source',
+	author$project$State$sourceDecoder,
+	A3(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'severity',
+		author$project$State$severityDecoder,
+		A3(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'body',
+			elm$json$Json$Decode$string,
+			elm$json$Json$Decode$succeed(author$project$State$Message))));
+var author$project$State$decodeDisplayMessage = function (message) {
+	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$messageDecoder, message);
+	if (_n0.$ === 'Ok') {
+		var message_ = _n0.a;
+		return message_;
+	} else {
+		return {body: 'Error parsing messages to display', severity: author$project$State$Warning, source: author$project$State$Internal};
+	}
+};
+var author$project$Main$parseMessages = F2(
+	function (newMessage, oldMessages) {
+		if (newMessage.$ === 'Just') {
+			var message = newMessage.a;
+			return _Utils_ap(
+				oldMessages,
+				_List_fromArray(
+					[
+						author$project$State$decodeDisplayMessage(message)
+					]));
+		} else {
+			return _Utils_ap(
+				oldMessages,
+				_List_fromArray(
+					[
+						{body: 'I was told to display a message, but not message was given.', severity: author$project$State$Warning, source: author$project$State$Internal}
+					]));
+		}
+	});
 var elm$json$Json$Decode$fail = _Json_fail;
 var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder = F3(
 	function (pathDecoder, valDecoder, fallback) {
@@ -7153,7 +7241,7 @@ var author$project$State$Settings = F2(
 		return {countMethod: countMethod, displayName: displayName};
 	});
 var author$project$State$Subtractive = {$: 'Subtractive'};
-var author$project$State$methodNewDecoder = A2(
+var author$project$State$methodDecoder = A2(
 	elm$json$Json$Decode$andThen,
 	function (str) {
 		switch (str) {
@@ -7170,7 +7258,7 @@ var author$project$State$methodNewDecoder = A2(
 var author$project$State$settingsDecoder = A4(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
 	'countMethod',
-	author$project$State$methodNewDecoder,
+	author$project$State$methodDecoder,
 	author$project$State$defaultSettings.countMethod,
 	A4(
 		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
@@ -7334,6 +7422,7 @@ var author$project$Main$updateUser = F2(
 		}
 	});
 var author$project$Ports$AuthStateChanged = {$: 'AuthStateChanged'};
+var author$project$Ports$DisplayMessageReceived = {$: 'DisplayMessageReceived'};
 var author$project$Ports$SettingsSaved = {$: 'SettingsSaved'};
 var author$project$Ports$Unknown = {$: 'Unknown'};
 var author$project$Ports$stringToInOperation = function (operation) {
@@ -7348,6 +7437,8 @@ var author$project$Ports$stringToInOperation = function (operation) {
 			return author$project$Ports$SettingsLoaded;
 		case 'SettingsSaved':
 			return author$project$Ports$SettingsSaved;
+		case 'DisplayMessageReceived':
+			return author$project$Ports$DisplayMessageReceived;
 		default:
 			return author$project$Ports$Unknown;
 	}
@@ -7400,6 +7491,21 @@ var author$project$Main$updateMessageReceived = F2(
 				return _Utils_Tuple2(
 					model,
 					author$project$Main$loadSettings(model.state.user));
+			case 'DisplayMessageReceived':
+				return function (state) {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{state: state}),
+						elm$core$Platform$Cmd$none);
+				}(
+					function (state) {
+						return _Utils_update(
+							state,
+							{
+								messages: A2(author$project$Main$parseMessages, message.content, state.messages)
+							});
+					}(model.state));
 			default:
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
@@ -14236,31 +14342,6 @@ var author$project$Page$Settings$countMethodToBool = function (method) {
 		return false;
 	}
 };
-var author$project$Page$Settings$defaultPadding = {bottom: 0, left: 0, right: 0, top: 0};
-var author$project$Appearance$siteHeaderSize = 18;
-var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
-var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
-	return {$: 'FontSize', a: a};
-};
-var mdgriffith$elm_ui$Element$Font$size = function (i) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontSize,
-		mdgriffith$elm_ui$Internal$Model$FontSize(i));
-};
-var author$project$Page$Settings$settingHeader = function (title) {
-	return A2(
-		mdgriffith$elm_ui$Element$el,
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$Font$size(author$project$Appearance$siteHeaderSize),
-				mdgriffith$elm_ui$Element$paddingEach(
-				_Utils_update(
-					author$project$Page$Settings$defaultPadding,
-					{bottom: 10}))
-			]),
-		mdgriffith$elm_ui$Element$text(title));
-};
 var author$project$Appearance$mediumGray = A3(mdgriffith$elm_ui$Element$rgb255, 110, 110, 110);
 var author$project$Appearance$siteActionButtonColor = A3(mdgriffith$elm_ui$Element$rgb255, 78, 160, 37);
 var mdgriffith$elm_ui$Element$Border$roundEach = function (_n0) {
@@ -14355,25 +14436,6 @@ var author$project$Page$Settings$showCheckBox = F3(
 var mdgriffith$elm_ui$Internal$Model$Top = {$: 'Top'};
 var mdgriffith$elm_ui$Element$alignTop = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$Top);
 var mdgriffith$elm_ui$Element$fillPortion = mdgriffith$elm_ui$Internal$Model$Fill;
-var mdgriffith$elm_ui$Internal$Model$Paragraph = {$: 'Paragraph'};
-var mdgriffith$elm_ui$Element$paragraph = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asParagraph,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$Paragraph),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$spacing(5),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
 var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
 var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
 var mdgriffith$elm_ui$Element$Input$onKeyLookup = function (lookup) {
@@ -14450,54 +14512,25 @@ var mdgriffith$elm_ui$Element$Input$checkbox = F2(
 						]))));
 	});
 var author$project$Page$Settings$countMethod = function (method) {
-	return A2(
-		mdgriffith$elm_ui$Element$column,
-		_List_Nil,
-		_List_fromArray(
-			[
-				author$project$Page$Settings$settingHeader('Counting Method'),
-				A2(
-				mdgriffith$elm_ui$Element$row,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$width(
-								mdgriffith$elm_ui$Element$fillPortion(4)),
-								mdgriffith$elm_ui$Element$alignTop,
-								mdgriffith$elm_ui$Element$paddingEach(
-								_Utils_update(
-									author$project$Page$Settings$defaultPadding,
-									{left: 10, right: 10}))
-							]),
-						A2(
-							mdgriffith$elm_ui$Element$paragraph,
-							_List_fromArray(
-								[mdgriffith$elm_ui$Element$alignTop]),
-							_List_fromArray(
-								[
-									mdgriffith$elm_ui$Element$text('Your words can be counted in two different ways, depending on your preference. \'New words\' means that every word you type will be added to your word count. \'Actual words\' means that if you delete words, they will also be removed from your word count. This only affects your daily word count. Progress towards completing a target will always count every word written.')
-								]))),
-						A2(
-						mdgriffith$elm_ui$Element$Input$checkbox,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$width(
-								mdgriffith$elm_ui$Element$fillPortion(1)),
-								mdgriffith$elm_ui$Element$centerX,
-								mdgriffith$elm_ui$Element$alignTop
-							]),
-						{
-							checked: author$project$Page$Settings$countMethodToBool(method),
-							icon: A2(author$project$Page$Settings$showCheckBox, 'New words', 'Actual words'),
-							label: mdgriffith$elm_ui$Element$Input$labelHidden('Counting Method'),
-							onChange: author$project$Page$Settings$CountMethodChanged
-						})
-					]))
-			]));
+	return {
+		description: 'Your words can be counted in two different ways, depending on your preference. \'New words\' means that every word you type will be added to your word count. \'Actual words\' means that if you delete words, they will also be removed from your word count. This only affects your daily word count. Progress towards completing a target will always count every word written.',
+		header: 'Counting Method',
+		input: A2(
+			mdgriffith$elm_ui$Element$Input$checkbox,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$width(
+					mdgriffith$elm_ui$Element$fillPortion(1)),
+					mdgriffith$elm_ui$Element$centerX,
+					mdgriffith$elm_ui$Element$alignTop
+				]),
+			{
+				checked: author$project$Page$Settings$countMethodToBool(method),
+				icon: A2(author$project$Page$Settings$showCheckBox, 'New words', 'Actual words'),
+				label: mdgriffith$elm_ui$Element$Input$labelHidden('Counting Method'),
+				onChange: author$project$Page$Settings$CountMethodChanged
+			})
+	};
 };
 var author$project$Appearance$black = A3(mdgriffith$elm_ui$Element$rgb255, 0, 0, 0);
 var author$project$Page$Settings$DisplayNameInputRecived = function (a) {
@@ -14515,12 +14548,93 @@ var mdgriffith$elm_ui$Element$Input$text = mdgriffith$elm_ui$Element$Input$textH
 		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
 	});
 var author$project$Page$Settings$displayName = function (name) {
+	return {
+		description: 'Your Display Name is your identity on GameYourWords.com. This name will be how you are seen by anyone else in the GameYourWords community. Please choose a name that isn\'t obscene or offensive.',
+		header: 'Display Name',
+		input: A2(
+			mdgriffith$elm_ui$Element$Input$text,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$width(
+					mdgriffith$elm_ui$Element$fillPortion(1)),
+					mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$black),
+					mdgriffith$elm_ui$Element$alignTop
+				]),
+			{
+				label: mdgriffith$elm_ui$Element$Input$labelHidden('Display Name'),
+				onChange: author$project$Page$Settings$DisplayNameInputRecived,
+				placeholder: elm$core$Maybe$Just(
+					A2(
+						mdgriffith$elm_ui$Element$Input$placeholder,
+						_List_Nil,
+						mdgriffith$elm_ui$Element$text('Display Name'))),
+				text: name
+			})
+	};
+};
+var author$project$Page$Settings$SaveButtonPressed = {$: 'SaveButtonPressed'};
+var author$project$Page$Settings$saveSettingsButton = A2(
+	mdgriffith$elm_ui$Element$Input$button,
+	_List_fromArray(
+		[
+			mdgriffith$elm_ui$Element$Border$color(author$project$Appearance$siteLightFontColor),
+			mdgriffith$elm_ui$Element$Border$width(2),
+			mdgriffith$elm_ui$Element$Border$rounded(5),
+			mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteActionButtonColor),
+			mdgriffith$elm_ui$Element$padding(10)
+		]),
+	{
+		label: mdgriffith$elm_ui$Element$text('Save settings'),
+		onPress: elm$core$Maybe$Just(author$project$Page$Settings$SaveButtonPressed)
+	});
+var author$project$Appearance$siteHeaderSize = 18;
+var author$project$Page$Settings$defaultPadding = {bottom: 0, left: 0, right: 0, top: 0};
+var mdgriffith$elm_ui$Internal$Model$Paragraph = {$: 'Paragraph'};
+var mdgriffith$elm_ui$Element$paragraph = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asParagraph,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$Paragraph),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$spacing(5),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
+var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
+var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
+	return {$: 'FontSize', a: a};
+};
+var mdgriffith$elm_ui$Element$Font$size = function (i) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontSize,
+		mdgriffith$elm_ui$Internal$Model$FontSize(i));
+};
+var author$project$Page$Settings$showSetting = function (setting) {
 	return A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_Nil,
 		_List_fromArray(
 			[
-				author$project$Page$Settings$settingHeader('Display Name'),
+				A2(
+				mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$Font$size(author$project$Appearance$siteHeaderSize),
+						mdgriffith$elm_ui$Element$paddingEach(
+						_Utils_update(
+							author$project$Page$Settings$defaultPadding,
+							{bottom: 10}))
+					]),
+				mdgriffith$elm_ui$Element$text(setting.header)),
 				A2(
 				mdgriffith$elm_ui$Element$row,
 				_List_Nil,
@@ -14543,45 +14657,12 @@ var author$project$Page$Settings$displayName = function (name) {
 							_List_Nil,
 							_List_fromArray(
 								[
-									mdgriffith$elm_ui$Element$text('Your Display Name is your identity on GameYourWords.com. This name will be how you are seen by anyone else in the GameYourWords community. Please choose a name that isn\'t obscene or offensive.')
+									mdgriffith$elm_ui$Element$text(setting.description)
 								]))),
-						A2(
-						mdgriffith$elm_ui$Element$Input$text,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$width(
-								mdgriffith$elm_ui$Element$fillPortion(1)),
-								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$black),
-								mdgriffith$elm_ui$Element$alignTop
-							]),
-						{
-							label: mdgriffith$elm_ui$Element$Input$labelHidden('Display Name'),
-							onChange: author$project$Page$Settings$DisplayNameInputRecived,
-							placeholder: elm$core$Maybe$Just(
-								A2(
-									mdgriffith$elm_ui$Element$Input$placeholder,
-									_List_Nil,
-									mdgriffith$elm_ui$Element$text('Display Name'))),
-							text: name
-						})
+						setting.input
 					]))
 			]));
 };
-var author$project$Page$Settings$SaveButtonPressed = {$: 'SaveButtonPressed'};
-var author$project$Page$Settings$saveSettingsButton = A2(
-	mdgriffith$elm_ui$Element$Input$button,
-	_List_fromArray(
-		[
-			mdgriffith$elm_ui$Element$Border$color(author$project$Appearance$siteLightFontColor),
-			mdgriffith$elm_ui$Element$Border$width(2),
-			mdgriffith$elm_ui$Element$Border$rounded(5),
-			mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteActionButtonColor),
-			mdgriffith$elm_ui$Element$padding(10)
-		]),
-	{
-		label: mdgriffith$elm_ui$Element$text('Save settings'),
-		onPress: elm$core$Maybe$Just(author$project$Page$Settings$SaveButtonPressed)
-	});
 var author$project$Page$Settings$touchedOrState = F4(
 	function (modelSelector, model, settingsSelector, settings) {
 		var _n0 = modelSelector(model);
@@ -14607,28 +14688,30 @@ var author$project$Page$Settings$showBody = F2(
 				]),
 			_List_fromArray(
 				[
+					author$project$Page$Settings$showSetting(
 					author$project$Page$Settings$displayName(
-					A4(
-						author$project$Page$Settings$touchedOrState,
-						function ($) {
-							return $.displayName;
-						},
-						model,
-						function ($) {
-							return $.displayName;
-						},
-						state.settings)),
+						A4(
+							author$project$Page$Settings$touchedOrState,
+							function ($) {
+								return $.displayName;
+							},
+							model,
+							function ($) {
+								return $.displayName;
+							},
+							state.settings))),
+					author$project$Page$Settings$showSetting(
 					author$project$Page$Settings$countMethod(
-					A4(
-						author$project$Page$Settings$touchedOrState,
-						function ($) {
-							return $.countMethod;
-						},
-						model,
-						function ($) {
-							return $.countMethod;
-						},
-						state.settings)),
+						A4(
+							author$project$Page$Settings$touchedOrState,
+							function ($) {
+								return $.countMethod;
+							},
+							model,
+							function ($) {
+								return $.countMethod;
+							},
+							state.settings))),
 					author$project$Page$Settings$saveSettingsButton
 				]));
 	});
@@ -15415,6 +15498,51 @@ var mdgriffith$elm_ui$Element$focusStyle = mdgriffith$elm_ui$Internal$Model$Focu
 var author$project$Appearance$siteFocusStyle = mdgriffith$elm_ui$Element$focusStyle(
 	{backgroundColor: elm$core$Maybe$Nothing, borderColor: elm$core$Maybe$Nothing, shadow: elm$core$Maybe$Nothing});
 var author$project$Appearance$siteFontSize = 14;
+var author$project$Skeleton$messageBackgroundColor = function (severity) {
+	switch (severity.$) {
+		case 'Error':
+			return A3(mdgriffith$elm_ui$Element$rgb255, 150, 10, 10);
+		case 'Warning':
+			return A3(mdgriffith$elm_ui$Element$rgb255, 150, 150, 10);
+		default:
+			return author$project$Appearance$siteBackgroundDark;
+	}
+};
+var author$project$Skeleton$displaySingleMessage = function (message) {
+	return A2(
+		mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+				mdgriffith$elm_ui$Element$height(
+				mdgriffith$elm_ui$Element$px(20)),
+				mdgriffith$elm_ui$Element$Background$color(
+				author$project$Skeleton$messageBackgroundColor(message.severity)),
+				mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+						mdgriffith$elm_ui$Element$centerX,
+						mdgriffith$elm_ui$Element$centerY
+					]),
+				mdgriffith$elm_ui$Element$text(message.body))
+			]));
+};
+var author$project$Skeleton$displayMessages = function (messages) {
+	return elm$core$List$isEmpty(messages) ? mdgriffith$elm_ui$Element$none : A2(
+		mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+			]),
+		A2(elm$core$List$map, author$project$Skeleton$displaySingleMessage, messages));
+};
 var author$project$Skeleton$horizontalSpacer = A2(
 	mdgriffith$elm_ui$Element$el,
 	_List_fromArray(
@@ -15683,8 +15811,8 @@ var mdgriffith$elm_ui$Element$layoutWith = F3(
 			child);
 	});
 var mdgriffith$elm_ui$Element$scrollbars = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$overflow, mdgriffith$elm_ui$Internal$Style$classes.scrollbars);
-var author$project$Skeleton$composePage = F2(
-	function (header, body) {
+var author$project$Skeleton$composePage = F3(
+	function (state, header, body) {
 		return A3(
 			mdgriffith$elm_ui$Element$layoutWith,
 			{
@@ -15709,6 +15837,7 @@ var author$project$Skeleton$composePage = F2(
 					[
 						author$project$Skeleton$verticalSpacer,
 						header,
+						author$project$Skeleton$displayMessages(state.messages),
 						A2(
 						mdgriffith$elm_ui$Element$row,
 						_List_fromArray(
@@ -15759,8 +15888,9 @@ var author$project$Skeleton$view = F3(
 		return {
 			body: _List_fromArray(
 				[
-					A2(
+					A3(
 					author$project$Skeleton$composePage,
+					state,
 					A2(author$project$Skeleton$buildHeader, state, pageData.headerSettings),
 					A2(mdgriffith$elm_ui$Element$map, pageMapper, pageData.body))
 				]),

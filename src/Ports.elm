@@ -50,6 +50,7 @@ type InOperation
     | AuthStateChanged
     | SettingsLoaded
     | SettingsSaved
+    | DisplayMessageReceived
 
 
 
@@ -144,6 +145,9 @@ inOperationToString operation =
         SettingsSaved ->
             "SettingsSaved"
 
+        DisplayMessageReceived ->
+            "DisplayMessageReceived"
+
 
 stringToInOperation : String -> InOperation
 stringToInOperation operation =
@@ -162,6 +166,9 @@ stringToInOperation operation =
 
         "SettingsSaved" ->
             SettingsSaved
+
+        "DisplayMessageReceived" ->
+            DisplayMessageReceived
 
         _ ->
             Unknown

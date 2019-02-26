@@ -1,10 +1,14 @@
 module State exposing
     ( CountMethod(..)
     , Ended(..)
+    , Message
     , Settings
+    , Severity(..)
+    , Source(..)
     , State
     , User
     , decodeDimensions
+    , decodeDisplayMessage
     , decodeLoadedState
     , decodeSettings
     , decodeUser
@@ -33,6 +37,7 @@ type alias State =
     , windowDimensions : Dimensions
     , user : Maybe User
     , settings : Settings
+    , messages : List Message
     , key : Nav.Key
     }
 
@@ -53,6 +58,25 @@ type alias Settings =
     { displayName : String
     , countMethod : CountMethod
     }
+
+
+type alias Message =
+    { body : String
+    , severity : Severity
+    , source : Source
+    }
+
+
+type Source
+    = Db
+    | Auth
+    | Internal
+
+
+type Severity
+    = Info
+    | Warning
+    | Error
 
 
 type CountMethod
@@ -149,7 +173,7 @@ settingsDecoder : Decode.Decoder Settings
 settingsDecoder =
     Decode.succeed Settings
         |> optional "displayName" Decode.string defaultSettings.displayName
-        |> optional "countMethod" methodNewDecoder defaultSettings.countMethod
+        |> optional "countMethod" methodDecoder defaultSettings.countMethod
 
 
 defaultSettings : Settings
@@ -157,6 +181,67 @@ defaultSettings =
     { displayName = ""
     , countMethod = Additive
     }
+
+
+decodeDisplayMessage : Decode.Value -> Message
+decodeDisplayMessage message =
+    case Decode.decodeValue messageDecoder message of
+        Ok message_ ->
+            message_
+
+        Err _ ->
+            { body = "Error parsing messages to display"
+            , severity = Warning
+            , source = Internal
+            }
+
+
+messageDecoder : Decode.Decoder Message
+messageDecoder =
+    Decode.succeed Message
+        |> required "body" Decode.string
+        |> required "severity" severityDecoder
+        |> required "source" sourceDecoder
+
+
+severityDecoder : Decode.Decoder Severity
+severityDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\severity -> Decode.succeed <| severityFromString severity)
+
+
+severityFromString : String -> Severity
+severityFromString severity =
+    case severity of
+        "error" ->
+            Error
+
+        "warning" ->
+            Warning
+
+        _ ->
+            Info
+
+
+sourceDecoder : Decode.Decoder Source
+sourceDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\source -> Decode.succeed <| sourceFromString source)
+
+
+sourceFromString : String -> Source
+sourceFromString source =
+    case source of
+        "db" ->
+            Db
+
+        "auth" ->
+            Auth
+
+        _ ->
+            Internal
 
 
 getValue : Decode.Decoder a -> Decode.Value -> a -> a
@@ -184,8 +269,8 @@ actualCountDecoder =
     Decode.field "actualCount" Decode.int
 
 
-methodNewDecoder : Decode.Decoder CountMethod
-methodNewDecoder =
+methodDecoder : Decode.Decoder CountMethod
+methodDecoder =
     Decode.string
         |> Decode.andThen
             (\str ->

@@ -63,14 +63,15 @@ view state pageMapper pageData =
     { title = pageData.title
     , body =
         [ composePage
+            state
             (buildHeader state pageData.headerSettings)
             (Element.map pageMapper pageData.body)
         ]
     }
 
 
-composePage : Element msg -> Element msg -> Html msg
-composePage header body =
+composePage : State -> Element msg -> Element msg -> Html msg
+composePage state header body =
     Element.layoutWith
         { options = [ Appearance.siteFocusStyle ] }
         [ Font.size Appearance.siteFontSize
@@ -85,6 +86,7 @@ composePage header body =
             ]
             [ verticalSpacer
             , header
+            , displayMessages state.messages
             , row
                 [ width fill
                 , height fill
@@ -114,6 +116,48 @@ horizontalSpacer =
         , width <| px 5
         ]
         none
+
+
+displayMessages : List State.Message -> Element msg
+displayMessages messages =
+    if List.isEmpty messages then
+        none
+
+    else
+        column [ width fill ] <|
+            List.map displaySingleMessage messages
+
+
+displaySingleMessage : State.Message -> Element msg
+displaySingleMessage message =
+    row
+        [ width fill
+        , height <| px 20
+        , Background.color <| messageBackgroundColor message.severity
+        , Font.color Appearance.siteLightFontColor
+        ]
+        [ el
+            [ width shrink
+            , height shrink
+            , centerX
+            , centerY
+            ]
+          <|
+            text message.body
+        ]
+
+
+messageBackgroundColor : State.Severity -> Color
+messageBackgroundColor severity =
+    case severity of
+        State.Error ->
+            rgb255 150 10 10
+
+        State.Warning ->
+            rgb255 150 150 10
+
+        State.Info ->
+            Appearance.siteBackgroundDark
 
 
 buildHeader : State -> Maybe HeaderSettings -> Element msg

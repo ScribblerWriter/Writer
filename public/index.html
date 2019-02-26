@@ -59,6 +59,13 @@
                 const content = JSON.parse(localStorage.getItem('settings'));
                 const message = { operation: returnOperation, content: content}
                 appElm.ports.incomingMessage.send( message );
+
+                // const error = displayMessage.build("This is an error.", displayMessage.severityError(), displayMessage.sourceExternal());
+                // const warning = displayMessage.build("This is a warning.", displayMessage.severityWarning(), displayMessage.sourceExternal());
+                // const info = displayMessage.build("This is just info.", displayMessage.severityInfo(), displayMessage.sourceExternal());
+                // appElm.ports.incomingMessage.send(error);
+                // appElm.ports.incomingMessage.send(warning);
+                // appElm.ports.incomingMessage.send(info);
             }
 
             function saveToStorage(content) {
@@ -105,10 +112,10 @@
                 catch (error) {
                     console.error ("Error in incoming message: ", error.message);
                 }
-              }
-
+            }
 
         </script>
+        <script src="displayMessage.js"></script>
         <script src="fb-db.js"></script>
         <script src="fb-auth.js"></script>
     </body>
