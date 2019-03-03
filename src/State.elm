@@ -1,14 +1,10 @@
 module State exposing
     ( CountMethod(..)
     , Ended(..)
-    , Message
     , Settings
-    , Severity(..)
-    , Source(..)
     , State
     , User
     , decodeDimensions
-    , decodeDisplayMessage
     , decodeLoadedState
     , decodeSettings
     , decodeUser
@@ -20,6 +16,7 @@ module State exposing
 
 import Browser.Navigation as Nav
 import Data.Target exposing (Target)
+import DisplayMessage
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (optional, required)
 import Json.Encode as Encode
@@ -37,7 +34,7 @@ type alias State =
     , windowDimensions : Dimensions
     , user : Maybe User
     , settings : Settings
-    , messages : List Message
+    , messages : List DisplayMessage.Message
     , key : Nav.Key
     }
 
@@ -58,25 +55,6 @@ type alias Settings =
     { displayName : String
     , countMethod : CountMethod
     }
-
-
-type alias Message =
-    { body : String
-    , severity : Severity
-    , source : Source
-    }
-
-
-type Source
-    = Db
-    | Auth
-    | Internal
-
-
-type Severity
-    = Info
-    | Warning
-    | Error
 
 
 type CountMethod
@@ -181,67 +159,6 @@ defaultSettings =
     { displayName = ""
     , countMethod = Additive
     }
-
-
-decodeDisplayMessage : Decode.Value -> Message
-decodeDisplayMessage message =
-    case Decode.decodeValue messageDecoder message of
-        Ok message_ ->
-            message_
-
-        Err _ ->
-            { body = "Error parsing messages to display"
-            , severity = Warning
-            , source = Internal
-            }
-
-
-messageDecoder : Decode.Decoder Message
-messageDecoder =
-    Decode.succeed Message
-        |> required "body" Decode.string
-        |> required "severity" severityDecoder
-        |> required "source" sourceDecoder
-
-
-severityDecoder : Decode.Decoder Severity
-severityDecoder =
-    Decode.string
-        |> Decode.andThen
-            (\severity -> Decode.succeed <| severityFromString severity)
-
-
-severityFromString : String -> Severity
-severityFromString severity =
-    case severity of
-        "error" ->
-            Error
-
-        "warning" ->
-            Warning
-
-        _ ->
-            Info
-
-
-sourceDecoder : Decode.Decoder Source
-sourceDecoder =
-    Decode.string
-        |> Decode.andThen
-            (\source -> Decode.succeed <| sourceFromString source)
-
-
-sourceFromString : String -> Source
-sourceFromString source =
-    case source of
-        "db" ->
-            Db
-
-        "auth" ->
-            Auth
-
-        _ ->
-            Internal
 
 
 getValue : Decode.Decoder a -> Decode.Value -> a -> a

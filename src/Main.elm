@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Browser.Navigation as Nav
+import DisplayMessage exposing (Message)
 import Html exposing (text)
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -101,7 +102,7 @@ view model =
             Skeleton.view model.state GotTargetSelectorMsg (TargetSelector.view targetSelectorModel model.state)
 
         Authenticator authenticatorModel ->
-            Skeleton.view model.state GotAuthenticatorMsg (Authenticator.view authenticatorModel)
+            Skeleton.view model.state GotAuthenticatorMsg (Authenticator.view authenticatorModel model.state.messages)
 
         SignerOuter ->
             Skeleton.view model.state GotSignerOuterMsg SignerOuter.view
@@ -276,17 +277,18 @@ updateNewSettings value model =
             ( model, Cmd.none )
 
 
-parseMessages : Maybe Decode.Value -> List State.Message -> List State.Message
+parseMessages : Maybe Decode.Value -> List Message -> List Message
 parseMessages newMessage oldMessages =
     case newMessage of
         Just message ->
-            oldMessages ++ [ State.decodeDisplayMessage message ]
+            oldMessages ++ [ DisplayMessage.decodeDisplayMessage message ]
 
         Nothing ->
             oldMessages
-                ++ [ { body = "I was told to display a message, but not message was given."
-                     , severity = State.Warning
-                     , source = State.Internal
+                ++ [ { body = "I was told to display a message, but no message was given."
+                     , severity = DisplayMessage.Warning
+                     , source = DisplayMessage.Internal
+                     , code = DisplayMessage.NoMessage
                      }
                    ]
 
@@ -381,8 +383,8 @@ updateAuthenticator : Authenticator.Msg -> Model -> ( Model, Cmd Msg )
 updateAuthenticator msg model =
     case model.page of
         Authenticator authenticatorModel ->
-            Authenticator.update msg authenticatorModel
-                |> (\data -> stepAuthenticator model data)
+            Authenticator.update msg authenticatorModel model.state
+                |> (\( state, data ) -> stepAuthenticator { model | state = state } data)
 
         _ ->
             ( model, Cmd.none )

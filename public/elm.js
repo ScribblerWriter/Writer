@@ -6888,6 +6888,27 @@ var author$project$Main$subscriptions = function (model) {
 		}());
 };
 var author$project$Page$Authenticator$UserPass = {$: 'UserPass'};
+var author$project$DisplayMessage$Auth = {$: 'Auth'};
+var elm$core$Basics$neq = _Utils_notEqual;
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var author$project$Page$Authenticator$clearAuthMessages = function (messages) {
+	return A2(
+		elm$core$List$filter,
+		function (msg) {
+			return !_Utils_eq(msg.source, author$project$DisplayMessage$Auth);
+		},
+		messages);
+};
 var author$project$Page$Authenticator$emailPassEncoder = F2(
 	function (email, pass) {
 		return elm$json$Json$Encode$object(
@@ -6911,47 +6932,79 @@ var author$project$Ports$sendMessageWithJustContent = F2(
 			elm$core$Maybe$Just(content),
 			elm$core$Maybe$Nothing);
 	});
-var author$project$Page$Authenticator$update = F2(
-	function (msg, model) {
+var author$project$Page$Authenticator$update = F3(
+	function (msg, model, state) {
 		switch (msg.$) {
 			case 'SignInInputReceived':
 				var inputType = msg.a;
 				var value = msg.b;
 				if (inputType.$ === 'Email') {
 					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{email: value}),
-						elm$core$Platform$Cmd$none);
+						state,
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{email: value}),
+							elm$core$Platform$Cmd$none));
 				} else {
 					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{password: value}),
-						elm$core$Platform$Cmd$none);
+						state,
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{password: value}),
+							elm$core$Platform$Cmd$none));
 				}
 			case 'SignInButtonClicked':
-				return _Utils_Tuple2(
-					model,
-					A2(
-						author$project$Ports$sendMessageWithJustContent,
-						author$project$Ports$SignIn,
-						A2(author$project$Page$Authenticator$emailPassEncoder, model.email, model.password)));
+				return function (messages) {
+					return _Utils_Tuple2(
+						_Utils_update(
+							state,
+							{messages: messages}),
+						_Utils_Tuple2(
+							model,
+							A2(
+								author$project$Ports$sendMessageWithJustContent,
+								author$project$Ports$SignIn,
+								A2(author$project$Page$Authenticator$emailPassEncoder, model.email, model.password))));
+				}(
+					author$project$Page$Authenticator$clearAuthMessages(state.messages));
 			case 'SignUpButtonClicked':
-				return _Utils_Tuple2(
-					{currentSignUpPage: author$project$Page$Authenticator$UserPass, email: '', password: ''},
-					elm$core$Platform$Cmd$none);
+				return function (messages) {
+					return _Utils_Tuple2(
+						_Utils_update(
+							state,
+							{messages: messages}),
+						_Utils_Tuple2(
+							{currentSignUpPage: author$project$Page$Authenticator$UserPass, email: '', password: ''},
+							elm$core$Platform$Cmd$none));
+				}(
+					author$project$Page$Authenticator$clearAuthMessages(state.messages));
 			case 'ReturnToSignInButtonClicked':
-				return _Utils_Tuple2(
-					{currentSignUpPage: author$project$Page$Authenticator$None, email: '', password: ''},
-					elm$core$Platform$Cmd$none);
+				return function (messages) {
+					return _Utils_Tuple2(
+						_Utils_update(
+							state,
+							{messages: messages}),
+						_Utils_Tuple2(
+							{currentSignUpPage: author$project$Page$Authenticator$None, email: '', password: ''},
+							elm$core$Platform$Cmd$none));
+				}(
+					author$project$Page$Authenticator$clearAuthMessages(state.messages));
 			default:
-				return _Utils_Tuple2(
-					model,
-					A2(
-						author$project$Ports$sendMessageWithJustContent,
-						author$project$Ports$SignUp,
-						A2(author$project$Page$Authenticator$emailPassEncoder, model.email, model.password)));
+				return function (messages) {
+					return _Utils_Tuple2(
+						_Utils_update(
+							state,
+							{messages: messages}),
+						_Utils_Tuple2(
+							model,
+							A2(
+								author$project$Ports$sendMessageWithJustContent,
+								author$project$Ports$SignUp,
+								A2(author$project$Page$Authenticator$emailPassEncoder, model.email, model.password))));
+				}(
+					author$project$Page$Authenticator$clearAuthMessages(state.messages));
 		}
 	});
 var author$project$Main$updateAuthenticator = F2(
@@ -6959,10 +7012,17 @@ var author$project$Main$updateAuthenticator = F2(
 		var _n0 = model.page;
 		if (_n0.$ === 'Authenticator') {
 			var authenticatorModel = _n0.a;
-			return function (data) {
-				return A2(author$project$Main$stepAuthenticator, model, data);
+			return function (_n1) {
+				var state = _n1.a;
+				var data = _n1.b;
+				return A2(
+					author$project$Main$stepAuthenticator,
+					_Utils_update(
+						model,
+						{state: state}),
+					data);
 			}(
-				A2(author$project$Page$Authenticator$update, msg, authenticatorModel));
+				A3(author$project$Page$Authenticator$update, msg, authenticatorModel, model.state));
 		} else {
 			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
@@ -7107,70 +7167,104 @@ var author$project$Main$loadSettings = function (user) {
 		return elm$core$Platform$Cmd$none;
 	}
 };
-var author$project$State$Internal = {$: 'Internal'};
-var author$project$State$Warning = {$: 'Warning'};
-var author$project$State$Message = F3(
-	function (body, severity, source) {
-		return {body: body, severity: severity, source: source};
+var author$project$DisplayMessage$Internal = {$: 'Internal'};
+var author$project$DisplayMessage$NoMessage = {$: 'NoMessage'};
+var author$project$DisplayMessage$Warning = {$: 'Warning'};
+var author$project$DisplayMessage$ParseError = {$: 'ParseError'};
+var author$project$DisplayMessage$Message = F4(
+	function (body, severity, source, code) {
+		return {body: body, code: code, severity: severity, source: source};
 	});
-var author$project$State$Error = {$: 'Error'};
-var author$project$State$Info = {$: 'Info'};
-var author$project$State$severityFromString = function (severity) {
-	switch (severity) {
-		case 'error':
-			return author$project$State$Error;
-		case 'warning':
-			return author$project$State$Warning;
+var author$project$DisplayMessage$BadPass = {$: 'BadPass'};
+var author$project$DisplayMessage$BadUser = {$: 'BadUser'};
+var author$project$DisplayMessage$EmailAlreadyInUse = {$: 'EmailAlreadyInUse'};
+var author$project$DisplayMessage$InvalidEmail = {$: 'InvalidEmail'};
+var author$project$DisplayMessage$Unknown = {$: 'Unknown'};
+var author$project$DisplayMessage$WeakPassword = {$: 'WeakPassword'};
+var author$project$DisplayMessage$codeFromString = function (code) {
+	switch (code) {
+		case 'bad-user':
+			return author$project$DisplayMessage$BadUser;
+		case 'bad-pass':
+			return author$project$DisplayMessage$BadPass;
+		case 'invalid-email':
+			return author$project$DisplayMessage$InvalidEmail;
+		case 'weak-password':
+			return author$project$DisplayMessage$WeakPassword;
+		case 'email-already-in-use':
+			return author$project$DisplayMessage$EmailAlreadyInUse;
 		default:
-			return author$project$State$Info;
+			return author$project$DisplayMessage$Unknown;
 	}
 };
-var author$project$State$severityDecoder = A2(
+var author$project$DisplayMessage$codeDecoder = A2(
+	elm$json$Json$Decode$andThen,
+	function (code) {
+		return elm$json$Json$Decode$succeed(
+			author$project$DisplayMessage$codeFromString(code));
+	},
+	elm$json$Json$Decode$string);
+var author$project$DisplayMessage$Error = {$: 'Error'};
+var author$project$DisplayMessage$Info = {$: 'Info'};
+var author$project$DisplayMessage$severityFromString = function (severity) {
+	switch (severity) {
+		case 'error':
+			return author$project$DisplayMessage$Error;
+		case 'warning':
+			return author$project$DisplayMessage$Warning;
+		default:
+			return author$project$DisplayMessage$Info;
+	}
+};
+var author$project$DisplayMessage$severityDecoder = A2(
 	elm$json$Json$Decode$andThen,
 	function (severity) {
 		return elm$json$Json$Decode$succeed(
-			author$project$State$severityFromString(severity));
+			author$project$DisplayMessage$severityFromString(severity));
 	},
 	elm$json$Json$Decode$string);
-var author$project$State$Auth = {$: 'Auth'};
-var author$project$State$Db = {$: 'Db'};
-var author$project$State$sourceFromString = function (source) {
+var author$project$DisplayMessage$Db = {$: 'Db'};
+var author$project$DisplayMessage$sourceFromString = function (source) {
 	switch (source) {
 		case 'db':
-			return author$project$State$Db;
+			return author$project$DisplayMessage$Db;
 		case 'auth':
-			return author$project$State$Auth;
+			return author$project$DisplayMessage$Auth;
 		default:
-			return author$project$State$Internal;
+			return author$project$DisplayMessage$Internal;
 	}
 };
-var author$project$State$sourceDecoder = A2(
+var author$project$DisplayMessage$sourceDecoder = A2(
 	elm$json$Json$Decode$andThen,
 	function (source) {
 		return elm$json$Json$Decode$succeed(
-			author$project$State$sourceFromString(source));
+			author$project$DisplayMessage$sourceFromString(source));
 	},
 	elm$json$Json$Decode$string);
-var author$project$State$messageDecoder = A3(
+var author$project$DisplayMessage$messageDecoder = A3(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'source',
-	author$project$State$sourceDecoder,
+	'code',
+	author$project$DisplayMessage$codeDecoder,
 	A3(
 		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'severity',
-		author$project$State$severityDecoder,
+		'source',
+		author$project$DisplayMessage$sourceDecoder,
 		A3(
 			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-			'body',
-			elm$json$Json$Decode$string,
-			elm$json$Json$Decode$succeed(author$project$State$Message))));
-var author$project$State$decodeDisplayMessage = function (message) {
-	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$messageDecoder, message);
+			'severity',
+			author$project$DisplayMessage$severityDecoder,
+			A3(
+				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+				'body',
+				elm$json$Json$Decode$string,
+				elm$json$Json$Decode$succeed(author$project$DisplayMessage$Message)))));
+var author$project$DisplayMessage$decodeDisplayMessage = function (message) {
+	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$DisplayMessage$messageDecoder, message);
 	if (_n0.$ === 'Ok') {
 		var message_ = _n0.a;
 		return message_;
 	} else {
-		return {body: 'Error parsing messages to display', severity: author$project$State$Warning, source: author$project$State$Internal};
+		return {body: 'Error parsing messages to display', code: author$project$DisplayMessage$ParseError, severity: author$project$DisplayMessage$Warning, source: author$project$DisplayMessage$Internal};
 	}
 };
 var author$project$Main$parseMessages = F2(
@@ -7181,14 +7275,14 @@ var author$project$Main$parseMessages = F2(
 				oldMessages,
 				_List_fromArray(
 					[
-						author$project$State$decodeDisplayMessage(message)
+						author$project$DisplayMessage$decodeDisplayMessage(message)
 					]));
 		} else {
 			return _Utils_ap(
 				oldMessages,
 				_List_fromArray(
 					[
-						{body: 'I was told to display a message, but not message was given.', severity: author$project$State$Warning, source: author$project$State$Internal}
+						{body: 'I was told to display a message, but no message was given.', code: author$project$DisplayMessage$NoMessage, severity: author$project$DisplayMessage$Warning, source: author$project$DisplayMessage$Internal}
 					]));
 		}
 	});
@@ -7759,7 +7853,6 @@ var author$project$Main$updateTargetSelector = F2(
 var author$project$State$TimeExpired = {$: 'TimeExpired'};
 var author$project$State$WordsReached = {$: 'WordsReached'};
 var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Basics$neq = _Utils_notEqual;
 var author$project$Main$updateTargetTimer = function (state) {
 	var _n0 = state.currentTarget;
 	if (_n0.$ === 'Nothing') {
@@ -7797,17 +7890,6 @@ var author$project$Page$Writer$calculateProgress = F2(
 		} else {
 			return -1;
 		}
-	});
-var elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
 	});
 var elm$core$String$any = _String_any;
 var elm$core$String$replace = F3(
@@ -8006,24 +8088,24 @@ var author$project$Page$Authenticator$SignInInputReceived = F2(
 	function (a, b) {
 		return {$: 'SignInInputReceived', a: a, b: b};
 	});
-var elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$string(string));
-	});
-var elm$html$Html$Attributes$placeholder = elm$html$Html$Attributes$stringProperty('placeholder');
-var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
-	return {$: 'AlignX', a: a};
+var author$project$Page$Authenticator$badUserOrPass = 'Invalid email address or password.';
+var author$project$Page$Authenticator$textForMessage = function (message) {
+	var _n0 = message.code;
+	switch (_n0.$) {
+		case 'BadPass':
+			return author$project$Page$Authenticator$badUserOrPass;
+		case 'BadUser':
+			return author$project$Page$Authenticator$badUserOrPass;
+		case 'InvalidEmail':
+			return message.body;
+		case 'WeakPassword':
+			return message.body;
+		case 'EmailAlreadyInUse':
+			return message.body;
+		default:
+			return 'Unhandled message: ' + message.body;
+	}
 };
-var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
-var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
-var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
-	return {$: 'AlignY', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
-var mdgriffith$elm_ui$Element$centerY = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$CenterY);
 var mdgriffith$elm_ui$Internal$Model$Height = function (a) {
 	return {$: 'Height', a: a};
 };
@@ -8037,8 +8119,8 @@ var mdgriffith$elm_ui$Element$width = mdgriffith$elm_ui$Internal$Model$Width;
 var mdgriffith$elm_ui$Internal$Model$Unkeyed = function (a) {
 	return {$: 'Unkeyed', a: a};
 };
-var mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
-var mdgriffith$elm_ui$Internal$Model$asColumn = mdgriffith$elm_ui$Internal$Model$AsColumn;
+var mdgriffith$elm_ui$Internal$Model$AsEl = {$: 'AsEl'};
+var mdgriffith$elm_ui$Internal$Model$asEl = mdgriffith$elm_ui$Internal$Model$AsEl;
 var mdgriffith$elm_ui$Internal$Model$Generic = {$: 'Generic'};
 var mdgriffith$elm_ui$Internal$Model$div = mdgriffith$elm_ui$Internal$Model$Generic;
 var mdgriffith$elm_ui$Internal$Flag$Field = F2(
@@ -8151,8 +8233,6 @@ var mdgriffith$elm_ui$Internal$Model$addKeyedChildren = F3(
 							inFront)));
 		}
 	});
-var mdgriffith$elm_ui$Internal$Model$AsEl = {$: 'AsEl'};
-var mdgriffith$elm_ui$Internal$Model$asEl = mdgriffith$elm_ui$Internal$Model$AsEl;
 var mdgriffith$elm_ui$Internal$Model$AsParagraph = {$: 'AsParagraph'};
 var mdgriffith$elm_ui$Internal$Model$asParagraph = mdgriffith$elm_ui$Internal$Model$AsParagraph;
 var elm$core$Basics$not = _Basics_not;
@@ -8160,6 +8240,13 @@ var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$p = _VirtualDom_node('p');
 var elm$html$Html$s = _VirtualDom_node('s');
 var elm$html$Html$u = _VirtualDom_node('u');
+var elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$string(string));
+	});
 var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
 var elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 	return _VirtualDom_keyedNode(
@@ -13147,6 +13234,53 @@ var mdgriffith$elm_ui$Internal$Model$element = F4(
 				mdgriffith$elm_ui$Internal$Model$NoNearbyChildren,
 				elm$core$List$reverse(attributes)));
 	});
+var mdgriffith$elm_ui$Element$el = F2(
+	function (attrs, child) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asEl,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					attrs)),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[child])));
+	});
+var mdgriffith$elm_ui$Internal$Model$Text = function (a) {
+	return {$: 'Text', a: a};
+};
+var mdgriffith$elm_ui$Element$text = function (content) {
+	return mdgriffith$elm_ui$Internal$Model$Text(content);
+};
+var author$project$Page$Authenticator$parseMessages = function (messages) {
+	return A2(
+		elm$core$List$map,
+		function (msg) {
+			return A2(
+				mdgriffith$elm_ui$Element$el,
+				_List_Nil,
+				mdgriffith$elm_ui$Element$text(
+					author$project$Page$Authenticator$textForMessage(msg)));
+		},
+		A2(
+			elm$core$List$filter,
+			function (msg) {
+				return _Utils_eq(msg.source, author$project$DisplayMessage$Auth);
+			},
+			messages));
+};
+var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
+	return {$: 'AlignX', a: a};
+};
+var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
+var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
+var mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
+var mdgriffith$elm_ui$Internal$Model$asColumn = mdgriffith$elm_ui$Internal$Model$AsColumn;
 var mdgriffith$elm_ui$Internal$Model$htmlClass = function (cls) {
 	return mdgriffith$elm_ui$Internal$Model$Attr(
 		elm$html$Html$Attributes$class(cls));
@@ -13169,33 +13303,53 @@ var mdgriffith$elm_ui$Element$column = F2(
 						attrs))),
 			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
-var mdgriffith$elm_ui$Element$el = F2(
-	function (attrs, child) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asEl,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-					attrs)),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[child])));
-	});
-var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
-var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
-var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
-var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
-	function (a, b, c, d, e) {
-		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
+var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
+var mdgriffith$elm_ui$Internal$Model$Colored = F3(
+	function (a, b, c) {
+		return {$: 'Colored', a: a, b: b, c: c};
 	});
 var mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
 	function (a, b) {
 		return {$: 'StyleClass', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
+	var red = _n0.a;
+	var green = _n0.b;
+	var blue = _n0.c;
+	var alpha = _n0.d;
+	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
+};
+var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontColor,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Colored,
+			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
+			'color',
+			fontColor));
+};
+var author$project$Page$Authenticator$validationMessages = function (messages) {
+	return A2(
+		mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				mdgriffith$elm_ui$Element$centerX,
+				mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+			]),
+		author$project$Page$Authenticator$parseMessages(messages));
+};
+var elm$html$Html$Attributes$placeholder = elm$html$Html$Attributes$stringProperty('placeholder');
+var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
+	return {$: 'AlignY', a: a};
+};
+var mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
+var mdgriffith$elm_ui$Element$centerY = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$CenterY);
+var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
+var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
+	function (a, b, c, d, e) {
+		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
 	});
 var mdgriffith$elm_ui$Element$padding = function (x) {
 	return A2(
@@ -13248,24 +13402,7 @@ var mdgriffith$elm_ui$Element$spacing = function (x) {
 			x,
 			x));
 };
-var mdgriffith$elm_ui$Internal$Model$Text = function (a) {
-	return {$: 'Text', a: a};
-};
-var mdgriffith$elm_ui$Element$text = function (content) {
-	return mdgriffith$elm_ui$Internal$Model$Text(content);
-};
 var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
-var mdgriffith$elm_ui$Internal$Model$Colored = F3(
-	function (a, b, c) {
-		return {$: 'Colored', a: a, b: b, c: c};
-	});
-var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
-	var red = _n0.a;
-	var green = _n0.b;
-	var blue = _n0.c;
-	var alpha = _n0.d;
-	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
-};
 var mdgriffith$elm_ui$Element$Background$color = function (clr) {
 	return A2(
 		mdgriffith$elm_ui$Internal$Model$StyleClass,
@@ -13309,17 +13446,6 @@ var mdgriffith$elm_ui$Internal$Model$Class = F2(
 		return {$: 'Class', a: a, b: b};
 	});
 var mdgriffith$elm_ui$Element$Font$bold = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontWeight, mdgriffith$elm_ui$Internal$Style$classes.bold);
-var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
-var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontColor,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Colored,
-			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
-			'color',
-			fontColor));
-};
 var mdgriffith$elm_ui$Element$Font$underline = mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.underline);
 var elm$json$Json$Encode$bool = _Json_wrap;
 var elm$html$Html$Attributes$boolProperty = F2(
@@ -14227,8 +14353,8 @@ var mdgriffith$elm_ui$Element$Input$username = mdgriffith$elm_ui$Element$Input$t
 		spellchecked: false,
 		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
 	});
-var author$project$Page$Authenticator$showDetails = F2(
-	function (model, fieldValues) {
+var author$project$Page$Authenticator$showDetails = F3(
+	function (model, messages, fieldValues) {
 		return A2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
@@ -14242,6 +14368,7 @@ var author$project$Page$Authenticator$showDetails = F2(
 				]),
 			_List_fromArray(
 				[
+					author$project$Page$Authenticator$validationMessages(messages),
 					A2(
 					mdgriffith$elm_ui$Element$Input$username,
 					_List_fromArray(
@@ -14286,12 +14413,13 @@ var author$project$Page$Authenticator$showDetails = F2(
 						label: mdgriffith$elm_ui$Element$text(fieldValues.buttonText),
 						onPress: elm$core$Maybe$Just(fieldValues.clickEvent)
 					}),
-					A2(mdgriffith$elm_ui$Element$el, _List_Nil, mdgriffith$elm_ui$Element$none),
 					A2(
 					mdgriffith$elm_ui$Element$row,
 					_List_fromArray(
 						[
-							mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+							mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor),
+							mdgriffith$elm_ui$Element$centerX,
+							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
 						]),
 					_List_fromArray(
 						[
@@ -14310,27 +14438,31 @@ var author$project$Page$Authenticator$showDetails = F2(
 						]))
 				]));
 	});
-var author$project$Page$Authenticator$showBody = function (model) {
-	var _n0 = model.currentSignUpPage;
-	if (_n0.$ === 'None') {
-		return A2(
-			author$project$Page$Authenticator$showDetails,
-			model,
-			{buttonText: 'Sign in!', clickEvent: author$project$Page$Authenticator$SignInButtonClicked, underButtonText: 'Sign up!', underClickEvent: author$project$Page$Authenticator$SignUpButtonClicked, underText: 'Don\'t have an account yet? '});
-	} else {
-		return A2(
-			author$project$Page$Authenticator$showDetails,
-			model,
-			{buttonText: 'Sign up!', clickEvent: author$project$Page$Authenticator$CreateUserButtonClicked, underButtonText: 'Go back!', underClickEvent: author$project$Page$Authenticator$ReturnToSignInButtonClicked, underText: 'Oops, I already have an account! '});
-	}
-};
-var author$project$Page$Authenticator$view = function (model) {
-	return {
-		body: author$project$Page$Authenticator$showBody(model),
-		headerSettings: elm$core$Maybe$Nothing,
-		title: 'Sign In'
-	};
-};
+var author$project$Page$Authenticator$showBody = F2(
+	function (model, messages) {
+		var _n0 = model.currentSignUpPage;
+		if (_n0.$ === 'None') {
+			return A3(
+				author$project$Page$Authenticator$showDetails,
+				model,
+				messages,
+				{buttonText: 'Sign in!', clickEvent: author$project$Page$Authenticator$SignInButtonClicked, underButtonText: 'Sign up!', underClickEvent: author$project$Page$Authenticator$SignUpButtonClicked, underText: 'Don\'t have an account yet? '});
+		} else {
+			return A3(
+				author$project$Page$Authenticator$showDetails,
+				model,
+				messages,
+				{buttonText: 'Sign up!', clickEvent: author$project$Page$Authenticator$CreateUserButtonClicked, underButtonText: 'Go back!', underClickEvent: author$project$Page$Authenticator$ReturnToSignInButtonClicked, underText: 'Oops, I already have an account! '});
+		}
+	});
+var author$project$Page$Authenticator$view = F2(
+	function (model, messages) {
+		return {
+			body: A2(author$project$Page$Authenticator$showBody, model, messages),
+			headerSettings: elm$core$Maybe$Nothing,
+			title: 'Sign In'
+		};
+	});
 var author$project$Appearance$siteBackgroundMediumDark = A3(mdgriffith$elm_ui$Element$rgb255, 23, 80, 123);
 var author$project$Page$Settings$CountMethodChanged = function (a) {
 	return {$: 'CountMethodChanged', a: a};
@@ -15155,6 +15287,8 @@ var author$project$Page$Writer$currentTargetFightStatus = F2(
 	});
 var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
 var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
+var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
+var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
 var mdgriffith$elm_ui$Internal$Model$OnLeft = {$: 'OnLeft'};
 var mdgriffith$elm_ui$Element$onLeft = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnLeft, element);
@@ -15498,51 +15632,6 @@ var mdgriffith$elm_ui$Element$focusStyle = mdgriffith$elm_ui$Internal$Model$Focu
 var author$project$Appearance$siteFocusStyle = mdgriffith$elm_ui$Element$focusStyle(
 	{backgroundColor: elm$core$Maybe$Nothing, borderColor: elm$core$Maybe$Nothing, shadow: elm$core$Maybe$Nothing});
 var author$project$Appearance$siteFontSize = 14;
-var author$project$Skeleton$messageBackgroundColor = function (severity) {
-	switch (severity.$) {
-		case 'Error':
-			return A3(mdgriffith$elm_ui$Element$rgb255, 150, 10, 10);
-		case 'Warning':
-			return A3(mdgriffith$elm_ui$Element$rgb255, 150, 150, 10);
-		default:
-			return author$project$Appearance$siteBackgroundDark;
-	}
-};
-var author$project$Skeleton$displaySingleMessage = function (message) {
-	return A2(
-		mdgriffith$elm_ui$Element$row,
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$height(
-				mdgriffith$elm_ui$Element$px(20)),
-				mdgriffith$elm_ui$Element$Background$color(
-				author$project$Skeleton$messageBackgroundColor(message.severity)),
-				mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-			]),
-		_List_fromArray(
-			[
-				A2(
-				mdgriffith$elm_ui$Element$el,
-				_List_fromArray(
-					[
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-						mdgriffith$elm_ui$Element$centerX,
-						mdgriffith$elm_ui$Element$centerY
-					]),
-				mdgriffith$elm_ui$Element$text(message.body))
-			]));
-};
-var author$project$Skeleton$displayMessages = function (messages) {
-	return elm$core$List$isEmpty(messages) ? mdgriffith$elm_ui$Element$none : A2(
-		mdgriffith$elm_ui$Element$column,
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
-			]),
-		A2(elm$core$List$map, author$project$Skeleton$displaySingleMessage, messages));
-};
 var author$project$Skeleton$horizontalSpacer = A2(
 	mdgriffith$elm_ui$Element$el,
 	_List_fromArray(
@@ -15837,7 +15926,6 @@ var author$project$Skeleton$composePage = F3(
 					[
 						author$project$Skeleton$verticalSpacer,
 						header,
-						author$project$Skeleton$displayMessages(state.messages),
 						A2(
 						mdgriffith$elm_ui$Element$row,
 						_List_fromArray(
@@ -15922,7 +16010,7 @@ var author$project$Main$view = function (model) {
 				author$project$Skeleton$view,
 				model.state,
 				author$project$Main$GotAuthenticatorMsg,
-				author$project$Page$Authenticator$view(authenticatorModel));
+				A2(author$project$Page$Authenticator$view, authenticatorModel, model.state.messages));
 		case 'SignerOuter':
 			return A3(author$project$Skeleton$view, model.state, author$project$Main$GotSignerOuterMsg, author$project$Page$SignerOuter$view);
 		default:

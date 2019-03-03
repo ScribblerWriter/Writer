@@ -9,28 +9,33 @@ const fbauth = (function(messageCallback) {
 		});
 	});
 
+	function buildWarningMessage(error) {
+		return displayMessage.build(
+			error.message,
+			displayMessage.severityWarning(),
+			displayMessage.sourceAuth(),
+			error.code
+		);
+	}
 	return {
 		signIn: data => {
 			auth.signInWithEmailAndPassword(data.email, data.pass)
 				.catch(error => {
-					const message = displayMessage.build(error.message, displayMessage.severityWarning(), displayMessage.sourceAuth());
-					messageCallback(message);
-					console.log('Error signing in: ', error.message);
-					console.log('error', error);
+					messageCallback(buildWarningMessage(error));
 				});
 		},
 
 		signUp: data => {
 			auth.createUserWithEmailAndPassword(data.email, data.pass)
 				.catch(error => {
-					console.log('Error creating new user: ', error.message);
+					messageCallback(buildWarningMessage(error));
 				});
 		},
 
 		signOut: () => {
 			auth.signOut()
 				.catch(error => {
-					console.log('Error signing out: ', error.message);
+					messageCallback(buildWarningMessage(error));
 				});
 		}
 	};

@@ -4,6 +4,7 @@ import Appearance
 import Browser
 import Browser.Events
 import CustomHtmlEvents
+import DisplayMessage exposing (Message)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -68,65 +69,92 @@ init =
 -- update
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
-update msg model =
+update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
+update msg model state =
     case msg of
         SignInInputReceived inputType value ->
             case inputType of
                 Email ->
-                    ( { model | email = value }, Cmd.none )
+                    ( state, ( { model | email = value }, Cmd.none ) )
 
                 Password ->
-                    ( { model | password = value }, Cmd.none )
+                    ( state, ( { model | password = value }, Cmd.none ) )
 
         SignInButtonClicked ->
-            ( model
-            , Ports.sendMessageWithJustContent
-                Ports.SignIn
-                (emailPassEncoder model.email model.password)
-            )
+            clearAuthMessages state.messages
+                |> (\messages ->
+                        ( { state | messages = messages }
+                        , ( model
+                          , Ports.sendMessageWithJustContent
+                                Ports.SignIn
+                                (emailPassEncoder model.email model.password)
+                          )
+                        )
+                   )
 
         SignUpButtonClicked ->
-            ( { email = ""
-              , password = ""
-              , currentSignUpPage = UserPass
-              }
-            , Cmd.none
-            )
+            clearAuthMessages state.messages
+                |> (\messages ->
+                        ( { state | messages = messages }
+                        , ( { email = ""
+                            , password = ""
+                            , currentSignUpPage = UserPass
+                            }
+                          , Cmd.none
+                          )
+                        )
+                   )
 
         ReturnToSignInButtonClicked ->
-            ( { email = ""
-              , password = ""
-              , currentSignUpPage = None
-              }
-            , Cmd.none
-            )
+            clearAuthMessages state.messages
+                |> (\messages ->
+                        ( { state | messages = messages }
+                        , ( { email = ""
+                            , password = ""
+                            , currentSignUpPage = None
+                            }
+                          , Cmd.none
+                          )
+                        )
+                   )
 
         CreateUserButtonClicked ->
-            ( model
-            , Ports.sendMessageWithJustContent
-                Ports.SignUp
-                (emailPassEncoder model.email model.password)
-            )
+            clearAuthMessages state.messages
+                |> (\messages ->
+                        ( { state | messages = messages }
+                        , ( model
+                          , Ports.sendMessageWithJustContent
+                                Ports.SignUp
+                                (emailPassEncoder model.email model.password)
+                          )
+                        )
+                   )
+
+
+clearAuthMessages : List Message -> List Message
+clearAuthMessages messages =
+    messages
+        |> List.filter (\msg -> msg.source /= DisplayMessage.Auth)
 
 
 
 -- View
 
 
-view : Model -> Skeleton.PageData Msg
-view model =
+view : Model -> List Message -> Skeleton.PageData Msg
+view model messages =
     { title = "Sign In"
     , headerSettings = Nothing
-    , body = showBody model
+    , body = showBody model messages
     }
 
 
-showBody : Model -> Element Msg
-showBody model =
+showBody : Model -> List Message -> Element Msg
+showBody model messages =
     case model.currentSignUpPage of
         None ->
             showDetails model
+                messages
                 { buttonText = "Sign in!"
                 , clickEvent = SignInButtonClicked
                 , underText = "Don't have an account yet? "
@@ -136,6 +164,7 @@ showBody model =
 
         UserPass ->
             showDetails model
+                messages
                 { buttonText = "Sign up!"
                 , clickEvent = CreateUserButtonClicked
                 , underText = "Oops, I already have an account! "
@@ -144,8 +173,8 @@ showBody model =
                 }
 
 
-showDetails : Model -> FieldValues -> Element Msg
-showDetails model fieldValues =
+showDetails : Model -> List Message -> FieldValues -> Element Msg
+showDetails model messages fieldValues =
     column
         [ width shrink
         , width shrink
@@ -154,7 +183,8 @@ showDetails model fieldValues =
         , centerY
         , CustomHtmlEvents.onEnter fieldValues.clickEvent
         ]
-        [ Input.username
+        [ validationMessages messages
+        , Input.username
             [ Input.focusedOnLoad
             , htmlAttribute <| Html.Attributes.placeholder "Email Address"
             ]
@@ -184,10 +214,11 @@ showDetails model fieldValues =
             { onPress = Just fieldValues.clickEvent
             , label = text fieldValues.buttonText
             }
-        , el []
-            none
         , row
-            [ Font.color Appearance.siteLightFontColor ]
+            [ Font.color Appearance.siteLightFontColor
+            , centerX
+            , width shrink
+            ]
             [ el [] <|
                 text fieldValues.underText
             , Input.button
@@ -199,6 +230,51 @@ showDetails model fieldValues =
                 }
             ]
         ]
+
+
+validationMessages : List Message -> Element msg
+validationMessages messages =
+    column
+        [ width shrink
+        , centerX
+        , Font.color Appearance.siteLightFontColor
+        ]
+    <|
+        parseMessages messages
+
+
+parseMessages : List Message -> List (Element msg)
+parseMessages messages =
+    messages
+        |> List.filter (\msg -> msg.source == DisplayMessage.Auth)
+        |> List.map (\msg -> el [] <| text <| textForMessage msg)
+
+
+textForMessage : Message -> String
+textForMessage message =
+    case message.code of
+        DisplayMessage.BadPass ->
+            badUserOrPass
+
+        DisplayMessage.BadUser ->
+            badUserOrPass
+
+        DisplayMessage.InvalidEmail ->
+            message.body
+
+        DisplayMessage.WeakPassword ->
+            message.body
+
+        DisplayMessage.EmailAlreadyInUse ->
+            message.body
+
+        _ ->
+            "Unhandled message: " ++ message.body
+
+
+badUserOrPass : String
+badUserOrPass =
+    "Invalid email address or password."
 
 
 
