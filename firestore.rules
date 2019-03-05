@@ -1,7 +1,28 @@
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write;
+
+    function isAdmin() {
+  		return request.auth.uid in get(/databases/$(database)/documents/private/roles).data.admins
+  	}
+
+    match /users/{user} {
+    	// allow full access to your own user, and to the admin
+    	allow read, update, delete: if request.auth != null &&
+      	(request.auth.uid == user || isAdmin())
+
+      // allow creation of an account
+      allow create: if request.auth != null
+    }
+
+    match /targets/{target} {
+    	// allow read to all users, full access to admin
+    	allow read: if request.auth != null
+      allow write: if request.auth != null && isAdmin()
+    }
+
+    match /private/roles {
+    	// only allow internal use
+    	allow read, write: if false
     }
   }
 }
