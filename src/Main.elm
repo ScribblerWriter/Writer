@@ -57,32 +57,39 @@ type ReturnPage
 
 init : Decode.Value -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    stepUrl url
-        { page = NotFound
-        , returnPage = ToWriter
-        , state =
-            { additiveCount = 0
-            , actualCount = 0
-            , currentText = ""
-            , currentTarget = Nothing
-            , currentTargetTimerInSecs = 0
-            , winProgress = 0
-            , ended = State.No
-            , windowDimensions = State.decodeDimensions flags
-            , user = Nothing
-            , settings = State.defaultSettings
-            , messages = []
-            , key = key
-            }
-        }
-        |> (\( model, cmd ) ->
-                ( model
-                , Cmd.batch
-                    [ cmd
-                    , Ports.sendMessageWithJustResponse Ports.LoadContent Ports.ContentLoaded
-                    ]
-                )
-           )
+    { page = NotFound
+    , returnPage = ToWriter
+    , state = initialState flags key
+    }
+        |> stepUrl url
+        |> addGlobalStartupCmds
+
+
+initialState : Decode.Value -> Nav.Key -> State
+initialState flags key =
+    { additiveCount = 0
+    , actualCount = 0
+    , currentText = ""
+    , currentTarget = Nothing
+    , currentTargetTimerInSecs = 0
+    , winProgress = 0
+    , ended = State.No
+    , windowDimensions = State.decodeDimensions flags
+    , user = Nothing
+    , settings = State.defaultSettings
+    , messages = []
+    , key = key
+    }
+
+
+addGlobalStartupCmds : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
+addGlobalStartupCmds ( model, cmd ) =
+    ( model
+    , Cmd.batch
+        [ cmd
+        , Ports.sendMessageWithJustResponse Ports.LoadContent Ports.ContentLoaded
+        ]
+    )
 
 
 
