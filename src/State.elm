@@ -20,7 +20,6 @@ import DisplayMessage
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (optional, required)
 import Json.Encode as Encode
-import Maybe.Extra
 
 
 type alias State =
