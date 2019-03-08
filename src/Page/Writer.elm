@@ -50,7 +50,7 @@ update msg model state =
                         ( { newState | additiveCount = count }, ( updatedModel, Cmd.none ) )
                    )
 
-        SaveTimerTicked _ ->
+        SaveTimerTicked time ->
             if model.touched then
                 ( state
                 , ( { model | touched = False }

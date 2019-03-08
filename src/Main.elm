@@ -78,6 +78,7 @@ initialState flags key =
     , user = Nothing
     , settings = State.defaultSettings
     , messages = []
+    , currentTime = Time.millisToPosix 0
     , key = key
     }
 
@@ -132,6 +133,7 @@ type Msg
     | GotSignerOuterMsg SignerOuter.Msg
     | GotSettingsMsg Settings.Msg
     | TargetTimerTicked Time.Posix
+    | UpdateCurrentTime Time.Posix
     | WindowResized Int Int
 
 
@@ -149,6 +151,11 @@ update message model =
 
         TargetTimerTicked _ ->
             ( { model | state = updateTargetTimer model.state }, Cmd.none )
+
+        UpdateCurrentTime time ->
+            model.state
+                |> (\state -> { state | currentTime = time })
+                |> (\state -> ( { model | state = state }, Cmd.none ))
 
         GotWriterMsg msg ->
             updateWriter msg model
@@ -509,6 +516,7 @@ subscriptions model =
                     [ subs
                     , Ports.incomingMessage PortMessageReceived
                     , Time.every 1000 TargetTimerTicked
+                    , Time.every 1000 UpdateCurrentTime
                     , Browser.Events.onResize WindowResized
                     ]
            )

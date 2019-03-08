@@ -20,6 +20,8 @@ import DisplayMessage
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (optional, required)
 import Json.Encode as Encode
+import Task
+import Time
 
 
 type alias State =
@@ -34,6 +36,7 @@ type alias State =
     , user : Maybe User
     , settings : Settings
     , messages : List DisplayMessage.Message
+    , currentTime : Time.Posix
     , key : Nav.Key
     }
 
@@ -212,6 +215,7 @@ encodeSaveState state =
         [ ( "count", Encode.int state.additiveCount )
         , ( "text", Encode.string state.currentText )
         , ( "actualCount", Encode.int state.actualCount )
+        , ( "timestamp", Encode.int <| Time.posixToMillis state.currentTime )
         ]
 
 
