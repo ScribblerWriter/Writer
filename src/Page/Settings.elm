@@ -242,15 +242,6 @@ showCheckBox leftValue rightValue checked =
         ]
 
 
-defaultPadding : { top : Int, bottom : Int, left : Int, right : Int }
-defaultPadding =
-    { top = 0
-    , bottom = 0
-    , left = 0
-    , right = 0
-    }
-
-
 saveSettingsButton : Element Msg
 saveSettingsButton =
     Input.button
