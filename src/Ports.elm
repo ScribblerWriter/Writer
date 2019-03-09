@@ -121,7 +121,7 @@ outOperationToString operation =
             "SignUp"
 
         SaveToDbCollection ->
-            "SaveToDb"
+            "SaveToDbCollection"
 
 
 inOperationToString : InOperation -> String
