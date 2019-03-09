@@ -46,8 +46,8 @@
                     fbauth.signOut();
                 } else if (msg.operation == 'SignUp') {
                     fbauth.signUp(msg.content);
-                } else if (msg.operation == 'SaveToDb') {
-                    saveToDb(msg.content, msg.returnOperation);
+                } else if (msg.operation == 'SaveToDbCollection') {
+                    saveToDbCollection(msg.content, msg.returnOperation);
                 } else {
                     console.log('Unknown operation: ', msg.operation);
                 }
@@ -94,8 +94,8 @@
                 });
             }
 
-            function saveToDb(content, returnOperation) {
-                fbdb.saveToDb(content)
+            function saveToDbCollection(content, returnOperation) {
+                fbdb.saveToDbCollection(content)
                 .then( function() {
                     const message = { operation: returnOperation, content: null };
                     appElm.ports.incomingMessage.send(message);

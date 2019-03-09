@@ -37,7 +37,7 @@ type OutOperation
     | LoadContent
     | QueryDbMultiple
     | QueryDbSingle
-    | SaveToDb
+    | SaveToDbCollection
     | SignIn
     | SignOut
     | SignUp
@@ -120,7 +120,7 @@ outOperationToString operation =
         SignUp ->
             "SignUp"
 
-        SaveToDb ->
+        SaveToDbCollection ->
             "SaveToDb"
 
 

@@ -37,7 +37,7 @@ const fbdb = (function(messageCallback) {
 
 		},
 
-		saveToDb: data => {
+		saveToDbCollection: data => {
 			return db.collection(data.collection)
 				.doc(data.doc)
 				.set(data.data, { merge: true })

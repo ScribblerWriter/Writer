@@ -70,7 +70,7 @@ update msg model state =
                     ( state
                     , ( model
                       , Ports.sendMessageWithContentAndResponse
-                            Ports.SaveToDb
+                            Ports.SaveToDbCollection
                             (encodeSave user.uid model)
                             Ports.SettingsSaved
                       )
