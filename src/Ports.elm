@@ -38,6 +38,7 @@ type OutOperation
     | QueryDbMultiple
     | QueryDbSingle
     | SaveToDbCollection
+    | SaveToDbSubcollection
     | SignIn
     | SignOut
     | SignUp
@@ -122,6 +123,9 @@ outOperationToString operation =
 
         SaveToDbCollection ->
             "SaveToDbCollection"
+
+        SaveToDbSubcollection ->
+            "SaveToDbSubcollection"
 
 
 inOperationToString : InOperation -> String

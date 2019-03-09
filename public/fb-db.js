@@ -47,6 +47,20 @@ const fbdb = (function(messageCallback) {
 				.catch(error => {
 					console.log('Error writing document', error);
 				});
+		},
+
+		saveToDbSubcollection: data => {
+			return db.collection(data.collection)
+				.doc(data.doc)
+				.collection(data.subcollection)
+				.doc(data.subdoc)
+				.set(data.data, { merge: true })
+				.then( function() {
+					return;
+				})
+				.catch(error => {
+					console.log('Error writing document', error);
+				});
 		}
 	};
 

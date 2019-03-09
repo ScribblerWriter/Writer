@@ -48,6 +48,8 @@
                     fbauth.signUp(msg.content);
                 } else if (msg.operation == 'SaveToDbCollection') {
                     saveToDbCollection(msg.content, msg.returnOperation);
+                } else if (msg.operation == 'SaveToDbSubcollection') {
+                    saveToDbSubcollection(msg.content, msg.returnOperation);
                 } else {
                     console.log('Unknown operation: ', msg.operation);
                 }
@@ -74,35 +76,46 @@
 
             function queryDbSingle(content, returnOperation) {
                 fbdb.queryDbSingle(content)
-                .then(doc => {
-                    const message = { operation: returnOperation, content: doc };
-                    appElm.ports.incomingMessage.send(message);
-                })
-                .catch(error => {
-                    console.log ("Couldn't send to port: ", error);
-                })
+                    .then(doc => {
+                        const message = { operation: returnOperation, content: doc };
+                        appElm.ports.incomingMessage.send(message);
+                    })
+                    .catch(error => {
+                        console.log ("Couldn't send to port: ", error);
+                    })
             }
 
             function queryDbMultiple(content, returnOperation) {
                 fbdb.queryDbMultiple(content)
-                .then(result => {
-                    const message = { operation: returnOperation, content: result };
-                    appElm.ports.incomingMessage.send(message);
-                })
-                .catch(error => {
-                    console.log ("Couldn't send to port: ", error);
-                });
+                    .then(result => {
+                        const message = { operation: returnOperation, content: result };
+                        appElm.ports.incomingMessage.send(message);
+                    })
+                    .catch(error => {
+                        console.log ("Couldn't send to port: ", error);
+                    });
             }
 
             function saveToDbCollection(content, returnOperation) {
                 fbdb.saveToDbCollection(content)
-                .then( function() {
-                    const message = { operation: returnOperation, content: null };
-                    appElm.ports.incomingMessage.send(message);
-                })
-                .catch(error => {
-                    console.log ("Couldn't send to port: ", error);
-                });
+                    .then( function() {
+                        const message = { operation: returnOperation, content: null };
+                        appElm.ports.incomingMessage.send(message);
+                    })
+                    .catch(error => {
+                        console.log ("Couldn't send to port: ", error);
+                    });
+            }
+
+            function saveToDbSubcollection(content, returnOperation) {
+                fbdb.saveToDbSubcollection(content)
+                    .then( function() {
+                        const message = { operation: returnOperation, content: null };
+                        appElm.ports.incomingMessage.send(message);
+                    })
+                    .catch(error => {
+                        console.log ("Couldn't send to port: ", error);
+                    });
             }
 
             function messageCallback(message) {

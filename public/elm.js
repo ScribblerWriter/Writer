@@ -4454,8 +4454,10 @@ var author$project$Ports$outOperationToString = function (operation) {
 			return 'SignOut';
 		case 'SignUp':
 			return 'SignUp';
+		case 'SaveToDbCollection':
+			return 'SaveToDbCollection';
 		default:
-			return 'SaveToDb';
+			return 'SaveToDbSubcollection';
 	}
 };
 var elm$core$Basics$identity = function (x) {
@@ -7698,7 +7700,7 @@ var author$project$Page$Settings$encodeSave = F2(
 					author$project$Page$Settings$encodeSettings(model))
 				]));
 	});
-var author$project$Ports$SaveToDb = {$: 'SaveToDb'};
+var author$project$Ports$SaveToDbCollection = {$: 'SaveToDbCollection'};
 var author$project$Page$Settings$update = F3(
 	function (msg, model, state) {
 		switch (msg.$) {
@@ -7737,7 +7739,7 @@ var author$project$Page$Settings$update = F3(
 							model,
 							A3(
 								author$project$Ports$sendMessageWithContentAndResponse,
-								author$project$Ports$SaveToDb,
+								author$project$Ports$SaveToDbCollection,
 								A2(author$project$Page$Settings$encodeSave, user.uid, model),
 								author$project$Ports$SettingsSaved)));
 				} else {
