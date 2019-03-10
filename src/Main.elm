@@ -57,12 +57,17 @@ type ReturnPage
 
 init : Decode.Value -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
+    initialModel flags key
+        |> stepUrl url
+        |> addGlobalStartupCmds
+
+
+initialModel : Decode.Value -> Nav.Key -> Model
+initialModel flags key =
     { page = NotFound
     , returnPage = ToWriter
     , state = initialState flags key
     }
-        |> stepUrl url
-        |> addGlobalStartupCmds
 
 
 initialState : Decode.Value -> Nav.Key -> State
