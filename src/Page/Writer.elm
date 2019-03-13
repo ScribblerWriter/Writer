@@ -9,12 +9,14 @@ module Page.Writer exposing
     )
 
 import Appearance
+import Calendar
 import Data.Target exposing (Target)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Input as Input
 import Html.Attributes
+import Json.Encode as Encode
 import Ports
 import Skeleton
 import State exposing (State)
@@ -22,12 +24,18 @@ import Time
 
 
 type alias Model =
-    { touched : Bool }
+    { needsLocalSave : Bool
+    , needsDbSave : Bool
+    , timeSinceLastTouch : Time.Posix
+    }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { touched = False }
+    ( { needsLocalSave = False
+      , needsDbSave = False
+      , timeSinceLastTouch = Time.millisToPosix 0
+      }
     , Cmd.none
     )
 
@@ -39,6 +47,7 @@ init =
 type Msg
     = WordsWritten String
     | SaveTimerTicked Time.Posix
+    | SavedToDb
 
 
 update : Msg -> Model -> State -> ( State, ( Model, Cmd msg ) )
@@ -47,29 +56,68 @@ update msg model state =
         WordsWritten document ->
             updateCounts document model state
                 |> (\( count, updatedModel, newState ) ->
-                        ( { newState | additiveCount = count }, ( updatedModel, Cmd.none ) )
+                        ( { newState | additiveCount = count }
+                        , ( { updatedModel | timeSinceLastTouch = state.currentTime }
+                          , Cmd.none
+                          )
+                        )
                    )
 
         SaveTimerTicked time ->
-            if model.touched then
-                ( state
-                , ( { model | touched = False }
-                  , saveContent model state
-                  )
-                )
+            saveContentIfNeeded model state
+                |> (\( updatedModel, contentMsg ) -> ( contentMsg, saveToDbIfNeeded updatedModel state ))
+                |> (\( contentMsg, ( updatedModel, dbMsg ) ) ->
+                        ( state, ( updatedModel, Cmd.batch [ contentMsg, dbMsg ] ) )
+                   )
 
-            else
-                ( state, ( model, Cmd.none ) )
+        SavedToDb ->
+            ( state, ( model, Cmd.none ) )
 
 
-saveContent : Model -> State -> Cmd msg
-saveContent model state =
+saveContentIfNeeded : Model -> State -> ( Model, Cmd msg )
+saveContentIfNeeded model state =
+    if model.needsLocalSave then
+        ( { model | needsLocalSave = False }, saveContent state )
+
+    else
+        ( model, Cmd.none )
+
+
+saveContent : State -> Cmd msg
+saveContent state =
     Ports.sendMessageWithJustContent Ports.SaveContent (State.encodeSaveState state)
 
 
-updatePageLinkClick : Model -> State -> Cmd msg
-updatePageLinkClick model state =
-    saveContent model state
+saveToDbIfNeeded : Model -> State -> ( Model, Cmd msg )
+saveToDbIfNeeded model state =
+    if
+        model.needsDbSave
+            && ((Time.posixToMillis state.currentTime - Time.posixToMillis model.timeSinceLastTouch) > 5000)
+    then
+        ( { model | needsDbSave = False }, saveToDb state )
+
+    else
+        ( model, Cmd.none )
+
+
+saveToDb : State -> Cmd msg
+saveToDb state =
+    case state.user of
+        Just user ->
+            Ports.sendMessageWithContentAndResponse
+                Ports.SaveToDbSubcollection
+                (posixToDate ( state.timeZone, state.currentTime )
+                    |> encodeWordcountSave user.uid state.additiveCount
+                )
+                Ports.WriterDataSaved
+
+        Nothing ->
+            Cmd.none
+
+
+updatePageLinkClick : State -> Cmd msg
+updatePageLinkClick state =
+    Cmd.batch [ saveContent state, saveToDb state ]
 
 
 
@@ -89,7 +137,8 @@ updateCounts document model state =
     in
     ( updateWrittenCount state.additiveCount trimmedWordCount state dif
     , { model
-        | touched = True
+        | needsLocalSave = True
+        , needsDbSave = True
       }
     , { state
         | currentText = document
@@ -275,6 +324,46 @@ formatSecondsToStringHourCheck seconds hasHour =
         String.fromInt (seconds // 3600)
             ++ ":"
             ++ formatSecondsToStringHourCheck (remainderBy 3600 seconds) True
+
+
+
+-- Encoding
+
+
+encodeWordcountSave : String -> Int -> Calendar.Date -> Encode.Value
+encodeWordcountSave userId count date =
+    Encode.object
+        [ ( "collection", Encode.string "users" )
+        , ( "doc", Encode.string userId )
+        , ( "subcollection", Encode.string "days" )
+        , ( "subdoc", Encode.string <| dateToSortableString date )
+        , ( "data", encodeWordCount date count )
+        ]
+
+
+encodeWordCount : Calendar.Date -> Int -> Encode.Value
+encodeWordCount date count =
+    Encode.object
+        [ ( "count", Encode.int count )
+        , ( "date", Encode.int <| Calendar.toMillis date )
+        ]
+
+
+dateToSortableString : Calendar.Date -> String
+dateToSortableString date =
+    (String.fromInt <| Calendar.getYear date)
+        ++ (String.padLeft 2 '0' <| String.fromInt <| Calendar.monthToInt <| Calendar.getMonth date)
+        ++ (String.padLeft 2 '0' <| String.fromInt <| Calendar.getDay date)
+
+
+posixToDate : ( Time.Zone, Time.Posix ) -> Calendar.Date
+posixToDate ( zone, time ) =
+    { year = Time.toYear zone time
+    , month = Time.toMonth zone time
+    , day = Time.toDay zone time
+    }
+        |> Calendar.fromRawParts
+        |> Maybe.withDefault (Calendar.fromPosix time)
 
 
 

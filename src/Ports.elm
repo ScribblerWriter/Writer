@@ -52,6 +52,7 @@ type InOperation
     | SettingsLoaded
     | SettingsSaved
     | DisplayMessageReceived
+    | WriterDataSaved
 
 
 
@@ -152,6 +153,9 @@ inOperationToString operation =
         DisplayMessageReceived ->
             "DisplayMessageReceived"
 
+        WriterDataSaved ->
+            "WriterDataSaved"
+
 
 stringToInOperation : String -> InOperation
 stringToInOperation operation =
@@ -173,6 +177,9 @@ stringToInOperation operation =
 
         "DisplayMessageReceived" ->
             DisplayMessageReceived
+
+        "WriterDataSaved" ->
+            WriterDataSaved
 
         _ ->
             Unknown

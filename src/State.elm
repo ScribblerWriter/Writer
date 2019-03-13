@@ -37,6 +37,7 @@ type alias State =
     , settings : Settings
     , messages : List DisplayMessage.Message
     , currentTime : Time.Posix
+    , timeZone : Time.Zone
     , key : Nav.Key
     }
 

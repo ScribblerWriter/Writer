@@ -2313,23 +2313,6 @@ function _Platform_mergeExportsDebug(moduleName, obj, exports)
 }
 
 
-function _Url_percentEncode(string)
-{
-	return encodeURIComponent(string);
-}
-
-function _Url_percentDecode(string)
-{
-	try
-	{
-		return elm$core$Maybe$Just(decodeURIComponent(string));
-	}
-	catch (e)
-	{
-		return elm$core$Maybe$Nothing;
-	}
-}
-
 
 function _Time_now(millisToPosix)
 {
@@ -2375,6 +2358,23 @@ function _Time_getZoneName()
 	});
 }
 
+
+function _Url_percentEncode(string)
+{
+	return encodeURIComponent(string);
+}
+
+function _Url_percentDecode(string)
+{
+	try
+	{
+		return elm$core$Maybe$Just(decodeURIComponent(string));
+	}
+	catch (e)
+	{
+		return elm$core$Maybe$Nothing;
+	}
+}
 
 
 
@@ -4416,8 +4416,9 @@ var author$project$Main$LinkClicked = function (a) {
 var author$project$Main$UrlChanged = function (a) {
 	return {$: 'UrlChanged', a: a};
 };
-var author$project$Main$NotFound = {$: 'NotFound'};
-var author$project$Main$ToWriter = {$: 'ToWriter'};
+var author$project$Main$TimeZoneDetected = function (a) {
+	return {$: 'TimeZoneDetected', a: a};
+};
 var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
 var author$project$Ports$LoadContent = {$: 'LoadContent'};
 var author$project$Ports$inOperationToString = function (operation) {
@@ -4434,8 +4435,10 @@ var author$project$Ports$inOperationToString = function (operation) {
 			return 'SettingsLoaded';
 		case 'SettingsSaved':
 			return 'SettingsSaved';
-		default:
+		case 'DisplayMessageReceived':
 			return 'DisplayMessageReceived';
+		default:
+			return 'WriterDataSaved';
 	}
 };
 var author$project$Ports$outOperationToString = function (operation) {
@@ -5009,80 +5012,11 @@ var author$project$Ports$sendMessageWithJustResponse = F2(
 			elm$core$Maybe$Just(returnOperation));
 	});
 var elm$core$Platform$Cmd$batch = _Platform_batch;
-var author$project$Main$addGlobalStartupCmds = function (_n0) {
-	var model = _n0.a;
-	var cmd = _n0.b;
-	return _Utils_Tuple2(
-		model,
-		elm$core$Platform$Cmd$batch(
-			_List_fromArray(
-				[
-					cmd,
-					A2(author$project$Ports$sendMessageWithJustResponse, author$project$Ports$LoadContent, author$project$Ports$ContentLoaded)
-				])));
+var elm$core$Task$Perform = function (a) {
+	return {$: 'Perform', a: a};
 };
-var author$project$State$No = {$: 'No'};
-var elm$json$Json$Decode$map2 = _Json_map2;
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
-var elm$json$Json$Decode$field = _Json_decodeField;
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
-	function (key, valDecoder, decoder) {
-		return A2(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
-			A2(elm$json$Json$Decode$field, key, valDecoder),
-			decoder);
-	});
-var author$project$State$Dimensions = F2(
-	function (width, height) {
-		return {height: height, width: width};
-	});
-var elm$json$Json$Decode$int = _Json_decodeInt;
-var elm$json$Json$Decode$succeed = _Json_succeed;
-var author$project$State$dimensionDecoder = A3(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'height',
-	elm$json$Json$Decode$int,
-	A3(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'width',
-		elm$json$Json$Decode$int,
-		elm$json$Json$Decode$succeed(author$project$State$Dimensions)));
-var elm$json$Json$Decode$decodeValue = _Json_run;
-var author$project$State$decodeDimensions = function (value) {
-	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$dimensionDecoder, value);
-	if (_n0.$ === 'Ok') {
-		var dimensions = _n0.a;
-		return dimensions;
-	} else {
-		return {height: 600, width: 800};
-	}
-};
-var author$project$State$Additive = {$: 'Additive'};
-var author$project$State$defaultSettings = {countMethod: author$project$State$Additive, displayName: ''};
-var elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var elm$time$Time$millisToPosix = elm$time$Time$Posix;
-var author$project$Main$initialState = F2(
-	function (flags, key) {
-		return {
-			actualCount: 0,
-			additiveCount: 0,
-			currentTarget: elm$core$Maybe$Nothing,
-			currentTargetTimerInSecs: 0,
-			currentText: '',
-			currentTime: elm$time$Time$millisToPosix(0),
-			ended: author$project$State$No,
-			key: key,
-			messages: _List_Nil,
-			settings: author$project$State$defaultSettings,
-			user: elm$core$Maybe$Nothing,
-			winProgress: 0,
-			windowDimensions: author$project$State$decodeDimensions(flags)
-		};
-	});
-var author$project$Main$ToSettings = {$: 'ToSettings'};
-var author$project$Main$ToTargetSelector = {$: 'ToTargetSelector'};
+var elm$core$Task$succeed = _Scheduler_succeed;
+var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
 var elm$core$List$foldrHelper = F4(
 	function (fn, acc, ctr, ls) {
 		if (!ls.b) {
@@ -5152,6 +5086,179 @@ var elm$core$List$map = F2(
 			_List_Nil,
 			xs);
 	});
+var elm$core$Task$andThen = _Scheduler_andThen;
+var elm$core$Task$map = F2(
+	function (func, taskA) {
+		return A2(
+			elm$core$Task$andThen,
+			function (a) {
+				return elm$core$Task$succeed(
+					func(a));
+			},
+			taskA);
+	});
+var elm$core$Task$map2 = F3(
+	function (func, taskA, taskB) {
+		return A2(
+			elm$core$Task$andThen,
+			function (a) {
+				return A2(
+					elm$core$Task$andThen,
+					function (b) {
+						return elm$core$Task$succeed(
+							A2(func, a, b));
+					},
+					taskB);
+			},
+			taskA);
+	});
+var elm$core$Task$sequence = function (tasks) {
+	return A3(
+		elm$core$List$foldr,
+		elm$core$Task$map2(elm$core$List$cons),
+		elm$core$Task$succeed(_List_Nil),
+		tasks);
+};
+var elm$core$Platform$sendToApp = _Platform_sendToApp;
+var elm$core$Task$spawnCmd = F2(
+	function (router, _n0) {
+		var task = _n0.a;
+		return _Scheduler_spawn(
+			A2(
+				elm$core$Task$andThen,
+				elm$core$Platform$sendToApp(router),
+				task));
+	});
+var elm$core$Task$onEffects = F3(
+	function (router, commands, state) {
+		return A2(
+			elm$core$Task$map,
+			function (_n0) {
+				return _Utils_Tuple0;
+			},
+			elm$core$Task$sequence(
+				A2(
+					elm$core$List$map,
+					elm$core$Task$spawnCmd(router),
+					commands)));
+	});
+var elm$core$Task$onSelfMsg = F3(
+	function (_n0, _n1, _n2) {
+		return elm$core$Task$succeed(_Utils_Tuple0);
+	});
+var elm$core$Task$cmdMap = F2(
+	function (tagger, _n0) {
+		var task = _n0.a;
+		return elm$core$Task$Perform(
+			A2(elm$core$Task$map, tagger, task));
+	});
+_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
+var elm$core$Task$command = _Platform_leaf('Task');
+var elm$core$Task$perform = F2(
+	function (toMessage, task) {
+		return elm$core$Task$command(
+			elm$core$Task$Perform(
+				A2(elm$core$Task$map, toMessage, task)));
+	});
+var elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
+};
+var elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
+};
+var elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var elm$time$Time$customZone = elm$time$Time$Zone;
+var elm$time$Time$here = _Time_here(_Utils_Tuple0);
+var author$project$Main$addGlobalStartupCmds = function (_n0) {
+	var model = _n0.a;
+	var cmd = _n0.b;
+	return _Utils_Tuple2(
+		model,
+		elm$core$Platform$Cmd$batch(
+			_List_fromArray(
+				[
+					cmd,
+					A2(author$project$Ports$sendMessageWithJustResponse, author$project$Ports$LoadContent, author$project$Ports$ContentLoaded),
+					A2(elm$core$Task$perform, author$project$Main$TimeZoneDetected, elm$time$Time$here)
+				])));
+};
+var author$project$Main$NotFound = {$: 'NotFound'};
+var author$project$Main$ToWriter = {$: 'ToWriter'};
+var author$project$State$No = {$: 'No'};
+var elm$json$Json$Decode$map2 = _Json_map2;
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
+var elm$json$Json$Decode$field = _Json_decodeField;
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
+	function (key, valDecoder, decoder) {
+		return A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			A2(elm$json$Json$Decode$field, key, valDecoder),
+			decoder);
+	});
+var author$project$State$Dimensions = F2(
+	function (width, height) {
+		return {height: height, width: width};
+	});
+var elm$json$Json$Decode$int = _Json_decodeInt;
+var elm$json$Json$Decode$succeed = _Json_succeed;
+var author$project$State$dimensionDecoder = A3(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'height',
+	elm$json$Json$Decode$int,
+	A3(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'width',
+		elm$json$Json$Decode$int,
+		elm$json$Json$Decode$succeed(author$project$State$Dimensions)));
+var elm$json$Json$Decode$decodeValue = _Json_run;
+var author$project$State$decodeDimensions = function (value) {
+	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$dimensionDecoder, value);
+	if (_n0.$ === 'Ok') {
+		var dimensions = _n0.a;
+		return dimensions;
+	} else {
+		return {height: 600, width: 800};
+	}
+};
+var author$project$State$Additive = {$: 'Additive'};
+var author$project$State$defaultSettings = {countMethod: author$project$State$Additive, displayName: ''};
+var elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var elm$time$Time$millisToPosix = elm$time$Time$Posix;
+var elm$time$Time$utc = A2(elm$time$Time$Zone, 0, _List_Nil);
+var author$project$Main$initialState = F2(
+	function (flags, key) {
+		return {
+			actualCount: 0,
+			additiveCount: 0,
+			currentTarget: elm$core$Maybe$Nothing,
+			currentTargetTimerInSecs: 0,
+			currentText: '',
+			currentTime: elm$time$Time$millisToPosix(0),
+			ended: author$project$State$No,
+			key: key,
+			messages: _List_Nil,
+			settings: author$project$State$defaultSettings,
+			timeZone: elm$time$Time$utc,
+			user: elm$core$Maybe$Nothing,
+			winProgress: 0,
+			windowDimensions: author$project$State$decodeDimensions(flags)
+		};
+	});
+var author$project$Main$initialModel = F2(
+	function (flags, key) {
+		return {
+			page: author$project$Main$NotFound,
+			returnPage: author$project$Main$ToWriter,
+			state: A2(author$project$Main$initialState, flags, key)
+		};
+	});
+var author$project$Main$ToSettings = {$: 'ToSettings'};
+var author$project$Main$ToTargetSelector = {$: 'ToTargetSelector'};
 var elm$url$Url$Parser$Parser = function (a) {
 	return {$: 'Parser', a: a};
 };
@@ -5316,7 +5423,11 @@ var author$project$Page$TargetSelector$init = _Utils_Tuple2(
 	{targets: elm$core$Dict$empty},
 	A3(author$project$Ports$sendMessageWithContentAndResponse, author$project$Ports$QueryDbMultiple, author$project$Page$TargetSelector$encodeGetTargetsQuery, author$project$Ports$TargetListReturned));
 var author$project$Page$Writer$init = _Utils_Tuple2(
-	{touched: false},
+	{
+		needsDbSave: false,
+		needsLocalSave: false,
+		timeSinceLastTouch: elm$time$Time$millisToPosix(0)
+	},
 	elm$core$Platform$Cmd$none);
 var elm$core$List$append = F2(
 	function (xs, ys) {
@@ -6059,11 +6170,7 @@ var author$project$Main$init = F3(
 			A2(
 				author$project$Main$stepUrl,
 				url,
-				{
-					page: author$project$Main$NotFound,
-					returnPage: author$project$Main$ToWriter,
-					state: A2(author$project$Main$initialState, flags, key)
-				}));
+				A2(author$project$Main$initialModel, flags, key)));
 	});
 var author$project$Main$PortMessageReceived = function (a) {
 	return {$: 'PortMessageReceived', a: a};
@@ -6131,7 +6238,6 @@ var elm$time$Time$Every = F2(
 	function (a, b) {
 		return {$: 'Every', a: a, b: b};
 	});
-var elm$core$Task$succeed = _Scheduler_succeed;
 var elm$time$Time$State = F2(
 	function (taggers, processes) {
 		return {processes: processes, taggers: taggers};
@@ -6225,7 +6331,6 @@ var elm$core$Dict$merge = F6(
 			leftovers);
 	});
 var elm$core$Process$kill = _Scheduler_kill;
-var elm$core$Task$andThen = _Scheduler_andThen;
 var elm$time$Time$addMySub = F2(
 	function (_n0, state) {
 		var interval = _n0.a;
@@ -6249,17 +6354,6 @@ var elm$time$Time$addMySub = F2(
 	});
 var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
 var elm$core$Process$spawn = _Scheduler_spawn;
-var elm$time$Time$Name = function (a) {
-	return {$: 'Name', a: a};
-};
-var elm$time$Time$Offset = function (a) {
-	return {$: 'Offset', a: a};
-};
-var elm$time$Time$Zone = F2(
-	function (a, b) {
-		return {$: 'Zone', a: a, b: b};
-	});
-var elm$time$Time$customZone = elm$time$Time$Zone;
 var elm$time$Time$setInterval = _Time_setInterval;
 var elm$time$Time$spawnHelp = F3(
 	function (router, intervals, processes) {
@@ -6349,29 +6443,6 @@ var elm$time$Time$onEffects = F3(
 				},
 				killTask));
 	});
-var elm$core$Platform$sendToApp = _Platform_sendToApp;
-var elm$core$Task$map2 = F3(
-	function (func, taskA, taskB) {
-		return A2(
-			elm$core$Task$andThen,
-			function (a) {
-				return A2(
-					elm$core$Task$andThen,
-					function (b) {
-						return elm$core$Task$succeed(
-							A2(func, a, b));
-					},
-					taskB);
-			},
-			taskA);
-	});
-var elm$core$Task$sequence = function (tasks) {
-	return A3(
-		elm$core$List$foldr,
-		elm$core$Task$map2(elm$core$List$cons),
-		elm$core$Task$succeed(_List_Nil),
-		tasks);
-};
 var elm$time$Time$now = _Time_now(elm$time$Time$millisToPosix);
 var elm$time$Time$onSelfMsg = F3(
 	function (router, interval, state) {
@@ -6455,16 +6526,6 @@ var elm$browser$Browser$Events$Event = F2(
 	function (key, event) {
 		return {event: event, key: key};
 	});
-var elm$core$Task$map = F2(
-	function (func, taskA) {
-		return A2(
-			elm$core$Task$andThen,
-			function (a) {
-				return elm$core$Task$succeed(
-					func(a));
-			},
-			taskA);
-	});
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
 };
@@ -6483,50 +6544,6 @@ var elm$core$Basics$never = function (_n0) {
 		continue never;
 	}
 };
-var elm$core$Task$Perform = function (a) {
-	return {$: 'Perform', a: a};
-};
-var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
-var elm$core$Task$spawnCmd = F2(
-	function (router, _n0) {
-		var task = _n0.a;
-		return _Scheduler_spawn(
-			A2(
-				elm$core$Task$andThen,
-				elm$core$Platform$sendToApp(router),
-				task));
-	});
-var elm$core$Task$onEffects = F3(
-	function (router, commands, state) {
-		return A2(
-			elm$core$Task$map,
-			function (_n0) {
-				return _Utils_Tuple0;
-			},
-			elm$core$Task$sequence(
-				A2(
-					elm$core$List$map,
-					elm$core$Task$spawnCmd(router),
-					commands)));
-	});
-var elm$core$Task$onSelfMsg = F3(
-	function (_n0, _n1, _n2) {
-		return elm$core$Task$succeed(_Utils_Tuple0);
-	});
-var elm$core$Task$cmdMap = F2(
-	function (tagger, _n0) {
-		var task = _n0.a;
-		return elm$core$Task$Perform(
-			A2(elm$core$Task$map, tagger, task));
-	});
-_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
-var elm$core$Task$command = _Platform_leaf('Task');
-var elm$core$Task$perform = F2(
-	function (toMessage, task) {
-		return elm$core$Task$command(
-			elm$core$Task$Perform(
-				A2(elm$core$Task$map, toMessage, task)));
-	});
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 'Normal':
@@ -7064,23 +7081,749 @@ var author$project$State$encodeSaveState = function (state) {
 					elm$time$Time$posixToMillis(state.currentTime)))
 			]));
 };
-var author$project$Page$Writer$saveContent = F2(
-	function (model, state) {
+var author$project$Page$Writer$saveContent = function (state) {
+	return A2(
+		author$project$Ports$sendMessageWithJustContent,
+		author$project$Ports$SaveContent,
+		author$project$State$encodeSaveState(state));
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt = function (_n0) {
+	var day = _n0.a;
+	return day;
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getDay = function (_n0) {
+	var date = _n0.a;
+	return date.day;
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$getDay = A2(elm$core$Basics$composeL, PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt, PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getDay);
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getMonth = function (_n0) {
+	var month = _n0.a.month;
+	return month;
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$getMonth = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getMonth;
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getYear = function (_n0) {
+	var year = _n0.a.year;
+	return year;
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearToInt = function (_n0) {
+	var year = _n0.a;
+	return year;
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$getYear = A2(elm$core$Basics$composeL, PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearToInt, PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getYear);
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$monthToInt = function (month) {
+	switch (month.$) {
+		case 'Jan':
+			return 1;
+		case 'Feb':
+			return 2;
+		case 'Mar':
+			return 3;
+		case 'Apr':
+			return 4;
+		case 'May':
+			return 5;
+		case 'Jun':
+			return 6;
+		case 'Jul':
+			return 7;
+		case 'Aug':
+			return 8;
+		case 'Sep':
+			return 9;
+		case 'Oct':
+			return 10;
+		case 'Nov':
+			return 11;
+		default:
+			return 12;
+	}
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$monthToInt = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$monthToInt;
+var elm$core$String$cons = _String_cons;
+var elm$core$String$fromChar = function (_char) {
+	return A2(elm$core$String$cons, _char, '');
+};
+var elm$core$Bitwise$and = _Bitwise_and;
+var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var elm$core$String$repeatHelp = F3(
+	function (n, chunk, result) {
+		return (n <= 0) ? result : A3(
+			elm$core$String$repeatHelp,
+			n >> 1,
+			_Utils_ap(chunk, chunk),
+			(!(n & 1)) ? result : _Utils_ap(result, chunk));
+	});
+var elm$core$String$repeat = F2(
+	function (n, chunk) {
+		return A3(elm$core$String$repeatHelp, n, chunk, '');
+	});
+var elm$core$String$padLeft = F3(
+	function (n, _char, string) {
+		return _Utils_ap(
+			A2(
+				elm$core$String$repeat,
+				n - elm$core$String$length(string),
+				elm$core$String$fromChar(_char)),
+			string);
+	});
+var author$project$Page$Writer$dateToSortableString = function (date) {
+	return _Utils_ap(
+		elm$core$String$fromInt(
+			PanagiotisGeorgiadis$elm_datetime$Calendar$getYear(date)),
+		_Utils_ap(
+			A3(
+				elm$core$String$padLeft,
+				2,
+				_Utils_chr('0'),
+				elm$core$String$fromInt(
+					PanagiotisGeorgiadis$elm_datetime$Calendar$monthToInt(
+						PanagiotisGeorgiadis$elm_datetime$Calendar$getMonth(date)))),
+			A3(
+				elm$core$String$padLeft,
+				2,
+				_Utils_chr('0'),
+				elm$core$String$fromInt(
+					PanagiotisGeorgiadis$elm_datetime$Calendar$getDay(date)))));
+};
+var elm$core$Basics$modBy = _Basics_modBy;
+var elm$core$Basics$not = _Basics_not;
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear = function (_n0) {
+	var _int = _n0.a;
+	return (!A2(elm$core$Basics$modBy, 4, _int)) && ((!A2(elm$core$Basics$modBy, 400, _int)) || (!(!A2(elm$core$Basics$modBy, 100, _int))));
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay = ((1000 * 60) * 60) * 24;
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInYear = function (year) {
+	return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear(year) ? (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay * 366) : (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay * 365);
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year = function (a) {
+	return {$: 'Year', a: a};
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearFromInt = function (year) {
+	return (year > 0) ? elm$core$Maybe$Just(
+		PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year(year)) : elm$core$Maybe$Nothing;
+};
+var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var elm$core$List$sum = function (numbers) {
+	return A3(elm$core$List$foldl, elm$core$Basics$add, 0, numbers);
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceEpoch = function (_n0) {
+	var year = _n0.a;
+	var getTotalMillis = A2(
+		elm$core$Basics$composeL,
+		A2(
+			elm$core$Basics$composeL,
+			elm$core$List$sum,
+			elm$core$List$map(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInYear)),
+		elm$core$List$filterMap(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearFromInt));
+	var epochYear = 1970;
+	return (year >= 1970) ? getTotalMillis(
+		A2(elm$core$List$range, epochYear, year - 1)) : (-getTotalMillis(
+		A2(elm$core$List$range, year, epochYear - 1)));
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceStartOfTheMonth = function (day) {
+	return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay * (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(day) - 1);
+};
+var elm$core$Array$fromListHelp = F3(
+	function (list, nodeList, nodeListSize) {
+		fromListHelp:
+		while (true) {
+			var _n0 = A2(elm$core$Elm$JsArray$initializeFromList, elm$core$Array$branchFactor, list);
+			var jsArray = _n0.a;
+			var remainingItems = _n0.b;
+			if (_Utils_cmp(
+				elm$core$Elm$JsArray$length(jsArray),
+				elm$core$Array$branchFactor) < 0) {
+				return A2(
+					elm$core$Array$builderToArray,
+					true,
+					{nodeList: nodeList, nodeListSize: nodeListSize, tail: jsArray});
+			} else {
+				var $temp$list = remainingItems,
+					$temp$nodeList = A2(
+					elm$core$List$cons,
+					elm$core$Array$Leaf(jsArray),
+					nodeList),
+					$temp$nodeListSize = nodeListSize + 1;
+				list = $temp$list;
+				nodeList = $temp$nodeList;
+				nodeListSize = $temp$nodeListSize;
+				continue fromListHelp;
+			}
+		}
+	});
+var elm$core$Array$fromList = function (list) {
+	if (!list.b) {
+		return elm$core$Array$empty;
+	} else {
+		return A3(elm$core$Array$fromListHelp, list, _List_Nil, 0);
+	}
+};
+var elm$time$Time$Apr = {$: 'Apr'};
+var elm$time$Time$Aug = {$: 'Aug'};
+var elm$time$Time$Dec = {$: 'Dec'};
+var elm$time$Time$Feb = {$: 'Feb'};
+var elm$time$Time$Jan = {$: 'Jan'};
+var elm$time$Time$Jul = {$: 'Jul'};
+var elm$time$Time$Jun = {$: 'Jun'};
+var elm$time$Time$Mar = {$: 'Mar'};
+var elm$time$Time$May = {$: 'May'};
+var elm$time$Time$Nov = {$: 'Nov'};
+var elm$time$Time$Oct = {$: 'Oct'};
+var elm$time$Time$Sep = {$: 'Sep'};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$months = elm$core$Array$fromList(
+	_List_fromArray(
+		[elm$time$Time$Jan, elm$time$Time$Feb, elm$time$Time$Mar, elm$time$Time$Apr, elm$time$Time$May, elm$time$Time$Jun, elm$time$Time$Jul, elm$time$Time$Aug, elm$time$Time$Sep, elm$time$Time$Oct, elm$time$Time$Nov, elm$time$Time$Dec]));
+var elm$core$Elm$JsArray$appendN = _JsArray_appendN;
+var elm$core$Elm$JsArray$slice = _JsArray_slice;
+var elm$core$Array$appendHelpBuilder = F2(
+	function (tail, builder) {
+		var tailLen = elm$core$Elm$JsArray$length(tail);
+		var notAppended = (elm$core$Array$branchFactor - elm$core$Elm$JsArray$length(builder.tail)) - tailLen;
+		var appended = A3(elm$core$Elm$JsArray$appendN, elm$core$Array$branchFactor, builder.tail, tail);
+		return (notAppended < 0) ? {
+			nodeList: A2(
+				elm$core$List$cons,
+				elm$core$Array$Leaf(appended),
+				builder.nodeList),
+			nodeListSize: builder.nodeListSize + 1,
+			tail: A3(elm$core$Elm$JsArray$slice, notAppended, tailLen, tail)
+		} : ((!notAppended) ? {
+			nodeList: A2(
+				elm$core$List$cons,
+				elm$core$Array$Leaf(appended),
+				builder.nodeList),
+			nodeListSize: builder.nodeListSize + 1,
+			tail: elm$core$Elm$JsArray$empty
+		} : {nodeList: builder.nodeList, nodeListSize: builder.nodeListSize, tail: appended});
+	});
+var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var elm$core$Array$tailIndex = function (len) {
+	return (len >>> 5) << 5;
+};
+var elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
+var elm$core$Array$sliceLeft = F2(
+	function (from, array) {
+		var len = array.a;
+		var tree = array.c;
+		var tail = array.d;
+		if (!from) {
+			return array;
+		} else {
+			if (_Utils_cmp(
+				from,
+				elm$core$Array$tailIndex(len)) > -1) {
+				return A4(
+					elm$core$Array$Array_elm_builtin,
+					len - from,
+					elm$core$Array$shiftStep,
+					elm$core$Elm$JsArray$empty,
+					A3(
+						elm$core$Elm$JsArray$slice,
+						from - elm$core$Array$tailIndex(len),
+						elm$core$Elm$JsArray$length(tail),
+						tail));
+			} else {
+				var skipNodes = (from / elm$core$Array$branchFactor) | 0;
+				var helper = F2(
+					function (node, acc) {
+						if (node.$ === 'SubTree') {
+							var subTree = node.a;
+							return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
+						} else {
+							var leaf = node.a;
+							return A2(elm$core$List$cons, leaf, acc);
+						}
+					});
+				var leafNodes = A3(
+					elm$core$Elm$JsArray$foldr,
+					helper,
+					_List_fromArray(
+						[tail]),
+					tree);
+				var nodesToInsert = A2(elm$core$List$drop, skipNodes, leafNodes);
+				if (!nodesToInsert.b) {
+					return elm$core$Array$empty;
+				} else {
+					var head = nodesToInsert.a;
+					var rest = nodesToInsert.b;
+					var firstSlice = from - (skipNodes * elm$core$Array$branchFactor);
+					var initialBuilder = {
+						nodeList: _List_Nil,
+						nodeListSize: 0,
+						tail: A3(
+							elm$core$Elm$JsArray$slice,
+							firstSlice,
+							elm$core$Elm$JsArray$length(head),
+							head)
+					};
+					return A2(
+						elm$core$Array$builderToArray,
+						true,
+						A3(elm$core$List$foldl, elm$core$Array$appendHelpBuilder, initialBuilder, rest));
+				}
+			}
+		}
+	});
+var elm$core$Array$bitMask = 4294967295 >>> (32 - elm$core$Array$shiftStep);
+var elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
+var elm$core$Array$fetchNewTail = F4(
+	function (shift, end, treeEnd, tree) {
+		fetchNewTail:
+		while (true) {
+			var pos = elm$core$Array$bitMask & (treeEnd >>> shift);
+			var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (_n0.$ === 'SubTree') {
+				var sub = _n0.a;
+				var $temp$shift = shift - elm$core$Array$shiftStep,
+					$temp$end = end,
+					$temp$treeEnd = treeEnd,
+					$temp$tree = sub;
+				shift = $temp$shift;
+				end = $temp$end;
+				treeEnd = $temp$treeEnd;
+				tree = $temp$tree;
+				continue fetchNewTail;
+			} else {
+				var values = _n0.a;
+				return A3(elm$core$Elm$JsArray$slice, 0, elm$core$Array$bitMask & end, values);
+			}
+		}
+	});
+var elm$core$Array$hoistTree = F3(
+	function (oldShift, newShift, tree) {
+		hoistTree:
+		while (true) {
+			if ((_Utils_cmp(oldShift, newShift) < 1) || (!elm$core$Elm$JsArray$length(tree))) {
+				return tree;
+			} else {
+				var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, 0, tree);
+				if (_n0.$ === 'SubTree') {
+					var sub = _n0.a;
+					var $temp$oldShift = oldShift - elm$core$Array$shiftStep,
+						$temp$newShift = newShift,
+						$temp$tree = sub;
+					oldShift = $temp$oldShift;
+					newShift = $temp$newShift;
+					tree = $temp$tree;
+					continue hoistTree;
+				} else {
+					return tree;
+				}
+			}
+		}
+	});
+var elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
+var elm$core$Array$sliceTree = F3(
+	function (shift, endIdx, tree) {
+		var lastPos = elm$core$Array$bitMask & (endIdx >>> shift);
+		var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, lastPos, tree);
+		if (_n0.$ === 'SubTree') {
+			var sub = _n0.a;
+			var newSub = A3(elm$core$Array$sliceTree, shift - elm$core$Array$shiftStep, endIdx, sub);
+			return (!elm$core$Elm$JsArray$length(newSub)) ? A3(elm$core$Elm$JsArray$slice, 0, lastPos, tree) : A3(
+				elm$core$Elm$JsArray$unsafeSet,
+				lastPos,
+				elm$core$Array$SubTree(newSub),
+				A3(elm$core$Elm$JsArray$slice, 0, lastPos + 1, tree));
+		} else {
+			return A3(elm$core$Elm$JsArray$slice, 0, lastPos, tree);
+		}
+	});
+var elm$core$Array$sliceRight = F2(
+	function (end, array) {
+		var len = array.a;
+		var startShift = array.b;
+		var tree = array.c;
+		var tail = array.d;
+		if (_Utils_eq(end, len)) {
+			return array;
+		} else {
+			if (_Utils_cmp(
+				end,
+				elm$core$Array$tailIndex(len)) > -1) {
+				return A4(
+					elm$core$Array$Array_elm_builtin,
+					end,
+					startShift,
+					tree,
+					A3(elm$core$Elm$JsArray$slice, 0, elm$core$Array$bitMask & end, tail));
+			} else {
+				var endIdx = elm$core$Array$tailIndex(end);
+				var depth = elm$core$Basics$floor(
+					A2(
+						elm$core$Basics$logBase,
+						elm$core$Array$branchFactor,
+						A2(elm$core$Basics$max, 1, endIdx - 1)));
+				var newShift = A2(elm$core$Basics$max, 5, depth * elm$core$Array$shiftStep);
+				return A4(
+					elm$core$Array$Array_elm_builtin,
+					end,
+					newShift,
+					A3(
+						elm$core$Array$hoistTree,
+						startShift,
+						newShift,
+						A3(elm$core$Array$sliceTree, startShift, endIdx, tree)),
+					A4(elm$core$Array$fetchNewTail, startShift, end, endIdx, tree));
+			}
+		}
+	});
+var elm$core$Array$translateIndex = F2(
+	function (index, _n0) {
+		var len = _n0.a;
+		var posIndex = (index < 0) ? (len + index) : index;
+		return (posIndex < 0) ? 0 : ((_Utils_cmp(posIndex, len) > 0) ? len : posIndex);
+	});
+var elm$core$Array$slice = F3(
+	function (from, to, array) {
+		var correctTo = A2(elm$core$Array$translateIndex, to, array);
+		var correctFrom = A2(elm$core$Array$translateIndex, from, array);
+		return (_Utils_cmp(correctFrom, correctTo) > 0) ? elm$core$Array$empty : A2(
+			elm$core$Array$sliceLeft,
+			correctFrom,
+			A2(elm$core$Array$sliceRight, correctTo, array));
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getPrecedingMonths = function (month) {
+	return elm$core$Array$toList(
+		A3(
+			elm$core$Array$slice,
+			0,
+			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$monthToInt(month) - 1,
+			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$months));
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day = function (a) {
+	return {$: 'Day', a: a};
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf = F2(
+	function (year, month) {
+		switch (month.$) {
+			case 'Jan':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Feb':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear(year) ? PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(29) : PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(28);
+			case 'Mar':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Apr':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
+			case 'May':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Jun':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
+			case 'Jul':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Aug':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Sep':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
+			case 'Oct':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Nov':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
+			default:
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+		}
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceStartOfTheYear = F2(
+	function (year, month) {
+		return A3(
+			elm$core$List$foldl,
+			F2(
+				function (m, res) {
+					return res + (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay * PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(
+						A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf, year, m)));
+				}),
+			0,
+			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getPrecedingMonths(month));
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$toMillis = function (_n0) {
+	var year = _n0.a.year;
+	var month = _n0.a.month;
+	var day = _n0.a.day;
+	return (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceEpoch(year) + A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceStartOfTheYear, year, month)) + PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceStartOfTheMonth(day);
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$toMillis = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$toMillis;
+var author$project$Page$Writer$encodeWordCount = F2(
+	function (date, count) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'count',
+					elm$json$Json$Encode$int(count)),
+					_Utils_Tuple2(
+					'date',
+					elm$json$Json$Encode$int(
+						PanagiotisGeorgiadis$elm_datetime$Calendar$toMillis(date)))
+				]));
+	});
+var author$project$Page$Writer$encodeWordcountSave = F3(
+	function (userId, count, date) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'collection',
+					elm$json$Json$Encode$string('users')),
+					_Utils_Tuple2(
+					'doc',
+					elm$json$Json$Encode$string(userId)),
+					_Utils_Tuple2(
+					'subcollection',
+					elm$json$Json$Encode$string('days')),
+					_Utils_Tuple2(
+					'subdoc',
+					elm$json$Json$Encode$string(
+						author$project$Page$Writer$dateToSortableString(date))),
+					_Utils_Tuple2(
+					'data',
+					A2(author$project$Page$Writer$encodeWordCount, date, count))
+				]));
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date = function (a) {
+	return {$: 'Date', a: a};
+};
+var elm$time$Time$flooredDiv = F2(
+	function (numerator, denominator) {
+		return elm$core$Basics$floor(numerator / denominator);
+	});
+var elm$time$Time$toAdjustedMinutesHelp = F3(
+	function (defaultOffset, posixMinutes, eras) {
+		toAdjustedMinutesHelp:
+		while (true) {
+			if (!eras.b) {
+				return posixMinutes + defaultOffset;
+			} else {
+				var era = eras.a;
+				var olderEras = eras.b;
+				if (_Utils_cmp(era.start, posixMinutes) < 0) {
+					return posixMinutes + era.offset;
+				} else {
+					var $temp$defaultOffset = defaultOffset,
+						$temp$posixMinutes = posixMinutes,
+						$temp$eras = olderEras;
+					defaultOffset = $temp$defaultOffset;
+					posixMinutes = $temp$posixMinutes;
+					eras = $temp$eras;
+					continue toAdjustedMinutesHelp;
+				}
+			}
+		}
+	});
+var elm$time$Time$toAdjustedMinutes = F2(
+	function (_n0, time) {
+		var defaultOffset = _n0.a;
+		var eras = _n0.b;
+		return A3(
+			elm$time$Time$toAdjustedMinutesHelp,
+			defaultOffset,
+			A2(
+				elm$time$Time$flooredDiv,
+				elm$time$Time$posixToMillis(time),
+				60000),
+			eras);
+	});
+var elm$time$Time$toCivil = function (minutes) {
+	var rawDay = A2(elm$time$Time$flooredDiv, minutes, 60 * 24) + 719468;
+	var era = (((rawDay >= 0) ? rawDay : (rawDay - 146096)) / 146097) | 0;
+	var dayOfEra = rawDay - (era * 146097);
+	var yearOfEra = ((((dayOfEra - ((dayOfEra / 1460) | 0)) + ((dayOfEra / 36524) | 0)) - ((dayOfEra / 146096) | 0)) / 365) | 0;
+	var dayOfYear = dayOfEra - (((365 * yearOfEra) + ((yearOfEra / 4) | 0)) - ((yearOfEra / 100) | 0));
+	var mp = (((5 * dayOfYear) + 2) / 153) | 0;
+	var month = mp + ((mp < 10) ? 3 : (-9));
+	var year = yearOfEra + (era * 400);
+	return {
+		day: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
+		month: month,
+		year: year + ((month <= 2) ? 1 : 0)
+	};
+};
+var elm$time$Time$toDay = F2(
+	function (zone, time) {
+		return elm$time$Time$toCivil(
+			A2(elm$time$Time$toAdjustedMinutes, zone, time)).day;
+	});
+var elm$time$Time$toMonth = F2(
+	function (zone, time) {
+		var _n0 = elm$time$Time$toCivil(
+			A2(elm$time$Time$toAdjustedMinutes, zone, time)).month;
+		switch (_n0) {
+			case 1:
+				return elm$time$Time$Jan;
+			case 2:
+				return elm$time$Time$Feb;
+			case 3:
+				return elm$time$Time$Mar;
+			case 4:
+				return elm$time$Time$Apr;
+			case 5:
+				return elm$time$Time$May;
+			case 6:
+				return elm$time$Time$Jun;
+			case 7:
+				return elm$time$Time$Jul;
+			case 8:
+				return elm$time$Time$Aug;
+			case 9:
+				return elm$time$Time$Sep;
+			case 10:
+				return elm$time$Time$Oct;
+			case 11:
+				return elm$time$Time$Nov;
+			default:
+				return elm$time$Time$Dec;
+		}
+	});
+var elm$time$Time$toYear = F2(
+	function (zone, time) {
+		return elm$time$Time$toCivil(
+			A2(elm$time$Time$toAdjustedMinutes, zone, time)).year;
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromPosix = function (posix) {
+	return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date(
+		{
+			day: PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(
+				A2(elm$time$Time$toDay, elm$time$Time$utc, posix)),
+			month: A2(elm$time$Time$toMonth, elm$time$Time$utc, posix),
+			year: PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year(
+				A2(elm$time$Time$toYear, elm$time$Time$utc, posix))
+		});
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$fromPosix = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromPosix;
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayFromInt = F3(
+	function (year, month, day) {
+		var maxValidDay = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(
+			A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf, year, month));
+		return ((day > 0) && (!_Utils_eq(
+			A2(elm$core$Basics$compare, day, maxValidDay),
+			elm$core$Basics$GT))) ? elm$core$Maybe$Just(
+			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(day)) : elm$core$Maybe$Nothing;
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$compareDays = F2(
+	function (lhs, rhs) {
 		return A2(
-			author$project$Ports$sendMessageWithJustContent,
-			author$project$Ports$SaveContent,
-			author$project$State$encodeSaveState(state));
+			elm$core$Basics$compare,
+			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(lhs),
+			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(rhs));
 	});
-var author$project$Page$Writer$updatePageLinkClick = F2(
-	function (model, state) {
-		return A2(author$project$Page$Writer$saveContent, model, state);
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromYearMonthDay = F3(
+	function (y, m, d) {
+		var maxDay = A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf, y, m);
+		var _n0 = A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$compareDays, d, maxDay);
+		if (_n0.$ === 'GT') {
+			return elm$core$Maybe$Nothing;
+		} else {
+			return elm$core$Maybe$Just(
+				PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date(
+					{day: d, month: m, year: y}));
+		}
 	});
+var elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawDay = F3(
+	function (year, month, day) {
+		return A2(
+			elm$core$Maybe$andThen,
+			A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromYearMonthDay, year, month),
+			A3(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayFromInt, year, month, day));
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawParts = function (_n0) {
+	var year = _n0.year;
+	var month = _n0.month;
+	var day = _n0.day;
+	return A2(
+		elm$core$Maybe$andThen,
+		function (y) {
+			return A3(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawDay, y, month, day);
+		},
+		PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearFromInt(year));
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$fromRawParts = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawParts;
+var elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var author$project$Page$Writer$posixToDate = function (_n0) {
+	var zone = _n0.a;
+	var time = _n0.b;
+	return A2(
+		elm$core$Maybe$withDefault,
+		PanagiotisGeorgiadis$elm_datetime$Calendar$fromPosix(time),
+		PanagiotisGeorgiadis$elm_datetime$Calendar$fromRawParts(
+			{
+				day: A2(elm$time$Time$toDay, zone, time),
+				month: A2(elm$time$Time$toMonth, zone, time),
+				year: A2(elm$time$Time$toYear, zone, time)
+			}));
+};
+var author$project$Ports$SaveToDbSubcollection = {$: 'SaveToDbSubcollection'};
+var author$project$Ports$WriterDataSaved = {$: 'WriterDataSaved'};
+var author$project$Page$Writer$saveToDb = function (state) {
+	var _n0 = state.user;
+	if (_n0.$ === 'Just') {
+		var user = _n0.a;
+		return A3(
+			author$project$Ports$sendMessageWithContentAndResponse,
+			author$project$Ports$SaveToDbSubcollection,
+			A3(
+				author$project$Page$Writer$encodeWordcountSave,
+				user.uid,
+				state.additiveCount,
+				author$project$Page$Writer$posixToDate(
+					_Utils_Tuple2(state.timeZone, state.currentTime))),
+			author$project$Ports$WriterDataSaved);
+	} else {
+		return elm$core$Platform$Cmd$none;
+	}
+};
+var author$project$Page$Writer$updatePageLinkClick = function (state) {
+	return elm$core$Platform$Cmd$batch(
+		_List_fromArray(
+			[
+				author$project$Page$Writer$saveContent(state),
+				author$project$Page$Writer$saveToDb(state)
+			]));
+};
 var author$project$Main$updatePageLinkClick = function (model) {
 	var _n0 = model.page;
 	switch (_n0.$) {
 		case 'Writer':
-			var writerModel = _n0.a;
-			return A2(author$project$Page$Writer$updatePageLinkClick, writerModel, model.state);
+			return author$project$Page$Writer$updatePageLinkClick(model.state);
 		case 'TargetSelector':
 			var targetSelectorModel = _n0.a;
 			return elm$core$Platform$Cmd$none;
@@ -7553,6 +8296,8 @@ var author$project$Ports$stringToInOperation = function (operation) {
 			return author$project$Ports$SettingsSaved;
 		case 'DisplayMessageReceived':
 			return author$project$Ports$DisplayMessageReceived;
+		case 'WriterDataSaved':
+			return author$project$Ports$WriterDataSaved;
 		default:
 			return author$project$Ports$Unknown;
 	}
@@ -7872,7 +8617,6 @@ var author$project$Main$updateTargetSelector = F2(
 	});
 var author$project$State$TimeExpired = {$: 'TimeExpired'};
 var author$project$State$WordsReached = {$: 'WordsReached'};
-var elm$core$Basics$ge = _Utils_ge;
 var author$project$Main$updateTargetTimer = function (state) {
 	var _n0 = state.currentTarget;
 	if (_n0.$ === 'Nothing') {
@@ -7898,9 +8642,22 @@ var author$project$Main$updateTargetTimer = function (state) {
 			{currentTargetTimerInSecs: state.currentTargetTimerInSecs - 1})));
 	}
 };
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
+var author$project$Page$Writer$saveContentIfNeeded = F2(
+	function (model, state) {
+		return model.needsLocalSave ? _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{needsLocalSave: false}),
+			author$project$Page$Writer$saveContent(state)) : _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+	});
+var author$project$Page$Writer$saveToDbIfNeeded = F2(
+	function (model, state) {
+		return (model.needsDbSave && ((elm$time$Time$posixToMillis(state.currentTime) - elm$time$Time$posixToMillis(model.timeSinceLastTouch)) > 5000)) ? _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{needsDbSave: false}),
+			author$project$Page$Writer$saveToDb(state)) : _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+	});
 var author$project$Page$Writer$calculateProgress = F2(
 	function (state, dif) {
 		var _n0 = state.currentTarget;
@@ -7944,7 +8701,7 @@ var author$project$Page$Writer$updateCounts = F3(
 			A4(author$project$Page$Writer$updateWrittenCount, state.additiveCount, trimmedWordCount, state, dif),
 			_Utils_update(
 				model,
-				{touched: true}),
+				{needsDbSave: true, needsLocalSave: true}),
 			_Utils_update(
 				state,
 				{
@@ -7955,30 +8712,51 @@ var author$project$Page$Writer$updateCounts = F3(
 	});
 var author$project$Page$Writer$update = F3(
 	function (msg, model, state) {
-		if (msg.$ === 'WordsWritten') {
-			var document = msg.a;
-			return function (_n1) {
-				var count = _n1.a;
-				var updatedModel = _n1.b;
-				var newState = _n1.c;
+		switch (msg.$) {
+			case 'WordsWritten':
+				var document = msg.a;
+				return function (_n1) {
+					var count = _n1.a;
+					var updatedModel = _n1.b;
+					var newState = _n1.c;
+					return _Utils_Tuple2(
+						_Utils_update(
+							newState,
+							{additiveCount: count}),
+						_Utils_Tuple2(
+							_Utils_update(
+								updatedModel,
+								{timeSinceLastTouch: state.currentTime}),
+							elm$core$Platform$Cmd$none));
+				}(
+					A3(author$project$Page$Writer$updateCounts, document, model, state));
+			case 'SaveTimerTicked':
+				var time = msg.a;
+				return function (_n3) {
+					var contentMsg = _n3.a;
+					var _n4 = _n3.b;
+					var updatedModel = _n4.a;
+					var dbMsg = _n4.b;
+					return _Utils_Tuple2(
+						state,
+						_Utils_Tuple2(
+							updatedModel,
+							elm$core$Platform$Cmd$batch(
+								_List_fromArray(
+									[contentMsg, dbMsg]))));
+				}(
+					function (_n2) {
+						var updatedModel = _n2.a;
+						var contentMsg = _n2.b;
+						return _Utils_Tuple2(
+							contentMsg,
+							A2(author$project$Page$Writer$saveToDbIfNeeded, updatedModel, state));
+					}(
+						A2(author$project$Page$Writer$saveContentIfNeeded, model, state)));
+			default:
 				return _Utils_Tuple2(
-					_Utils_update(
-						newState,
-						{additiveCount: count}),
-					_Utils_Tuple2(updatedModel, elm$core$Platform$Cmd$none));
-			}(
-				A3(author$project$Page$Writer$updateCounts, document, model, state));
-		} else {
-			var time = msg.a;
-			return model.touched ? _Utils_Tuple2(
-				state,
-				_Utils_Tuple2(
-					_Utils_update(
-						model,
-						{touched: false}),
-					A2(author$project$Page$Writer$saveContent, model, state))) : _Utils_Tuple2(
-				state,
-				_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+					state,
+					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
 		}
 	});
 var author$project$Main$updateWriter = F2(
@@ -8050,7 +8828,7 @@ var author$project$Main$update = F2(
 			case 'GotSettingsMsg':
 				var msg = message.a;
 				return A2(author$project$Main$updateSettings, msg, model);
-			default:
+			case 'WindowResized':
 				var width = message.a;
 				var height = message.b;
 				return function (state) {
@@ -8066,6 +8844,20 @@ var author$project$Main$update = F2(
 							{
 								windowDimensions: {height: height, width: width}
 							});
+					}(model.state));
+			default:
+				var zone = message.a;
+				return function (state) {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{state: state}),
+						elm$core$Platform$Cmd$none);
+				}(
+					function (state) {
+						return _Utils_update(
+							state,
+							{timeZone: zone});
 					}(model.state));
 		}
 	});
@@ -8270,7 +9062,6 @@ var mdgriffith$elm_ui$Internal$Model$addKeyedChildren = F3(
 	});
 var mdgriffith$elm_ui$Internal$Model$AsParagraph = {$: 'AsParagraph'};
 var mdgriffith$elm_ui$Internal$Model$asParagraph = mdgriffith$elm_ui$Internal$Model$AsParagraph;
-var elm$core$Basics$not = _Basics_not;
 var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$p = _VirtualDom_node('p');
 var elm$html$Html$s = _VirtualDom_node('s');
@@ -8291,7 +9082,6 @@ var elm$virtual_dom$VirtualDom$node = function (tag) {
 	return _VirtualDom_node(
 		_VirtualDom_noScript(tag));
 };
-var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
 var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
 	return {$: 'Flag', a: a};
 };
@@ -8307,7 +9097,6 @@ var mdgriffith$elm_ui$Internal$Flag$centerX = mdgriffith$elm_ui$Internal$Flag$fl
 var mdgriffith$elm_ui$Internal$Flag$centerY = mdgriffith$elm_ui$Internal$Flag$flag(43);
 var mdgriffith$elm_ui$Internal$Flag$heightBetween = mdgriffith$elm_ui$Internal$Flag$flag(45);
 var mdgriffith$elm_ui$Internal$Flag$heightFill = mdgriffith$elm_ui$Internal$Flag$flag(37);
-var elm$core$Bitwise$and = _Bitwise_and;
 var mdgriffith$elm_ui$Internal$Flag$present = F2(
 	function (myFlag, _n0) {
 		var fieldOne = _n0.a;
@@ -8349,15 +9138,6 @@ var elm$core$Set$member = F2(
 	function (key, _n0) {
 		var dict = _n0.a;
 		return A2(elm$core$Dict$member, key, dict);
-	});
-var elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
 	});
 var mdgriffith$elm_ui$Internal$Model$lengthClassName = function (x) {
 	switch (x.$) {
@@ -15040,27 +15820,6 @@ var author$project$Page$TargetSelector$buildSingleTargetRow = F2(
 				author$project$Page$TargetSelector$buildSingleTargetSelector(imageWidth),
 				targets));
 	});
-var elm$core$List$drop = F2(
-	function (n, list) {
-		drop:
-		while (true) {
-			if (n <= 0) {
-				return list;
-			} else {
-				if (!list.b) {
-					return list;
-				} else {
-					var x = list.a;
-					var xs = list.b;
-					var $temp$n = n - 1,
-						$temp$list = xs;
-					n = $temp$n;
-					list = $temp$list;
-					continue drop;
-				}
-			}
-		}
-	});
 var elm$core$List$takeReverse = F3(
 	function (n, list, kept) {
 		takeReverse:
@@ -15264,32 +16023,6 @@ var author$project$Appearance$progressBarForeground = A3(mdgriffith$elm_ui$Eleme
 var author$project$Page$Writer$currentTargetCounts = F2(
 	function (winProgress, winCount) {
 		return '  ' + (elm$core$String$fromInt(winProgress) + (' / ' + elm$core$String$fromInt(winCount)));
-	});
-var elm$core$String$cons = _String_cons;
-var elm$core$String$fromChar = function (_char) {
-	return A2(elm$core$String$cons, _char, '');
-};
-var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
-var elm$core$String$repeatHelp = F3(
-	function (n, chunk, result) {
-		return (n <= 0) ? result : A3(
-			elm$core$String$repeatHelp,
-			n >> 1,
-			_Utils_ap(chunk, chunk),
-			(!(n & 1)) ? result : _Utils_ap(result, chunk));
-	});
-var elm$core$String$repeat = F2(
-	function (n, chunk) {
-		return A3(elm$core$String$repeatHelp, n, chunk, '');
-	});
-var elm$core$String$padLeft = F3(
-	function (n, _char, string) {
-		return _Utils_ap(
-			A2(
-				elm$core$String$repeat,
-				n - elm$core$String$length(string),
-				elm$core$String$fromChar(_char)),
-			string);
 	});
 var author$project$Page$Writer$formatSecondsToStringHourCheck = F2(
 	function (seconds, hasHour) {

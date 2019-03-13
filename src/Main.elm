@@ -15,6 +15,7 @@ import Page.Writer as Writer
 import Ports
 import Skeleton
 import State exposing (State)
+import Task
 import Time
 import Url
 import Url.Builder
@@ -84,6 +85,7 @@ initialState flags key =
     , settings = State.defaultSettings
     , messages = []
     , currentTime = Time.millisToPosix 0
+    , timeZone = Time.utc
     , key = key
     }
 
@@ -94,6 +96,7 @@ addGlobalStartupCmds ( model, cmd ) =
     , Cmd.batch
         [ cmd
         , Ports.sendMessageWithJustResponse Ports.LoadContent Ports.ContentLoaded
+        , Task.perform TimeZoneDetected Time.here
         ]
     )
 
@@ -140,6 +143,7 @@ type Msg
     | TargetTimerTicked Time.Posix
     | UpdateCurrentTime Time.Posix
     | WindowResized Int Int
+    | TimeZoneDetected Time.Zone
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -180,6 +184,11 @@ update message model =
         WindowResized width height ->
             model.state
                 |> (\state -> { state | windowDimensions = { width = width, height = height } })
+                |> (\state -> ( { model | state = state }, Cmd.none ))
+
+        TimeZoneDetected zone ->
+            model.state
+                |> (\state -> { state | timeZone = zone })
                 |> (\state -> ( { model | state = state }, Cmd.none ))
 
 
@@ -357,8 +366,8 @@ updateLinkClick urlRequest model =
 updatePageLinkClick : Model -> Cmd Msg
 updatePageLinkClick model =
     case model.page of
-        Writer writerModel ->
-            Writer.updatePageLinkClick writerModel model.state
+        Writer _ ->
+            Writer.updatePageLinkClick model.state
 
         TargetSelector targetSelectorModel ->
             Cmd.none
