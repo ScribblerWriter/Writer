@@ -5,7 +5,7 @@ service cloud.firestore {
   		return request.auth.uid in get(/databases/$(database)/documents/private/roles).data.admins
   	}
 
-    match /users/{user} {
+    match /users/{user=**} {
     	// allow full access to your own user, and to the admin
     	allow read, update, delete: if request.auth != null &&
       	(request.auth.uid == user || isAdmin())
