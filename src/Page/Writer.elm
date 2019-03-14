@@ -11,6 +11,7 @@ module Page.Writer exposing
 import Appearance
 import Calendar
 import Data.Target exposing (Target)
+import DateTimeHelpers
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -106,7 +107,7 @@ saveToDb state =
         Just user ->
             Ports.sendMessageWithContentAndResponse
                 Ports.SaveToDbSubcollection
-                (posixToDate ( state.timeZone, state.currentTime )
+                (DateTimeHelpers.posixToDate ( state.timeZone, state.currentTime )
                     |> encodeWordcountSave user.uid state.additiveCount
                 )
                 Ports.WriterDataSaved
@@ -336,7 +337,7 @@ encodeWordcountSave userId count date =
         [ ( "collection", Encode.string "users" )
         , ( "doc", Encode.string userId )
         , ( "subcollection", Encode.string "days" )
-        , ( "subdoc", Encode.string <| dateToSortableString date )
+        , ( "subdoc", Encode.string <| DateTimeHelpers.dateToSortableString date )
         , ( "data", encodeWordCount date count )
         ]
 
@@ -347,23 +348,6 @@ encodeWordCount date count =
         [ ( "count", Encode.int count )
         , ( "date", Encode.int <| Calendar.toMillis date )
         ]
-
-
-dateToSortableString : Calendar.Date -> String
-dateToSortableString date =
-    (String.fromInt <| Calendar.getYear date)
-        ++ (String.padLeft 2 '0' <| String.fromInt <| Calendar.monthToInt <| Calendar.getMonth date)
-        ++ (String.padLeft 2 '0' <| String.fromInt <| Calendar.getDay date)
-
-
-posixToDate : ( Time.Zone, Time.Posix ) -> Calendar.Date
-posixToDate ( zone, time ) =
-    { year = Time.toYear zone time
-    , month = Time.toMonth zone time
-    , day = Time.toDay zone time
-    }
-        |> Calendar.fromRawParts
-        |> Maybe.withDefault (Calendar.fromPosix time)
 
 
 

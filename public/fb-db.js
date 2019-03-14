@@ -37,6 +37,25 @@ const fbdb = (function(messageCallback) {
 
 		},
 
+		queryDbSingleSubCollection: query => {
+			return db
+				.collection(query.collection)
+				.doc(query.doc)
+				.collection(query.subcollection)
+				.doc(query.subdoc)
+				.get()
+				.then(doc => {
+					if(doc.exists) {
+						return doc.data();
+					} else {
+						return null;
+					}
+				})
+				.catch(error => {
+					console.log("Error getting document: ", error);
+				});
+
+		},
 		saveToDbCollection: data => {
 			return db.collection(data.collection)
 				.doc(data.doc)

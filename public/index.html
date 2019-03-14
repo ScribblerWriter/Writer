@@ -38,6 +38,8 @@
                     saveToStorage(msg.content);
                 } else if (msg.operation == 'QueryDbSingle') {
                     queryDbSingle(msg.content, msg.returnOperation);
+                } else if (msg.operation == 'QueryDbSingleSubCollection') {
+                    queryDbSingleSubCollection(msg.content, msg.returnOperation);
                 } else if (msg.operation == 'QueryDbMultiple') {
                     queryDbMultiple(msg.content, msg.returnOperation);
                 } else if (msg.operation == 'SignIn') {
@@ -78,6 +80,18 @@
                 fbdb.queryDbSingle(content)
                     .then(doc => {
                         const message = { operation: returnOperation, content: doc };
+                        appElm.ports.incomingMessage.send(message);
+                    })
+                    .catch(error => {
+                        console.log ("Couldn't send to port: ", error);
+                    })
+            }
+
+            function queryDbSingleSubCollection(content, returnOperation) {
+                fbdb.queryDbSingleSubCollection(content)
+                    .then(doc => {
+                        const message = { operation: returnOperation, content: doc };
+                        console.log('subcollection returned', message);
                         appElm.ports.incomingMessage.send(message);
                     })
                     .catch(error => {

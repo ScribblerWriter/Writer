@@ -4416,6 +4416,9 @@ var author$project$Main$LinkClicked = function (a) {
 var author$project$Main$UrlChanged = function (a) {
 	return {$: 'UrlChanged', a: a};
 };
+var author$project$Main$InitialTimeLoaded = function (a) {
+	return {$: 'InitialTimeLoaded', a: a};
+};
 var author$project$Main$TimeZoneDetected = function (a) {
 	return {$: 'TimeZoneDetected', a: a};
 };
@@ -4437,8 +4440,10 @@ var author$project$Ports$inOperationToString = function (operation) {
 			return 'SettingsSaved';
 		case 'DisplayMessageReceived':
 			return 'DisplayMessageReceived';
-		default:
+		case 'WriterDataSaved':
 			return 'WriterDataSaved';
+		default:
+			return 'WordCountLoaded';
 	}
 };
 var author$project$Ports$outOperationToString = function (operation) {
@@ -4451,6 +4456,8 @@ var author$project$Ports$outOperationToString = function (operation) {
 			return 'QueryDbMultiple';
 		case 'QueryDbSingle':
 			return 'QueryDbSingle';
+		case 'QueryDbSingleSubCollection':
+			return 'QueryDbSingleSubCollection';
 		case 'SignIn':
 			return 'SignIn';
 		case 'SignOut':
@@ -5172,6 +5179,11 @@ var elm$time$Time$Zone = F2(
 	});
 var elm$time$Time$customZone = elm$time$Time$Zone;
 var elm$time$Time$here = _Time_here(_Utils_Tuple0);
+var elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var elm$time$Time$millisToPosix = elm$time$Time$Posix;
+var elm$time$Time$now = _Time_now(elm$time$Time$millisToPosix);
 var author$project$Main$addGlobalStartupCmds = function (_n0) {
 	var model = _n0.a;
 	var cmd = _n0.b;
@@ -5182,7 +5194,8 @@ var author$project$Main$addGlobalStartupCmds = function (_n0) {
 				[
 					cmd,
 					A2(author$project$Ports$sendMessageWithJustResponse, author$project$Ports$LoadContent, author$project$Ports$ContentLoaded),
-					A2(elm$core$Task$perform, author$project$Main$TimeZoneDetected, elm$time$Time$here)
+					A2(elm$core$Task$perform, author$project$Main$TimeZoneDetected, elm$time$Time$here),
+					A2(elm$core$Task$perform, author$project$Main$InitialTimeLoaded, elm$time$Time$now)
 				])));
 };
 var author$project$Main$NotFound = {$: 'NotFound'};
@@ -5225,10 +5238,6 @@ var author$project$State$decodeDimensions = function (value) {
 };
 var author$project$State$Additive = {$: 'Additive'};
 var author$project$State$defaultSettings = {countMethod: author$project$State$Additive, displayName: ''};
-var elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var elm$time$Time$millisToPosix = elm$time$Time$Posix;
 var elm$time$Time$utc = A2(elm$time$Time$Zone, 0, _List_Nil);
 var author$project$Main$initialState = F2(
 	function (flags, key) {
@@ -6443,7 +6452,6 @@ var elm$time$Time$onEffects = F3(
 				},
 				killTask));
 	});
-var elm$time$Time$now = _Time_now(elm$time$Time$millisToPosix);
 var elm$time$Time$onSelfMsg = F3(
 	function (router, interval, state) {
 		var _n0 = A2(elm$core$Dict$get, interval, state.taggers);
@@ -7087,9 +7095,258 @@ var author$project$Page$Writer$saveContent = function (state) {
 		author$project$Ports$SaveContent,
 		author$project$State$encodeSaveState(state));
 };
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date = function (a) {
+	return {$: 'Date', a: a};
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day = function (a) {
+	return {$: 'Day', a: a};
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year = function (a) {
+	return {$: 'Year', a: a};
+};
+var elm$time$Time$flooredDiv = F2(
+	function (numerator, denominator) {
+		return elm$core$Basics$floor(numerator / denominator);
+	});
+var elm$time$Time$toAdjustedMinutesHelp = F3(
+	function (defaultOffset, posixMinutes, eras) {
+		toAdjustedMinutesHelp:
+		while (true) {
+			if (!eras.b) {
+				return posixMinutes + defaultOffset;
+			} else {
+				var era = eras.a;
+				var olderEras = eras.b;
+				if (_Utils_cmp(era.start, posixMinutes) < 0) {
+					return posixMinutes + era.offset;
+				} else {
+					var $temp$defaultOffset = defaultOffset,
+						$temp$posixMinutes = posixMinutes,
+						$temp$eras = olderEras;
+					defaultOffset = $temp$defaultOffset;
+					posixMinutes = $temp$posixMinutes;
+					eras = $temp$eras;
+					continue toAdjustedMinutesHelp;
+				}
+			}
+		}
+	});
+var elm$time$Time$toAdjustedMinutes = F2(
+	function (_n0, time) {
+		var defaultOffset = _n0.a;
+		var eras = _n0.b;
+		return A3(
+			elm$time$Time$toAdjustedMinutesHelp,
+			defaultOffset,
+			A2(
+				elm$time$Time$flooredDiv,
+				elm$time$Time$posixToMillis(time),
+				60000),
+			eras);
+	});
+var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var elm$time$Time$toCivil = function (minutes) {
+	var rawDay = A2(elm$time$Time$flooredDiv, minutes, 60 * 24) + 719468;
+	var era = (((rawDay >= 0) ? rawDay : (rawDay - 146096)) / 146097) | 0;
+	var dayOfEra = rawDay - (era * 146097);
+	var yearOfEra = ((((dayOfEra - ((dayOfEra / 1460) | 0)) + ((dayOfEra / 36524) | 0)) - ((dayOfEra / 146096) | 0)) / 365) | 0;
+	var dayOfYear = dayOfEra - (((365 * yearOfEra) + ((yearOfEra / 4) | 0)) - ((yearOfEra / 100) | 0));
+	var mp = (((5 * dayOfYear) + 2) / 153) | 0;
+	var month = mp + ((mp < 10) ? 3 : (-9));
+	var year = yearOfEra + (era * 400);
+	return {
+		day: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
+		month: month,
+		year: year + ((month <= 2) ? 1 : 0)
+	};
+};
+var elm$time$Time$toDay = F2(
+	function (zone, time) {
+		return elm$time$Time$toCivil(
+			A2(elm$time$Time$toAdjustedMinutes, zone, time)).day;
+	});
+var elm$time$Time$Apr = {$: 'Apr'};
+var elm$time$Time$Aug = {$: 'Aug'};
+var elm$time$Time$Dec = {$: 'Dec'};
+var elm$time$Time$Feb = {$: 'Feb'};
+var elm$time$Time$Jan = {$: 'Jan'};
+var elm$time$Time$Jul = {$: 'Jul'};
+var elm$time$Time$Jun = {$: 'Jun'};
+var elm$time$Time$Mar = {$: 'Mar'};
+var elm$time$Time$May = {$: 'May'};
+var elm$time$Time$Nov = {$: 'Nov'};
+var elm$time$Time$Oct = {$: 'Oct'};
+var elm$time$Time$Sep = {$: 'Sep'};
+var elm$time$Time$toMonth = F2(
+	function (zone, time) {
+		var _n0 = elm$time$Time$toCivil(
+			A2(elm$time$Time$toAdjustedMinutes, zone, time)).month;
+		switch (_n0) {
+			case 1:
+				return elm$time$Time$Jan;
+			case 2:
+				return elm$time$Time$Feb;
+			case 3:
+				return elm$time$Time$Mar;
+			case 4:
+				return elm$time$Time$Apr;
+			case 5:
+				return elm$time$Time$May;
+			case 6:
+				return elm$time$Time$Jun;
+			case 7:
+				return elm$time$Time$Jul;
+			case 8:
+				return elm$time$Time$Aug;
+			case 9:
+				return elm$time$Time$Sep;
+			case 10:
+				return elm$time$Time$Oct;
+			case 11:
+				return elm$time$Time$Nov;
+			default:
+				return elm$time$Time$Dec;
+		}
+	});
+var elm$time$Time$toYear = F2(
+	function (zone, time) {
+		return elm$time$Time$toCivil(
+			A2(elm$time$Time$toAdjustedMinutes, zone, time)).year;
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromPosix = function (posix) {
+	return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date(
+		{
+			day: PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(
+				A2(elm$time$Time$toDay, elm$time$Time$utc, posix)),
+			month: A2(elm$time$Time$toMonth, elm$time$Time$utc, posix),
+			year: PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year(
+				A2(elm$time$Time$toYear, elm$time$Time$utc, posix))
+		});
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$fromPosix = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromPosix;
 var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt = function (_n0) {
 	var day = _n0.a;
 	return day;
+};
+var elm$core$Basics$modBy = _Basics_modBy;
+var elm$core$Basics$not = _Basics_not;
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear = function (_n0) {
+	var _int = _n0.a;
+	return (!A2(elm$core$Basics$modBy, 4, _int)) && ((!A2(elm$core$Basics$modBy, 400, _int)) || (!(!A2(elm$core$Basics$modBy, 100, _int))));
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf = F2(
+	function (year, month) {
+		switch (month.$) {
+			case 'Jan':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Feb':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear(year) ? PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(29) : PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(28);
+			case 'Mar':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Apr':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
+			case 'May':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Jun':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
+			case 'Jul':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Aug':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Sep':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
+			case 'Oct':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+			case 'Nov':
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
+			default:
+				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
+		}
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayFromInt = F3(
+	function (year, month, day) {
+		var maxValidDay = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(
+			A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf, year, month));
+		return ((day > 0) && (!_Utils_eq(
+			A2(elm$core$Basics$compare, day, maxValidDay),
+			elm$core$Basics$GT))) ? elm$core$Maybe$Just(
+			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(day)) : elm$core$Maybe$Nothing;
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$compareDays = F2(
+	function (lhs, rhs) {
+		return A2(
+			elm$core$Basics$compare,
+			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(lhs),
+			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(rhs));
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromYearMonthDay = F3(
+	function (y, m, d) {
+		var maxDay = A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf, y, m);
+		var _n0 = A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$compareDays, d, maxDay);
+		if (_n0.$ === 'GT') {
+			return elm$core$Maybe$Nothing;
+		} else {
+			return elm$core$Maybe$Just(
+				PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date(
+					{day: d, month: m, year: y}));
+		}
+	});
+var elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawDay = F3(
+	function (year, month, day) {
+		return A2(
+			elm$core$Maybe$andThen,
+			A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromYearMonthDay, year, month),
+			A3(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayFromInt, year, month, day));
+	});
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearFromInt = function (year) {
+	return (year > 0) ? elm$core$Maybe$Just(
+		PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year(year)) : elm$core$Maybe$Nothing;
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawParts = function (_n0) {
+	var year = _n0.year;
+	var month = _n0.month;
+	var day = _n0.day;
+	return A2(
+		elm$core$Maybe$andThen,
+		function (y) {
+			return A3(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawDay, y, month, day);
+		},
+		PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearFromInt(year));
+};
+var PanagiotisGeorgiadis$elm_datetime$Calendar$fromRawParts = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawParts;
+var elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var author$project$DateTimeHelpers$posixToDate = function (_n0) {
+	var zone = _n0.a;
+	var time = _n0.b;
+	return A2(
+		elm$core$Maybe$withDefault,
+		PanagiotisGeorgiadis$elm_datetime$Calendar$fromPosix(time),
+		PanagiotisGeorgiadis$elm_datetime$Calendar$fromRawParts(
+			{
+				day: A2(elm$time$Time$toDay, zone, time),
+				month: A2(elm$time$Time$toMonth, zone, time),
+				year: A2(elm$time$Time$toYear, zone, time)
+			}));
 };
 var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getDay = function (_n0) {
 	var date = _n0.a;
@@ -7166,7 +7423,7 @@ var elm$core$String$padLeft = F3(
 				elm$core$String$fromChar(_char)),
 			string);
 	});
-var author$project$Page$Writer$dateToSortableString = function (date) {
+var author$project$DateTimeHelpers$dateToSortableString = function (date) {
 	return _Utils_ap(
 		elm$core$String$fromInt(
 			PanagiotisGeorgiadis$elm_datetime$Calendar$getYear(date)),
@@ -7185,26 +7442,9 @@ var author$project$Page$Writer$dateToSortableString = function (date) {
 				elm$core$String$fromInt(
 					PanagiotisGeorgiadis$elm_datetime$Calendar$getDay(date)))));
 };
-var elm$core$Basics$modBy = _Basics_modBy;
-var elm$core$Basics$not = _Basics_not;
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear = function (_n0) {
-	var _int = _n0.a;
-	return (!A2(elm$core$Basics$modBy, 4, _int)) && ((!A2(elm$core$Basics$modBy, 400, _int)) || (!(!A2(elm$core$Basics$modBy, 100, _int))));
-};
 var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay = ((1000 * 60) * 60) * 24;
 var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInYear = function (year) {
 	return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear(year) ? (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay * 366) : (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay * 365);
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year = function (a) {
-	return {$: 'Year', a: a};
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearFromInt = function (year) {
-	return (year > 0) ? elm$core$Maybe$Just(
-		PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year(year)) : elm$core$Maybe$Nothing;
-};
-var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Basics$negate = function (n) {
-	return -n;
 };
 var elm$core$List$sum = function (numbers) {
 	return A3(elm$core$List$foldl, elm$core$Basics$add, 0, numbers);
@@ -7261,18 +7501,6 @@ var elm$core$Array$fromList = function (list) {
 		return A3(elm$core$Array$fromListHelp, list, _List_Nil, 0);
 	}
 };
-var elm$time$Time$Apr = {$: 'Apr'};
-var elm$time$Time$Aug = {$: 'Aug'};
-var elm$time$Time$Dec = {$: 'Dec'};
-var elm$time$Time$Feb = {$: 'Feb'};
-var elm$time$Time$Jan = {$: 'Jan'};
-var elm$time$Time$Jul = {$: 'Jul'};
-var elm$time$Time$Jun = {$: 'Jun'};
-var elm$time$Time$Mar = {$: 'Mar'};
-var elm$time$Time$May = {$: 'May'};
-var elm$time$Time$Nov = {$: 'Nov'};
-var elm$time$Time$Oct = {$: 'Oct'};
-var elm$time$Time$Sep = {$: 'Sep'};
 var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$months = elm$core$Array$fromList(
 	_List_fromArray(
 		[elm$time$Time$Jan, elm$time$Time$Feb, elm$time$Time$Mar, elm$time$Time$Apr, elm$time$Time$May, elm$time$Time$Jun, elm$time$Time$Jul, elm$time$Time$Aug, elm$time$Time$Sep, elm$time$Time$Oct, elm$time$Time$Nov, elm$time$Time$Dec]));
@@ -7515,38 +7743,6 @@ var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getPrecedingMonths = fun
 			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$monthToInt(month) - 1,
 			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$months));
 };
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day = function (a) {
-	return {$: 'Day', a: a};
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf = F2(
-	function (year, month) {
-		switch (month.$) {
-			case 'Jan':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Feb':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear(year) ? PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(29) : PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(28);
-			case 'Mar':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Apr':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
-			case 'May':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Jun':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
-			case 'Jul':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Aug':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Sep':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
-			case 'Oct':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Nov':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
-			default:
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-		}
-	});
 var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceStartOfTheYear = F2(
 	function (year, month) {
 		return A3(
@@ -7597,200 +7793,12 @@ var author$project$Page$Writer$encodeWordcountSave = F3(
 					_Utils_Tuple2(
 					'subdoc',
 					elm$json$Json$Encode$string(
-						author$project$Page$Writer$dateToSortableString(date))),
+						author$project$DateTimeHelpers$dateToSortableString(date))),
 					_Utils_Tuple2(
 					'data',
 					A2(author$project$Page$Writer$encodeWordCount, date, count))
 				]));
 	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date = function (a) {
-	return {$: 'Date', a: a};
-};
-var elm$time$Time$flooredDiv = F2(
-	function (numerator, denominator) {
-		return elm$core$Basics$floor(numerator / denominator);
-	});
-var elm$time$Time$toAdjustedMinutesHelp = F3(
-	function (defaultOffset, posixMinutes, eras) {
-		toAdjustedMinutesHelp:
-		while (true) {
-			if (!eras.b) {
-				return posixMinutes + defaultOffset;
-			} else {
-				var era = eras.a;
-				var olderEras = eras.b;
-				if (_Utils_cmp(era.start, posixMinutes) < 0) {
-					return posixMinutes + era.offset;
-				} else {
-					var $temp$defaultOffset = defaultOffset,
-						$temp$posixMinutes = posixMinutes,
-						$temp$eras = olderEras;
-					defaultOffset = $temp$defaultOffset;
-					posixMinutes = $temp$posixMinutes;
-					eras = $temp$eras;
-					continue toAdjustedMinutesHelp;
-				}
-			}
-		}
-	});
-var elm$time$Time$toAdjustedMinutes = F2(
-	function (_n0, time) {
-		var defaultOffset = _n0.a;
-		var eras = _n0.b;
-		return A3(
-			elm$time$Time$toAdjustedMinutesHelp,
-			defaultOffset,
-			A2(
-				elm$time$Time$flooredDiv,
-				elm$time$Time$posixToMillis(time),
-				60000),
-			eras);
-	});
-var elm$time$Time$toCivil = function (minutes) {
-	var rawDay = A2(elm$time$Time$flooredDiv, minutes, 60 * 24) + 719468;
-	var era = (((rawDay >= 0) ? rawDay : (rawDay - 146096)) / 146097) | 0;
-	var dayOfEra = rawDay - (era * 146097);
-	var yearOfEra = ((((dayOfEra - ((dayOfEra / 1460) | 0)) + ((dayOfEra / 36524) | 0)) - ((dayOfEra / 146096) | 0)) / 365) | 0;
-	var dayOfYear = dayOfEra - (((365 * yearOfEra) + ((yearOfEra / 4) | 0)) - ((yearOfEra / 100) | 0));
-	var mp = (((5 * dayOfYear) + 2) / 153) | 0;
-	var month = mp + ((mp < 10) ? 3 : (-9));
-	var year = yearOfEra + (era * 400);
-	return {
-		day: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
-		month: month,
-		year: year + ((month <= 2) ? 1 : 0)
-	};
-};
-var elm$time$Time$toDay = F2(
-	function (zone, time) {
-		return elm$time$Time$toCivil(
-			A2(elm$time$Time$toAdjustedMinutes, zone, time)).day;
-	});
-var elm$time$Time$toMonth = F2(
-	function (zone, time) {
-		var _n0 = elm$time$Time$toCivil(
-			A2(elm$time$Time$toAdjustedMinutes, zone, time)).month;
-		switch (_n0) {
-			case 1:
-				return elm$time$Time$Jan;
-			case 2:
-				return elm$time$Time$Feb;
-			case 3:
-				return elm$time$Time$Mar;
-			case 4:
-				return elm$time$Time$Apr;
-			case 5:
-				return elm$time$Time$May;
-			case 6:
-				return elm$time$Time$Jun;
-			case 7:
-				return elm$time$Time$Jul;
-			case 8:
-				return elm$time$Time$Aug;
-			case 9:
-				return elm$time$Time$Sep;
-			case 10:
-				return elm$time$Time$Oct;
-			case 11:
-				return elm$time$Time$Nov;
-			default:
-				return elm$time$Time$Dec;
-		}
-	});
-var elm$time$Time$toYear = F2(
-	function (zone, time) {
-		return elm$time$Time$toCivil(
-			A2(elm$time$Time$toAdjustedMinutes, zone, time)).year;
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromPosix = function (posix) {
-	return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date(
-		{
-			day: PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(
-				A2(elm$time$Time$toDay, elm$time$Time$utc, posix)),
-			month: A2(elm$time$Time$toMonth, elm$time$Time$utc, posix),
-			year: PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year(
-				A2(elm$time$Time$toYear, elm$time$Time$utc, posix))
-		});
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$fromPosix = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromPosix;
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayFromInt = F3(
-	function (year, month, day) {
-		var maxValidDay = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(
-			A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf, year, month));
-		return ((day > 0) && (!_Utils_eq(
-			A2(elm$core$Basics$compare, day, maxValidDay),
-			elm$core$Basics$GT))) ? elm$core$Maybe$Just(
-			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(day)) : elm$core$Maybe$Nothing;
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$compareDays = F2(
-	function (lhs, rhs) {
-		return A2(
-			elm$core$Basics$compare,
-			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(lhs),
-			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(rhs));
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromYearMonthDay = F3(
-	function (y, m, d) {
-		var maxDay = A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf, y, m);
-		var _n0 = A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$compareDays, d, maxDay);
-		if (_n0.$ === 'GT') {
-			return elm$core$Maybe$Nothing;
-		} else {
-			return elm$core$Maybe$Just(
-				PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date(
-					{day: d, month: m, year: y}));
-		}
-	});
-var elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (maybeValue.$ === 'Just') {
-			var value = maybeValue.a;
-			return callback(value);
-		} else {
-			return elm$core$Maybe$Nothing;
-		}
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawDay = F3(
-	function (year, month, day) {
-		return A2(
-			elm$core$Maybe$andThen,
-			A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromYearMonthDay, year, month),
-			A3(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayFromInt, year, month, day));
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawParts = function (_n0) {
-	var year = _n0.year;
-	var month = _n0.month;
-	var day = _n0.day;
-	return A2(
-		elm$core$Maybe$andThen,
-		function (y) {
-			return A3(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawDay, y, month, day);
-		},
-		PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearFromInt(year));
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$fromRawParts = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawParts;
-var elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
-var author$project$Page$Writer$posixToDate = function (_n0) {
-	var zone = _n0.a;
-	var time = _n0.b;
-	return A2(
-		elm$core$Maybe$withDefault,
-		PanagiotisGeorgiadis$elm_datetime$Calendar$fromPosix(time),
-		PanagiotisGeorgiadis$elm_datetime$Calendar$fromRawParts(
-			{
-				day: A2(elm$time$Time$toDay, zone, time),
-				month: A2(elm$time$Time$toMonth, zone, time),
-				year: A2(elm$time$Time$toYear, zone, time)
-			}));
-};
 var author$project$Ports$SaveToDbSubcollection = {$: 'SaveToDbSubcollection'};
 var author$project$Ports$WriterDataSaved = {$: 'WriterDataSaved'};
 var author$project$Page$Writer$saveToDb = function (state) {
@@ -7804,7 +7812,7 @@ var author$project$Page$Writer$saveToDb = function (state) {
 				author$project$Page$Writer$encodeWordcountSave,
 				user.uid,
 				state.additiveCount,
-				author$project$Page$Writer$posixToDate(
+				author$project$DateTimeHelpers$posixToDate(
 					_Utils_Tuple2(state.timeZone, state.currentTime))),
 			author$project$Ports$WriterDataSaved);
 	} else {
@@ -8154,6 +8162,41 @@ var author$project$Main$updateNewSettings = F2(
 			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
+var author$project$Main$getLocalDateString = function (timeStamp) {
+	return author$project$DateTimeHelpers$dateToSortableString(
+		author$project$DateTimeHelpers$posixToDate(timeStamp));
+};
+var author$project$Ports$QueryDbSingleSubCollection = {$: 'QueryDbSingleSubCollection'};
+var author$project$Ports$WordCountLoaded = {$: 'WordCountLoaded'};
+var author$project$Main$loadWordCountForToday = F2(
+	function (user, timeStamp) {
+		if (user.$ === 'Just') {
+			var user_ = user.a;
+			return A3(
+				author$project$Ports$sendMessageWithContentAndResponse,
+				author$project$Ports$QueryDbSingleSubCollection,
+				elm$json$Json$Encode$object(
+					_List_fromArray(
+						[
+							_Utils_Tuple2(
+							'collection',
+							elm$json$Json$Encode$string('users')),
+							_Utils_Tuple2(
+							'doc',
+							elm$json$Json$Encode$string(user_.uid)),
+							_Utils_Tuple2(
+							'subcollection',
+							elm$json$Json$Encode$string('days')),
+							_Utils_Tuple2(
+							'subdoc',
+							elm$json$Json$Encode$string(
+								author$project$Main$getLocalDateString(timeStamp)))
+						])),
+				author$project$Ports$WordCountLoaded);
+		} else {
+			return elm$core$Platform$Cmd$none;
+		}
+	});
 var author$project$Main$pageToReturnPage = function (page) {
 	switch (page.$) {
 		case 'TargetSelector':
@@ -8266,7 +8309,11 @@ var author$project$Main$updateUser = F2(
 											author$project$Main$returnPageToUrlString(model.returnPage)
 										]),
 									_List_Nil)),
-								author$project$Main$loadSettings(state.user)
+								author$project$Main$loadSettings(state.user),
+								A2(
+								author$project$Main$loadWordCountForToday,
+								state.user,
+								_Utils_Tuple2(state.timeZone, state.currentTime))
 							])));
 			}(
 				function (state) {
@@ -8298,6 +8345,8 @@ var author$project$Ports$stringToInOperation = function (operation) {
 			return author$project$Ports$DisplayMessageReceived;
 		case 'WriterDataSaved':
 			return author$project$Ports$WriterDataSaved;
+		case 'WordCountLoaded':
+			return author$project$Ports$WordCountLoaded;
 		default:
 			return author$project$Ports$Unknown;
 	}
@@ -8800,6 +8849,20 @@ var author$project$Main$update = F2(
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'UpdateCurrentTime':
+				var time = message.a;
+				return function (state) {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{state: state}),
+						elm$core$Platform$Cmd$none);
+				}(
+					function (state) {
+						return _Utils_update(
+							state,
+							{currentTime: time});
+					}(model.state));
+			case 'InitialTimeLoaded':
 				var time = message.a;
 				return function (state) {
 					return _Utils_Tuple2(

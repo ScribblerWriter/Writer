@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Browser.Navigation as Nav
+import DateTimeHelpers
 import DisplayMessage exposing (Message)
 import Html exposing (text)
 import Json.Decode as Decode
@@ -97,6 +98,7 @@ addGlobalStartupCmds ( model, cmd ) =
         [ cmd
         , Ports.sendMessageWithJustResponse Ports.LoadContent Ports.ContentLoaded
         , Task.perform TimeZoneDetected Time.here
+        , Task.perform InitialTimeLoaded Time.now
         ]
     )
 
@@ -144,6 +146,7 @@ type Msg
     | UpdateCurrentTime Time.Posix
     | WindowResized Int Int
     | TimeZoneDetected Time.Zone
+    | InitialTimeLoaded Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -162,6 +165,11 @@ update message model =
             ( { model | state = updateTargetTimer model.state }, Cmd.none )
 
         UpdateCurrentTime time ->
+            model.state
+                |> (\state -> { state | currentTime = time })
+                |> (\state -> ( { model | state = state }, Cmd.none ))
+
+        InitialTimeLoaded time ->
             model.state
                 |> (\state -> { state | currentTime = time })
                 |> (\state -> ( { model | state = state }, Cmd.none ))
@@ -236,6 +244,7 @@ updateUser value model =
                         , Cmd.batch
                             [ Nav.pushUrl model.state.key (Url.Builder.absolute [ returnPageToUrlString model.returnPage ] [])
                             , loadSettings state.user
+                            , loadWordCountForToday state.user ( state.timeZone, state.currentTime )
                             ]
                         )
                    )
@@ -256,6 +265,31 @@ loadSettings user =
 
         Nothing ->
             Cmd.none
+
+
+loadWordCountForToday : Maybe State.User -> ( Time.Zone, Time.Posix ) -> Cmd Msg
+loadWordCountForToday user timeStamp =
+    case user of
+        Just user_ ->
+            Ports.sendMessageWithContentAndResponse
+                Ports.QueryDbSingleSubCollection
+                (Encode.object
+                    [ ( "collection", Encode.string "users" )
+                    , ( "doc", Encode.string user_.uid )
+                    , ( "subcollection", Encode.string "days" )
+                    , ( "subdoc", Encode.string <| getLocalDateString timeStamp )
+                    ]
+                )
+                Ports.WordCountLoaded
+
+        Nothing ->
+            Cmd.none
+
+
+getLocalDateString : ( Time.Zone, Time.Posix ) -> String
+getLocalDateString timeStamp =
+    DateTimeHelpers.posixToDate timeStamp
+        |> DateTimeHelpers.dateToSortableString
 
 
 pageToReturnPage : Page -> ReturnPage

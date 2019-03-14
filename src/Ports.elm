@@ -37,6 +37,7 @@ type OutOperation
     | LoadContent
     | QueryDbMultiple
     | QueryDbSingle
+    | QueryDbSingleSubCollection
     | SaveToDbCollection
     | SaveToDbSubcollection
     | SignIn
@@ -53,6 +54,7 @@ type InOperation
     | SettingsSaved
     | DisplayMessageReceived
     | WriterDataSaved
+    | WordCountLoaded
 
 
 
@@ -113,6 +115,9 @@ outOperationToString operation =
         QueryDbSingle ->
             "QueryDbSingle"
 
+        QueryDbSingleSubCollection ->
+            "QueryDbSingleSubCollection"
+
         SignIn ->
             "SignIn"
 
@@ -156,6 +161,9 @@ inOperationToString operation =
         WriterDataSaved ->
             "WriterDataSaved"
 
+        WordCountLoaded ->
+            "WordCountLoaded"
+
 
 stringToInOperation : String -> InOperation
 stringToInOperation operation =
@@ -180,6 +188,9 @@ stringToInOperation operation =
 
         "WriterDataSaved" ->
             WriterDataSaved
+
+        "WordCountLoaded" ->
+            WordCountLoaded
 
         _ ->
             Unknown
