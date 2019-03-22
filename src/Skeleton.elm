@@ -64,15 +64,14 @@ view state pageMapper pageData =
     { title = pageData.title
     , body =
         [ composePage
-            state
             (buildHeader state pageData.headerSettings)
             (Element.map pageMapper pageData.body)
         ]
     }
 
 
-composePage : State -> Element msg -> Element msg -> Html msg
-composePage state header body =
+composePage : Element msg -> Element msg -> Html msg
+composePage header body =
     Element.layoutWith
         { options = [ Appearance.siteFocusStyle ] }
         [ Font.size Appearance.siteFontSize
@@ -136,49 +135,30 @@ buildHeader state headerSettings =
                         Just buttonSettings ->
                             actionButton buttonSettings
                 ]
-                [ el
-                    [ padding 10
-                    , centerY
-                    , Font.color Appearance.siteLightFontColor
-                    ]
-                  <|
-                    text <|
-                        "Written so far: "
-                            ++ String.fromInt state.additiveCount
-                , el
-                    [ padding 10
-                    , centerY
-                    , alignRight
-                    , Font.color Appearance.siteLightFontColor
-                    ]
-                  <|
-                    text <|
-                        state.settings.displayName
-                , el
-                    [ padding 10
-                    , centerY
-                    , alignRight
-                    , Font.color Appearance.siteLightFontColor
-                    ]
-                  <|
-                    homeButton
-                , el
-                    [ padding 10
-                    , centerY
-                    , alignRight
-                    , Font.color Appearance.siteLightFontColor
-                    ]
-                  <|
-                    settingsButton
-                , el
-                    [ padding 10
-                    , centerY
-                    , alignRight
-                    , Font.color Appearance.siteLightFontColor
-                    ]
-                  <|
-                    signOutButton
+                [ el leftAttributes <| writeCountDisplay state.additiveCount
+                , el <| text <| state.settings.displayName
+                , el rightAttributes <| homeButton
+                , el rightAttributes <| settingsButton
+                , el rightAttributes <| signOutButton
                 ]
+
+
+rightAttributes : List (Attribute msg)
+rightAttributes =
+    [ padding 10
+    , centerY
+    , alignRight
+    , Font.color Appearance.siteLightFontColor
+    ]
+
+
+leftAttributes : List (Attribute msg)
+leftAttributes =
+    [ padding 10
+    , centerY
+    , alignRight
+    , Font.color Appearance.siteLightFontColor
+    ]
 
 
 actionButton : LinkSettings -> Element msg
@@ -231,3 +211,10 @@ homeButton =
         { url = "/"
         , label = text "Home"
         }
+
+
+writeCountDisplay : Int -> Element msg
+writeCountDisplay count =
+    text <|
+        "Written so far: "
+            ++ String.fromInt count

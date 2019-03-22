@@ -9,33 +9,31 @@ const fbauth = (function(messageCallback) {
 		});
 	});
 
-	function buildWarningMessage(error) {
-		return displayMessage.build(
-			error.message,
-			displayMessage.severityWarning(),
-			displayMessage.sourceAuth(),
-			error.code
-		);
+	function authenticationMessage(error) {
+		return { operation: "AuthMsgReceived"
+			   , content: error.message
+		};
 	}
+
 	return {
 		signIn: data => {
 			auth.signInWithEmailAndPassword(data.email, data.pass)
 				.catch(error => {
-					messageCallback(buildWarningMessage(error));
+					messageCallback(authenticationMessage(error));
 				});
 		},
 
 		signUp: data => {
 			auth.createUserWithEmailAndPassword(data.email, data.pass)
 				.catch(error => {
-					messageCallback(buildWarningMessage(error));
+					messageCallback(authenticationMessage(error));
 				});
 		},
 
 		signOut: () => {
 			auth.signOut()
 				.catch(error => {
-					messageCallback(buildWarningMessage(error));
+					messageCallback(authenticationMessage(error));
 				});
 		}
 	};

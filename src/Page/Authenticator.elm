@@ -1,4 +1,4 @@
-module Page.Authenticator exposing (Model, Msg, init, subscriptions, update, view)
+module Page.Authenticator exposing (Model, Msg, init, update, view)
 
 import Appearance
 import Browser
@@ -287,12 +287,3 @@ emailPassEncoder email pass =
         [ ( "email", Encode.string email )
         , ( "pass", Encode.string pass )
         ]
-
-
-
--- subscriptions
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none

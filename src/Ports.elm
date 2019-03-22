@@ -53,6 +53,7 @@ type InOperation
     | SettingsLoaded
     | SettingsSaved
     | DisplayMessageReceived
+    | AuthMsgReceived
     | WriterDataSaved
     | WordCountLoaded
 
@@ -158,6 +159,9 @@ inOperationToString operation =
         DisplayMessageReceived ->
             "DisplayMessageReceived"
 
+        AuthMsgReceived ->
+            "AuthMsgReceived"
+
         WriterDataSaved ->
             "WriterDataSaved"
 
@@ -185,6 +189,9 @@ stringToInOperation operation =
 
         "DisplayMessageReceived" ->
             DisplayMessageReceived
+
+        "AuthMsgReceived" ->
+            AuthMsgReceived
 
         "WriterDataSaved" ->
             WriterDataSaved

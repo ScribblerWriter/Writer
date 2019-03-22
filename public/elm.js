@@ -80,271 +80,6 @@ function A9(fun, a, b, c, d, e, f, g, h, i) {
 console.warn('Compiled in DEV mode. Follow the advice at https://elm-lang.org/0.19.0/optimize for better performance and smaller assets.');
 
 
-var _List_Nil_UNUSED = { $: 0 };
-var _List_Nil = { $: '[]' };
-
-function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
-function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
-
-
-var _List_cons = F2(_List_Cons);
-
-function _List_fromArray(arr)
-{
-	var out = _List_Nil;
-	for (var i = arr.length; i--; )
-	{
-		out = _List_Cons(arr[i], out);
-	}
-	return out;
-}
-
-function _List_toArray(xs)
-{
-	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		out.push(xs.a);
-	}
-	return out;
-}
-
-var _List_map2 = F3(function(f, xs, ys)
-{
-	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
-	{
-		arr.push(A2(f, xs.a, ys.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map3 = F4(function(f, xs, ys, zs)
-{
-	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A3(f, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map4 = F5(function(f, ws, xs, ys, zs)
-{
-	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
-{
-	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_sortBy = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		return _Utils_cmp(f(a), f(b));
-	}));
-});
-
-var _List_sortWith = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		var ord = A2(f, a, b);
-		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
-	}));
-});
-
-
-
-// EQUALITY
-
-function _Utils_eq(x, y)
-{
-	for (
-		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
-		isEqual && (pair = stack.pop());
-		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
-		)
-	{}
-
-	return isEqual;
-}
-
-function _Utils_eqHelp(x, y, depth, stack)
-{
-	if (depth > 100)
-	{
-		stack.push(_Utils_Tuple2(x,y));
-		return true;
-	}
-
-	if (x === y)
-	{
-		return true;
-	}
-
-	if (typeof x !== 'object' || x === null || y === null)
-	{
-		typeof x === 'function' && _Debug_crash(5);
-		return false;
-	}
-
-	/**/
-	if (x.$ === 'Set_elm_builtin')
-	{
-		x = elm$core$Set$toList(x);
-		y = elm$core$Set$toList(y);
-	}
-	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
-	{
-		x = elm$core$Dict$toList(x);
-		y = elm$core$Dict$toList(y);
-	}
-	//*/
-
-	/**_UNUSED/
-	if (x.$ < 0)
-	{
-		x = elm$core$Dict$toList(x);
-		y = elm$core$Dict$toList(y);
-	}
-	//*/
-
-	for (var key in x)
-	{
-		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-var _Utils_equal = F2(_Utils_eq);
-var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
-
-
-
-// COMPARISONS
-
-// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
-// the particular integer values assigned to LT, EQ, and GT.
-
-function _Utils_cmp(x, y, ord)
-{
-	if (typeof x !== 'object')
-	{
-		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
-	}
-
-	/**/
-	if (x instanceof String)
-	{
-		var a = x.valueOf();
-		var b = y.valueOf();
-		return a === b ? 0 : a < b ? -1 : 1;
-	}
-	//*/
-
-	/**_UNUSED/
-	if (typeof x.$ === 'undefined')
-	//*/
-	/**/
-	if (x.$[0] === '#')
-	//*/
-	{
-		return (ord = _Utils_cmp(x.a, y.a))
-			? ord
-			: (ord = _Utils_cmp(x.b, y.b))
-				? ord
-				: _Utils_cmp(x.c, y.c);
-	}
-
-	// traverse conses until end of a list or a mismatch
-	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
-	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
-}
-
-var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
-var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
-var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
-var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
-
-var _Utils_compare = F2(function(x, y)
-{
-	var n = _Utils_cmp(x, y);
-	return n < 0 ? elm$core$Basics$LT : n ? elm$core$Basics$GT : elm$core$Basics$EQ;
-});
-
-
-// COMMON VALUES
-
-var _Utils_Tuple0_UNUSED = 0;
-var _Utils_Tuple0 = { $: '#0' };
-
-function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
-function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
-
-function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
-function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
-
-function _Utils_chr_UNUSED(c) { return c; }
-function _Utils_chr(c) { return new String(c); }
-
-
-// RECORDS
-
-function _Utils_update(oldRecord, updatedFields)
-{
-	var newRecord = {};
-
-	for (var key in oldRecord)
-	{
-		newRecord[key] = oldRecord[key];
-	}
-
-	for (var key in updatedFields)
-	{
-		newRecord[key] = updatedFields[key];
-	}
-
-	return newRecord;
-}
-
-
-// APPEND
-
-var _Utils_append = F2(_Utils_ap);
-
-function _Utils_ap(xs, ys)
-{
-	// append Strings
-	if (typeof xs === 'string')
-	{
-		return xs + ys;
-	}
-
-	// append Lists
-	if (!xs.b)
-	{
-		return ys;
-	}
-	var root = _List_Cons(xs.a, ys);
-	xs = xs.b
-	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		curr = curr.b = _List_Cons(xs.a, ys);
-	}
-	return root;
-}
-
-
-
 var _JsArray_empty = [];
 
 function _JsArray_singleton(value)
@@ -790,6 +525,271 @@ function _Debug_regionToString(region)
 	}
 	return 'on lines ' + region.start.line + ' through ' + region.end.line;
 }
+
+
+
+// EQUALITY
+
+function _Utils_eq(x, y)
+{
+	for (
+		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
+		isEqual && (pair = stack.pop());
+		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
+		)
+	{}
+
+	return isEqual;
+}
+
+function _Utils_eqHelp(x, y, depth, stack)
+{
+	if (depth > 100)
+	{
+		stack.push(_Utils_Tuple2(x,y));
+		return true;
+	}
+
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (typeof x !== 'object' || x === null || y === null)
+	{
+		typeof x === 'function' && _Debug_crash(5);
+		return false;
+	}
+
+	/**/
+	if (x.$ === 'Set_elm_builtin')
+	{
+		x = elm$core$Set$toList(x);
+		y = elm$core$Set$toList(y);
+	}
+	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
+	{
+		x = elm$core$Dict$toList(x);
+		y = elm$core$Dict$toList(y);
+	}
+	//*/
+
+	/**_UNUSED/
+	if (x.$ < 0)
+	{
+		x = elm$core$Dict$toList(x);
+		y = elm$core$Dict$toList(y);
+	}
+	//*/
+
+	for (var key in x)
+	{
+		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+var _Utils_equal = F2(_Utils_eq);
+var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
+
+
+
+// COMPARISONS
+
+// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
+// the particular integer values assigned to LT, EQ, and GT.
+
+function _Utils_cmp(x, y, ord)
+{
+	if (typeof x !== 'object')
+	{
+		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
+	}
+
+	/**/
+	if (x instanceof String)
+	{
+		var a = x.valueOf();
+		var b = y.valueOf();
+		return a === b ? 0 : a < b ? -1 : 1;
+	}
+	//*/
+
+	/**_UNUSED/
+	if (typeof x.$ === 'undefined')
+	//*/
+	/**/
+	if (x.$[0] === '#')
+	//*/
+	{
+		return (ord = _Utils_cmp(x.a, y.a))
+			? ord
+			: (ord = _Utils_cmp(x.b, y.b))
+				? ord
+				: _Utils_cmp(x.c, y.c);
+	}
+
+	// traverse conses until end of a list or a mismatch
+	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
+	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
+}
+
+var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
+var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
+var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
+var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
+
+var _Utils_compare = F2(function(x, y)
+{
+	var n = _Utils_cmp(x, y);
+	return n < 0 ? elm$core$Basics$LT : n ? elm$core$Basics$GT : elm$core$Basics$EQ;
+});
+
+
+// COMMON VALUES
+
+var _Utils_Tuple0_UNUSED = 0;
+var _Utils_Tuple0 = { $: '#0' };
+
+function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
+function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
+
+function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
+function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
+
+function _Utils_chr_UNUSED(c) { return c; }
+function _Utils_chr(c) { return new String(c); }
+
+
+// RECORDS
+
+function _Utils_update(oldRecord, updatedFields)
+{
+	var newRecord = {};
+
+	for (var key in oldRecord)
+	{
+		newRecord[key] = oldRecord[key];
+	}
+
+	for (var key in updatedFields)
+	{
+		newRecord[key] = updatedFields[key];
+	}
+
+	return newRecord;
+}
+
+
+// APPEND
+
+var _Utils_append = F2(_Utils_ap);
+
+function _Utils_ap(xs, ys)
+{
+	// append Strings
+	if (typeof xs === 'string')
+	{
+		return xs + ys;
+	}
+
+	// append Lists
+	if (!xs.b)
+	{
+		return ys;
+	}
+	var root = _List_Cons(xs.a, ys);
+	xs = xs.b
+	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		curr = curr.b = _List_Cons(xs.a, ys);
+	}
+	return root;
+}
+
+
+
+var _List_Nil_UNUSED = { $: 0 };
+var _List_Nil = { $: '[]' };
+
+function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
+function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
+
+
+var _List_cons = F2(_List_Cons);
+
+function _List_fromArray(arr)
+{
+	var out = _List_Nil;
+	for (var i = arr.length; i--; )
+	{
+		out = _List_Cons(arr[i], out);
+	}
+	return out;
+}
+
+function _List_toArray(xs)
+{
+	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		out.push(xs.a);
+	}
+	return out;
+}
+
+var _List_map2 = F3(function(f, xs, ys)
+{
+	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
+	{
+		arr.push(A2(f, xs.a, ys.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map3 = F4(function(f, xs, ys, zs)
+{
+	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A3(f, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map4 = F5(function(f, ws, xs, ys, zs)
+{
+	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
+{
+	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_sortBy = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		return _Utils_cmp(f(a), f(b));
+	}));
+});
+
+var _List_sortWith = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		var ord = A2(f, a, b);
+		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
+	}));
+});
 
 
 
@@ -2310,52 +2310,6 @@ function _Platform_mergeExportsDebug(moduleName, obj, exports)
 				: _Platform_mergeExportsDebug(moduleName + '.' + name, obj[name], exports[name])
 			: (obj[name] = exports[name]);
 	}
-}
-
-
-
-function _Time_now(millisToPosix)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(millisToPosix(Date.now())));
-	});
-}
-
-var _Time_setInterval = F2(function(interval, task)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
-		return function() { clearInterval(id); };
-	});
-});
-
-function _Time_here()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(
-			A2(elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
-		));
-	});
-}
-
-
-function _Time_getZoneName()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		try
-		{
-			var name = elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
-		}
-		catch (e)
-		{
-			var name = elm$time$Time$Offset(new Date().getTimezoneOffset());
-		}
-		callback(_Scheduler_succeed(name));
-	});
 }
 
 
@@ -4416,80 +4370,47 @@ var author$project$Main$LinkClicked = function (a) {
 var author$project$Main$UrlChanged = function (a) {
 	return {$: 'UrlChanged', a: a};
 };
-var author$project$Main$InitialTimeLoaded = function (a) {
-	return {$: 'InitialTimeLoaded', a: a};
+var author$project$Main$Redirect = function (a) {
+	return {$: 'Redirect', a: a};
 };
-var author$project$Main$TimeZoneDetected = function (a) {
-	return {$: 'TimeZoneDetected', a: a};
-};
-var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
-var author$project$Ports$LoadContent = {$: 'LoadContent'};
-var author$project$Ports$inOperationToString = function (operation) {
-	switch (operation.$) {
-		case 'ContentLoaded':
-			return 'ContentLoaded';
-		case 'Unknown':
-			return 'Unknown';
-		case 'TargetListReturned':
-			return 'TargetListReturned';
-		case 'AuthStateChanged':
-			return 'AuthStateChanged';
-		case 'SettingsLoaded':
-			return 'SettingsLoaded';
-		case 'SettingsSaved':
-			return 'SettingsSaved';
-		case 'DisplayMessageReceived':
-			return 'DisplayMessageReceived';
-		case 'WriterDataSaved':
-			return 'WriterDataSaved';
-		default:
-			return 'WordCountLoaded';
-	}
-};
-var author$project$Ports$outOperationToString = function (operation) {
-	switch (operation.$) {
-		case 'SaveContent':
-			return 'SaveContent';
-		case 'LoadContent':
-			return 'LoadContent';
-		case 'QueryDbMultiple':
-			return 'QueryDbMultiple';
-		case 'QueryDbSingle':
-			return 'QueryDbSingle';
-		case 'QueryDbSingleSubCollection':
-			return 'QueryDbSingleSubCollection';
-		case 'SignIn':
-			return 'SignIn';
-		case 'SignOut':
-			return 'SignOut';
-		case 'SignUp':
-			return 'SignUp';
-		case 'SaveToDbCollection':
-			return 'SaveToDbCollection';
-		default:
-			return 'SaveToDbSubcollection';
-	}
-};
+var author$project$Main$Failed = F2(
+	function (a, b) {
+		return {$: 'Failed', a: a, b: b};
+	});
+var elm$core$Basics$apL = F2(
+	function (f, x) {
+		return f(x);
+	});
 var elm$core$Basics$identity = function (x) {
 	return x;
 };
-var elm$core$Maybe$destruct = F3(
-	function (_default, func, maybe) {
-		if (maybe.$ === 'Just') {
-			var a = maybe.a;
-			return func(a);
-		} else {
-			return _default;
-		}
-	});
-var elm$core$Array$branchFactor = 32;
-var elm$core$Array$Array_elm_builtin = F4(
-	function (a, b, c, d) {
-		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
-	});
 var elm$core$Basics$EQ = {$: 'EQ'};
-var elm$core$Basics$GT = {$: 'GT'};
 var elm$core$Basics$LT = {$: 'LT'};
+var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
+var elm$core$Array$foldr = F3(
+	function (func, baseCase, _n0) {
+		var tree = _n0.c;
+		var tail = _n0.d;
+		var helper = F2(
+			function (node, acc) {
+				if (node.$ === 'SubTree') {
+					var subTree = node.a;
+					return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
+				} else {
+					var values = node.a;
+					return A3(elm$core$Elm$JsArray$foldr, func, acc, values);
+				}
+			});
+		return A3(
+			elm$core$Elm$JsArray$foldr,
+			helper,
+			A3(elm$core$Elm$JsArray$foldr, func, baseCase, tail),
+			tree);
+	});
+var elm$core$Array$toList = function (array) {
+	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
+};
+var elm$core$Basics$GT = {$: 'GT'};
 var elm$core$Dict$foldr = F3(
 	function (func, acc, t) {
 		foldr:
@@ -4515,7 +4436,6 @@ var elm$core$Dict$foldr = F3(
 			}
 		}
 	});
-var elm$core$List$cons = _List_cons;
 var elm$core$Dict$toList = function (dict) {
 	return A3(
 		elm$core$Dict$foldr,
@@ -4543,48 +4463,9 @@ var elm$core$Set$toList = function (_n0) {
 	var dict = _n0.a;
 	return elm$core$Dict$keys(dict);
 };
-var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
-var elm$core$Array$foldr = F3(
-	function (func, baseCase, _n0) {
-		var tree = _n0.c;
-		var tail = _n0.d;
-		var helper = F2(
-			function (node, acc) {
-				if (node.$ === 'SubTree') {
-					var subTree = node.a;
-					return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
-				} else {
-					var values = node.a;
-					return A3(elm$core$Elm$JsArray$foldr, func, acc, values);
-				}
-			});
-		return A3(
-			elm$core$Elm$JsArray$foldr,
-			helper,
-			A3(elm$core$Elm$JsArray$foldr, func, baseCase, tail),
-			tree);
-	});
-var elm$core$Array$toList = function (array) {
-	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
-};
-var elm$core$Basics$ceiling = _Basics_ceiling;
-var elm$core$Basics$fdiv = _Basics_fdiv;
-var elm$core$Basics$logBase = F2(
-	function (base, number) {
-		return _Basics_log(number) / _Basics_log(base);
-	});
-var elm$core$Basics$toFloat = _Basics_toFloat;
-var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
-	A2(elm$core$Basics$logBase, 2, elm$core$Array$branchFactor));
-var elm$core$Elm$JsArray$empty = _JsArray_empty;
-var elm$core$Array$empty = A4(elm$core$Array$Array_elm_builtin, 0, elm$core$Array$shiftStep, elm$core$Elm$JsArray$empty, elm$core$Elm$JsArray$empty);
-var elm$core$Array$Leaf = function (a) {
-	return {$: 'Leaf', a: a};
-};
-var elm$core$Array$SubTree = function (a) {
-	return {$: 'SubTree', a: a};
-};
-var elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
+var elm$core$List$cons = _List_cons;
+var elm$core$Basics$add = _Basics_add;
+var elm$core$Basics$gt = _Utils_gt;
 var elm$core$List$foldl = F3(
 	function (func, acc, list) {
 		foldl:
@@ -4607,6 +4488,160 @@ var elm$core$List$foldl = F3(
 var elm$core$List$reverse = function (list) {
 	return A3(elm$core$List$foldl, elm$core$List$cons, _List_Nil, list);
 };
+var elm$core$List$foldrHelper = F4(
+	function (fn, acc, ctr, ls) {
+		if (!ls.b) {
+			return acc;
+		} else {
+			var a = ls.a;
+			var r1 = ls.b;
+			if (!r1.b) {
+				return A2(fn, a, acc);
+			} else {
+				var b = r1.a;
+				var r2 = r1.b;
+				if (!r2.b) {
+					return A2(
+						fn,
+						a,
+						A2(fn, b, acc));
+				} else {
+					var c = r2.a;
+					var r3 = r2.b;
+					if (!r3.b) {
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(fn, c, acc)));
+					} else {
+						var d = r3.a;
+						var r4 = r3.b;
+						var res = (ctr > 500) ? A3(
+							elm$core$List$foldl,
+							fn,
+							acc,
+							elm$core$List$reverse(r4)) : A4(elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(
+									fn,
+									c,
+									A2(fn, d, res))));
+					}
+				}
+			}
+		}
+	});
+var elm$core$List$foldr = F3(
+	function (fn, acc, ls) {
+		return A4(elm$core$List$foldrHelper, fn, acc, 0, ls);
+	});
+var elm$core$List$map = F2(
+	function (f, xs) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, acc) {
+					return A2(
+						elm$core$List$cons,
+						f(x),
+						acc);
+				}),
+			_List_Nil,
+			xs);
+	});
+var elm$url$Url$Parser$Parser = function (a) {
+	return {$: 'Parser', a: a};
+};
+var elm$url$Url$Parser$State = F5(
+	function (visited, unvisited, params, frag, value) {
+		return {frag: frag, params: params, unvisited: unvisited, value: value, visited: visited};
+	});
+var elm$url$Url$Parser$mapState = F2(
+	function (func, _n0) {
+		var visited = _n0.visited;
+		var unvisited = _n0.unvisited;
+		var params = _n0.params;
+		var frag = _n0.frag;
+		var value = _n0.value;
+		return A5(
+			elm$url$Url$Parser$State,
+			visited,
+			unvisited,
+			params,
+			frag,
+			func(value));
+	});
+var elm$url$Url$Parser$map = F2(
+	function (subValue, _n0) {
+		var parseArg = _n0.a;
+		return elm$url$Url$Parser$Parser(
+			function (_n1) {
+				var visited = _n1.visited;
+				var unvisited = _n1.unvisited;
+				var params = _n1.params;
+				var frag = _n1.frag;
+				var value = _n1.value;
+				return A2(
+					elm$core$List$map,
+					elm$url$Url$Parser$mapState(value),
+					parseArg(
+						A5(elm$url$Url$Parser$State, visited, unvisited, params, frag, subValue)));
+			});
+	});
+var author$project$Main$route = F2(
+	function (parser, handler) {
+		return A2(elm$url$Url$Parser$map, handler, parser);
+	});
+var author$project$Main$GotSignInMsg = function (a) {
+	return {$: 'GotSignInMsg', a: a};
+};
+var author$project$Main$SignIn = function (a) {
+	return {$: 'SignIn', a: a};
+};
+var author$project$Main$Unauthenticated = F2(
+	function (a, b) {
+		return {$: 'Unauthenticated', a: a, b: b};
+	});
+var elm$core$Basics$False = {$: 'False'};
+var elm$core$Basics$True = {$: 'True'};
+var elm$core$Result$isOk = function (result) {
+	if (result.$ === 'Ok') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var elm$core$Array$branchFactor = 32;
+var elm$core$Array$Array_elm_builtin = F4(
+	function (a, b, c, d) {
+		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
+	});
+var elm$core$Basics$ceiling = _Basics_ceiling;
+var elm$core$Basics$fdiv = _Basics_fdiv;
+var elm$core$Basics$logBase = F2(
+	function (base, number) {
+		return _Basics_log(number) / _Basics_log(base);
+	});
+var elm$core$Basics$toFloat = _Basics_toFloat;
+var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
+	A2(elm$core$Basics$logBase, 2, elm$core$Array$branchFactor));
+var elm$core$Elm$JsArray$empty = _JsArray_empty;
+var elm$core$Array$empty = A4(elm$core$Array$Array_elm_builtin, 0, elm$core$Array$shiftStep, elm$core$Elm$JsArray$empty, elm$core$Elm$JsArray$empty);
+var elm$core$Array$Leaf = function (a) {
+	return {$: 'Leaf', a: a};
+};
+var elm$core$Array$SubTree = function (a) {
+	return {$: 'SubTree', a: a};
+};
+var elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
 var elm$core$Array$compressNodes = F2(
 	function (nodes, acc) {
 		compressNodes:
@@ -4654,13 +4689,7 @@ var elm$core$Array$treeFromBuilder = F2(
 			}
 		}
 	});
-var elm$core$Basics$add = _Basics_add;
-var elm$core$Basics$apL = F2(
-	function (f, x) {
-		return f(x);
-	});
 var elm$core$Basics$floor = _Basics_floor;
-var elm$core$Basics$gt = _Utils_gt;
 var elm$core$Basics$max = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) > 0) ? x : y;
@@ -4691,7 +4720,6 @@ var elm$core$Array$builderToArray = F2(
 				builder.tail);
 		}
 	});
-var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$idiv = _Basics_idiv;
 var elm$core$Basics$lt = _Utils_lt;
 var elm$core$Elm$JsArray$initialize = _JsArray_initialize;
@@ -4743,14 +4771,6 @@ var elm$core$Result$Err = function (a) {
 };
 var elm$core$Result$Ok = function (a) {
 	return {$: 'Ok', a: a};
-};
-var elm$core$Basics$True = {$: 'True'};
-var elm$core$Result$isOk = function (result) {
-	if (result.$ === 'Ok') {
-		return true;
-	} else {
-		return false;
-	}
 };
 var elm$json$Json$Decode$Failure = F2(
 	function (a, b) {
@@ -4957,485 +4977,75 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 			}
 		}
 	});
-var elm$json$Json$Encode$null = _Json_encodeNull;
-var elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			elm$core$List$foldl,
-			F2(
-				function (_n0, obj) {
-					var k = _n0.a;
-					var v = _n0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var elm$json$Json$Encode$string = _Json_wrap;
-var author$project$Ports$outgoingMessage = _Platform_outgoingPort(
-	'outgoingMessage',
-	function ($) {
-		return elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'content',
-					function ($) {
-						return A3(elm$core$Maybe$destruct, elm$json$Json$Encode$null, elm$core$Basics$identity, $);
-					}($.content)),
-					_Utils_Tuple2(
-					'operation',
-					elm$json$Json$Encode$string($.operation)),
-					_Utils_Tuple2(
-					'returnOperation',
-					function ($) {
-						return A3(elm$core$Maybe$destruct, elm$json$Json$Encode$null, elm$json$Json$Encode$string, $);
-					}($.returnOperation))
-				]));
-	});
-var author$project$Ports$sendMessage = F3(
-	function (operation, content, returnOperation) {
-		return author$project$Ports$outgoingMessage(
-			{
-				content: content,
-				operation: author$project$Ports$outOperationToString(operation),
-				returnOperation: function () {
-					if (returnOperation.$ === 'Just') {
-						var op = returnOperation.a;
-						return elm$core$Maybe$Just(
-							author$project$Ports$inOperationToString(op));
-					} else {
-						return elm$core$Maybe$Nothing;
-					}
-				}()
-			});
-	});
-var author$project$Ports$sendMessageWithJustResponse = F2(
-	function (operation, returnOperation) {
-		return A3(
-			author$project$Ports$sendMessage,
-			operation,
-			elm$core$Maybe$Nothing,
-			elm$core$Maybe$Just(returnOperation));
-	});
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Task$Perform = function (a) {
-	return {$: 'Perform', a: a};
-};
-var elm$core$Task$succeed = _Scheduler_succeed;
-var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
-var elm$core$List$foldrHelper = F4(
-	function (fn, acc, ctr, ls) {
-		if (!ls.b) {
-			return acc;
-		} else {
-			var a = ls.a;
-			var r1 = ls.b;
-			if (!r1.b) {
-				return A2(fn, a, acc);
-			} else {
-				var b = r1.a;
-				var r2 = r1.b;
-				if (!r2.b) {
-					return A2(
-						fn,
-						a,
-						A2(fn, b, acc));
-				} else {
-					var c = r2.a;
-					var r3 = r2.b;
-					if (!r3.b) {
-						return A2(
-							fn,
-							a,
-							A2(
-								fn,
-								b,
-								A2(fn, c, acc)));
-					} else {
-						var d = r3.a;
-						var r4 = r3.b;
-						var res = (ctr > 500) ? A3(
-							elm$core$List$foldl,
-							fn,
-							acc,
-							elm$core$List$reverse(r4)) : A4(elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
-						return A2(
-							fn,
-							a,
-							A2(
-								fn,
-								b,
-								A2(
-									fn,
-									c,
-									A2(fn, d, res))));
-					}
-				}
-			}
-		}
-	});
-var elm$core$List$foldr = F3(
-	function (fn, acc, ls) {
-		return A4(elm$core$List$foldrHelper, fn, acc, 0, ls);
-	});
-var elm$core$List$map = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, acc) {
-					return A2(
-						elm$core$List$cons,
-						f(x),
-						acc);
-				}),
-			_List_Nil,
-			xs);
-	});
-var elm$core$Task$andThen = _Scheduler_andThen;
-var elm$core$Task$map = F2(
-	function (func, taskA) {
-		return A2(
-			elm$core$Task$andThen,
-			function (a) {
-				return elm$core$Task$succeed(
-					func(a));
-			},
-			taskA);
-	});
-var elm$core$Task$map2 = F3(
-	function (func, taskA, taskB) {
-		return A2(
-			elm$core$Task$andThen,
-			function (a) {
-				return A2(
-					elm$core$Task$andThen,
-					function (b) {
-						return elm$core$Task$succeed(
-							A2(func, a, b));
-					},
-					taskB);
-			},
-			taskA);
-	});
-var elm$core$Task$sequence = function (tasks) {
-	return A3(
-		elm$core$List$foldr,
-		elm$core$Task$map2(elm$core$List$cons),
-		elm$core$Task$succeed(_List_Nil),
-		tasks);
-};
-var elm$core$Platform$sendToApp = _Platform_sendToApp;
-var elm$core$Task$spawnCmd = F2(
-	function (router, _n0) {
-		var task = _n0.a;
-		return _Scheduler_spawn(
+var elm$core$Platform$Cmd$map = _Platform_map;
+var author$project$Main$routeToSignIn = F2(
+	function (session, _n0) {
+		var subModel = _n0.a;
+		var subMsg = _n0.b;
+		return _Utils_Tuple2(
 			A2(
-				elm$core$Task$andThen,
-				elm$core$Platform$sendToApp(router),
-				task));
+				author$project$Main$Unauthenticated,
+				author$project$Main$SignIn(subModel),
+				session),
+			A2(elm$core$Platform$Cmd$map, author$project$Main$GotSignInMsg, subMsg));
 	});
-var elm$core$Task$onEffects = F3(
-	function (router, commands, state) {
-		return A2(
-			elm$core$Task$map,
-			function (_n0) {
-				return _Utils_Tuple0;
-			},
-			elm$core$Task$sequence(
-				A2(
-					elm$core$List$map,
-					elm$core$Task$spawnCmd(router),
-					commands)));
-	});
-var elm$core$Task$onSelfMsg = F3(
-	function (_n0, _n1, _n2) {
-		return elm$core$Task$succeed(_Utils_Tuple0);
-	});
-var elm$core$Task$cmdMap = F2(
-	function (tagger, _n0) {
-		var task = _n0.a;
-		return elm$core$Task$Perform(
-			A2(elm$core$Task$map, tagger, task));
-	});
-_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
-var elm$core$Task$command = _Platform_leaf('Task');
-var elm$core$Task$perform = F2(
-	function (toMessage, task) {
-		return elm$core$Task$command(
-			elm$core$Task$Perform(
-				A2(elm$core$Task$map, toMessage, task)));
-	});
-var elm$time$Time$Name = function (a) {
-	return {$: 'Name', a: a};
+var author$project$Main$GotSignUpMsg = function (a) {
+	return {$: 'GotSignUpMsg', a: a};
 };
-var elm$time$Time$Offset = function (a) {
-	return {$: 'Offset', a: a};
+var author$project$Main$SignUp = function (a) {
+	return {$: 'SignUp', a: a};
 };
-var elm$time$Time$Zone = F2(
-	function (a, b) {
-		return {$: 'Zone', a: a, b: b};
+var author$project$Main$routeToSignUp = F2(
+	function (session, _n0) {
+		var subModel = _n0.a;
+		var subMsg = _n0.b;
+		return _Utils_Tuple2(
+			A2(
+				author$project$Main$Unauthenticated,
+				author$project$Main$SignUp(subModel),
+				session),
+			A2(elm$core$Platform$Cmd$map, author$project$Main$GotSignUpMsg, subMsg));
 	});
-var elm$time$Time$customZone = elm$time$Time$Zone;
-var elm$time$Time$here = _Time_here(_Utils_Tuple0);
-var elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var elm$time$Time$millisToPosix = elm$time$Time$Posix;
-var elm$time$Time$now = _Time_now(elm$time$Time$millisToPosix);
-var author$project$Main$addGlobalStartupCmds = function (_n0) {
-	var model = _n0.a;
-	var cmd = _n0.b;
-	return _Utils_Tuple2(
-		model,
-		elm$core$Platform$Cmd$batch(
-			_List_fromArray(
-				[
-					cmd,
-					A2(author$project$Ports$sendMessageWithJustResponse, author$project$Ports$LoadContent, author$project$Ports$ContentLoaded),
-					A2(elm$core$Task$perform, author$project$Main$TimeZoneDetected, elm$time$Time$here),
-					A2(elm$core$Task$perform, author$project$Main$InitialTimeLoaded, elm$time$Time$now)
-				])));
-};
-var author$project$Main$NotFound = {$: 'NotFound'};
-var author$project$Main$ToWriter = {$: 'ToWriter'};
-var author$project$State$No = {$: 'No'};
-var elm$json$Json$Decode$map2 = _Json_map2;
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
-var elm$json$Json$Decode$field = _Json_decodeField;
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
-	function (key, valDecoder, decoder) {
-		return A2(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
-			A2(elm$json$Json$Decode$field, key, valDecoder),
-			decoder);
-	});
-var author$project$State$Dimensions = F2(
-	function (width, height) {
-		return {height: height, width: width};
-	});
-var elm$json$Json$Decode$int = _Json_decodeInt;
-var elm$json$Json$Decode$succeed = _Json_succeed;
-var author$project$State$dimensionDecoder = A3(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'height',
-	elm$json$Json$Decode$int,
-	A3(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'width',
-		elm$json$Json$Decode$int,
-		elm$json$Json$Decode$succeed(author$project$State$Dimensions)));
-var elm$json$Json$Decode$decodeValue = _Json_run;
-var author$project$State$decodeDimensions = function (value) {
-	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$dimensionDecoder, value);
-	if (_n0.$ === 'Ok') {
-		var dimensions = _n0.a;
-		return dimensions;
-	} else {
-		return {height: 600, width: 800};
+var author$project$Main$toSession = function (model) {
+	switch (model.$) {
+		case 'Unauthenticated':
+			var session = model.b;
+			return session;
+		case 'Loading':
+			var session = model.b;
+			return session;
+		case 'Running':
+			var session = model.b;
+			return session;
+		case 'Failed':
+			var session = model.b;
+			return session;
+		default:
+			var session = model.a;
+			return session;
 	}
 };
-var author$project$State$Additive = {$: 'Additive'};
-var author$project$State$defaultSettings = {countMethod: author$project$State$Additive, displayName: ''};
-var elm$time$Time$utc = A2(elm$time$Time$Zone, 0, _List_Nil);
-var author$project$Main$initialState = F2(
-	function (flags, key) {
-		return {
-			actualCount: 0,
-			additiveCount: 0,
-			currentTarget: elm$core$Maybe$Nothing,
-			currentTargetTimerInSecs: 0,
-			currentText: '',
-			currentTime: elm$time$Time$millisToPosix(0),
-			ended: author$project$State$No,
-			key: key,
-			messages: _List_Nil,
-			settings: author$project$State$defaultSettings,
-			timeZone: elm$time$Time$utc,
-			user: elm$core$Maybe$Nothing,
-			winProgress: 0,
-			windowDimensions: author$project$State$decodeDimensions(flags)
-		};
-	});
-var author$project$Main$initialModel = F2(
-	function (flags, key) {
-		return {
-			page: author$project$Main$NotFound,
-			returnPage: author$project$Main$ToWriter,
-			state: A2(author$project$Main$initialState, flags, key)
-		};
-	});
-var author$project$Main$ToSettings = {$: 'ToSettings'};
-var author$project$Main$ToTargetSelector = {$: 'ToTargetSelector'};
-var elm$url$Url$Parser$Parser = function (a) {
-	return {$: 'Parser', a: a};
+var author$project$ValidationMessage$ValidationMessage = function (a) {
+	return {$: 'ValidationMessage', a: a};
 };
-var elm$url$Url$Parser$State = F5(
-	function (visited, unvisited, params, frag, value) {
-		return {frag: frag, params: params, unvisited: unvisited, value: value, visited: visited};
-	});
-var elm$url$Url$Parser$mapState = F2(
-	function (func, _n0) {
-		var visited = _n0.visited;
-		var unvisited = _n0.unvisited;
-		var params = _n0.params;
-		var frag = _n0.frag;
-		var value = _n0.value;
-		return A5(
-			elm$url$Url$Parser$State,
-			visited,
-			unvisited,
-			params,
-			frag,
-			func(value));
-	});
-var elm$url$Url$Parser$map = F2(
-	function (subValue, _n0) {
-		var parseArg = _n0.a;
-		return elm$url$Url$Parser$Parser(
-			function (_n1) {
-				var visited = _n1.visited;
-				var unvisited = _n1.unvisited;
-				var params = _n1.params;
-				var frag = _n1.frag;
-				var value = _n1.value;
-				return A2(
-					elm$core$List$map,
-					elm$url$Url$Parser$mapState(value),
-					parseArg(
-						A5(elm$url$Url$Parser$State, visited, unvisited, params, frag, subValue)));
-			});
-	});
-var author$project$Main$route = F2(
-	function (parser, handler) {
-		return A2(elm$url$Url$Parser$map, handler, parser);
-	});
-var author$project$Main$Authenticator = function (a) {
-	return {$: 'Authenticator', a: a};
+var author$project$ValidationMessage$create = function (message) {
+	return author$project$ValidationMessage$ValidationMessage(message);
 };
-var author$project$Main$GotAuthenticatorMsg = function (a) {
-	return {$: 'GotAuthenticatorMsg', a: a};
-};
-var elm$core$Platform$Cmd$map = _Platform_map;
-var author$project$Main$stepAuthenticator = F2(
-	function (model, _n0) {
-		var authenticatorModel = _n0.a;
-		var authenticatorCmds = _n0.b;
-		return _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{
-					page: author$project$Main$Authenticator(authenticatorModel)
-				}),
-			A2(elm$core$Platform$Cmd$map, author$project$Main$GotAuthenticatorMsg, authenticatorCmds));
-	});
-var author$project$Main$GotSettingsMsg = function (a) {
-	return {$: 'GotSettingsMsg', a: a};
-};
-var author$project$Main$Settings = function (a) {
-	return {$: 'Settings', a: a};
-};
-var author$project$Main$stepSettings = F2(
-	function (model, _n0) {
-		var settingsModel = _n0.a;
-		var settingsCmds = _n0.b;
-		return _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{
-					page: author$project$Main$Settings(settingsModel)
-				}),
-			A2(elm$core$Platform$Cmd$map, author$project$Main$GotSettingsMsg, settingsCmds));
-	});
-var author$project$Main$GotSignerOuterMsg = function (a) {
-	return {$: 'GotSignerOuterMsg', a: a};
-};
-var author$project$Main$SignerOuter = {$: 'SignerOuter'};
-var author$project$Main$stepSignerOuter = F2(
-	function (model, signerOuterCmd) {
-		return _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{page: author$project$Main$SignerOuter}),
-			A2(elm$core$Platform$Cmd$map, author$project$Main$GotSignerOuterMsg, signerOuterCmd));
-	});
-var author$project$Main$GotTargetSelectorMsg = function (a) {
-	return {$: 'GotTargetSelectorMsg', a: a};
-};
-var author$project$Main$TargetSelector = function (a) {
-	return {$: 'TargetSelector', a: a};
-};
-var author$project$Main$stepTargetSelector = F2(
-	function (model, _n0) {
-		var targetSelectorModel = _n0.a;
-		var targetSelectorCmds = _n0.b;
-		return _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{
-					page: author$project$Main$TargetSelector(targetSelectorModel)
-				}),
-			A2(elm$core$Platform$Cmd$map, author$project$Main$GotTargetSelectorMsg, targetSelectorCmds));
-	});
-var author$project$Main$GotWriterMsg = function (a) {
-	return {$: 'GotWriterMsg', a: a};
-};
-var author$project$Main$Writer = function (a) {
-	return {$: 'Writer', a: a};
-};
-var author$project$Main$stepWriter = F2(
-	function (model, _n0) {
-		var writerModel = _n0.a;
-		var writerCmds = _n0.b;
-		return _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{
-					page: author$project$Main$Writer(writerModel)
-				}),
-			A2(elm$core$Platform$Cmd$map, author$project$Main$GotWriterMsg, writerCmds));
-	});
-var author$project$Page$Authenticator$None = {$: 'None'};
+var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
-var author$project$Page$Authenticator$init = _Utils_Tuple2(
-	{currentSignUpPage: author$project$Page$Authenticator$None, email: '', password: ''},
-	elm$core$Platform$Cmd$none);
-var author$project$Page$Settings$init = _Utils_Tuple2(
-	{countMethod: elm$core$Maybe$Nothing, displayName: elm$core$Maybe$Nothing},
-	elm$core$Platform$Cmd$none);
-var author$project$Ports$SignOut = {$: 'SignOut'};
-var author$project$Ports$sendJustMessage = function (operation) {
-	return A3(author$project$Ports$sendMessage, operation, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing);
-};
-var author$project$Page$SignerOuter$init = author$project$Ports$sendJustMessage(author$project$Ports$SignOut);
-var author$project$Page$TargetSelector$encodeGetTargetsQuery = elm$json$Json$Encode$object(
-	_List_fromArray(
-		[
-			_Utils_Tuple2(
-			'collection',
-			elm$json$Json$Encode$string('targets'))
-		]));
-var author$project$Ports$QueryDbMultiple = {$: 'QueryDbMultiple'};
-var author$project$Ports$TargetListReturned = {$: 'TargetListReturned'};
-var author$project$Ports$sendMessageWithContentAndResponse = F3(
-	function (operation, content, returnOperation) {
-		return A3(
-			author$project$Ports$sendMessage,
-			operation,
-			elm$core$Maybe$Just(content),
-			elm$core$Maybe$Just(returnOperation));
-	});
-var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
-var author$project$Page$TargetSelector$init = _Utils_Tuple2(
-	{targets: elm$core$Dict$empty},
-	A3(author$project$Ports$sendMessageWithContentAndResponse, author$project$Ports$QueryDbMultiple, author$project$Page$TargetSelector$encodeGetTargetsQuery, author$project$Ports$TargetListReturned));
-var author$project$Page$Writer$init = _Utils_Tuple2(
+var author$project$Page$SignIn$init = _Utils_Tuple2(
 	{
-		needsDbSave: false,
-		needsLocalSave: false,
-		timeSinceLastTouch: elm$time$Time$millisToPosix(0)
+		email: '',
+		password: '',
+		validationMessage: author$project$ValidationMessage$create('')
+	},
+	elm$core$Platform$Cmd$none);
+var author$project$Page$SignUp$init = _Utils_Tuple2(
+	{
+		confirmPassword: '',
+		email: '',
+		password: '',
+		validationMessage: author$project$ValidationMessage$create('')
 	},
 	elm$core$Platform$Cmd$none);
 var elm$core$List$append = F2(
@@ -5515,6 +5125,8 @@ var elm$url$Url$Parser$preparePath = function (path) {
 		return elm$url$Url$Parser$removeFinalEmpty(segments);
 	}
 };
+var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var elm$core$Basics$compare = _Utils_compare;
 var elm$core$Dict$get = F2(
 	function (targetKey, dict) {
@@ -6125,91 +5737,115 @@ var elm$url$Url$Parser$top = elm$url$Url$Parser$Parser(
 		return _List_fromArray(
 			[state]);
 	});
-var author$project$Main$stepUrl = F2(
+var author$project$Main$changeRouteTo = F2(
 	function (url, model) {
-		var parser = elm$url$Url$Parser$oneOf(
-			_List_fromArray(
-				[
-					A2(
-					author$project$Main$route,
-					elm$url$Url$Parser$top,
-					A2(author$project$Main$stepWriter, model, author$project$Page$Writer$init)),
-					A2(
-					author$project$Main$route,
-					elm$url$Url$Parser$s('target'),
-					A2(
-						author$project$Main$stepTargetSelector,
-						_Utils_update(
-							model,
-							{returnPage: author$project$Main$ToTargetSelector}),
-						author$project$Page$TargetSelector$init)),
-					A2(
-					author$project$Main$route,
-					elm$url$Url$Parser$s('signin'),
-					A2(author$project$Main$stepAuthenticator, model, author$project$Page$Authenticator$init)),
-					A2(
-					author$project$Main$route,
-					elm$url$Url$Parser$s('signout'),
-					A2(author$project$Main$stepSignerOuter, model, author$project$Page$SignerOuter$init)),
-					A2(
-					author$project$Main$route,
-					elm$url$Url$Parser$s('settings'),
-					A2(
-						author$project$Main$stepSettings,
-						_Utils_update(
-							model,
-							{returnPage: author$project$Main$ToSettings}),
-						author$project$Page$Settings$init))
-				]));
+		var parser = function () {
+			var session = author$project$Main$toSession(model);
+			return elm$url$Url$Parser$oneOf(
+				_List_fromArray(
+					[
+						A2(
+						author$project$Main$route,
+						elm$url$Url$Parser$top,
+						A2(author$project$Main$routeToSignIn, session, author$project$Page$SignIn$init)),
+						A2(
+						author$project$Main$route,
+						elm$url$Url$Parser$s('signin'),
+						A2(author$project$Main$routeToSignIn, session, author$project$Page$SignIn$init)),
+						A2(
+						author$project$Main$route,
+						elm$url$Url$Parser$s('signup'),
+						A2(author$project$Main$routeToSignUp, session, author$project$Page$SignUp$init))
+					]));
+		}();
 		var _n0 = A2(elm$url$Url$Parser$parse, parser, url);
 		if (_n0.$ === 'Just') {
 			var result = _n0.a;
 			return result;
 		} else {
 			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{page: author$project$Main$NotFound}),
+				A2(
+					author$project$Main$Failed,
+					elm$core$Maybe$Nothing,
+					author$project$Main$toSession(model)),
 				elm$core$Platform$Cmd$none);
 		}
 	});
+var author$project$Dimensions$Dimensions = function (a) {
+	return {$: 'Dimensions', a: a};
+};
+var author$project$Height$Height = function (a) {
+	return {$: 'Height', a: a};
+};
+var elm$json$Json$Decode$field = _Json_decodeField;
+var elm$json$Json$Decode$int = _Json_decodeInt;
+var author$project$Height$heightDecoder = A2(elm$json$Json$Decode$field, 'height', elm$json$Json$Decode$int);
+var elm$core$Result$withDefault = F2(
+	function (def, result) {
+		if (result.$ === 'Ok') {
+			var a = result.a;
+			return a;
+		} else {
+			return def;
+		}
+	});
+var elm$json$Json$Decode$decodeValue = _Json_run;
+var author$project$Height$decode = function (json) {
+	return author$project$Height$Height(
+		A2(
+			elm$core$Result$withDefault,
+			600,
+			A2(elm$json$Json$Decode$decodeValue, author$project$Height$heightDecoder, json)));
+};
+var author$project$Width$Width = function (a) {
+	return {$: 'Width', a: a};
+};
+var author$project$Width$widthDecoder = A2(elm$json$Json$Decode$field, 'width', elm$json$Json$Decode$int);
+var author$project$Width$decode = function (json) {
+	return author$project$Width$Width(
+		A2(
+			elm$core$Result$withDefault,
+			800,
+			A2(elm$json$Json$Decode$decodeValue, author$project$Width$widthDecoder, json)));
+};
+var author$project$Dimensions$decode = function (json) {
+	var width = author$project$Width$decode(json);
+	var height = author$project$Height$decode(json);
+	return author$project$Dimensions$Dimensions(
+		{height: height, width: width});
+};
+var author$project$Session$Session = function (a) {
+	return {$: 'Session', a: a};
+};
+var author$project$Session$create = F3(
+	function (flags, url, key) {
+		return author$project$Session$Session(
+			{
+				key: key,
+				lastRequestedUrl: url,
+				windowDimensions: author$project$Dimensions$decode(flags)
+			});
+	});
 var author$project$Main$init = F3(
 	function (flags, url, key) {
-		return author$project$Main$addGlobalStartupCmds(
-			A2(
-				author$project$Main$stepUrl,
-				url,
-				A2(author$project$Main$initialModel, flags, key)));
+		return A2(
+			author$project$Main$changeRouteTo,
+			url,
+			author$project$Main$Redirect(
+				A3(author$project$Session$create, flags, url, key)));
 	});
 var author$project$Main$PortMessageReceived = function (a) {
 	return {$: 'PortMessageReceived', a: a};
 };
-var author$project$Main$TargetTimerTicked = function (a) {
-	return {$: 'TargetTimerTicked', a: a};
-};
-var author$project$Main$UpdateCurrentTime = function (a) {
-	return {$: 'UpdateCurrentTime', a: a};
-};
-var author$project$Main$WindowResized = F2(
-	function (a, b) {
-		return {$: 'WindowResized', a: a, b: b};
-	});
-var elm$core$Platform$Sub$batch = _Platform_batch;
-var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
-var author$project$Page$Authenticator$subscriptions = function (model) {
-	return elm$core$Platform$Sub$none;
-};
-var author$project$Page$Settings$subscriptions = function (_n0) {
-	return elm$core$Platform$Sub$none;
-};
-var author$project$Page$TargetSelector$MessageReceived = function (a) {
-	return {$: 'MessageReceived', a: a};
+var author$project$Page$SignIn$AuthMsgReceived = function (a) {
+	return {$: 'AuthMsgReceived', a: a};
 };
 var elm$json$Json$Decode$andThen = _Json_andThen;
 var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$null = _Json_decodeNull;
 var elm$json$Json$Decode$oneOf = _Json_oneOf;
 var elm$json$Json$Decode$string = _Json_decodeString;
+var elm$json$Json$Decode$succeed = _Json_succeed;
 var elm$json$Json$Decode$value = _Json_decodeValue;
 var author$project$Ports$incomingMessage = _Platform_incomingPort(
 	'incomingMessage',
@@ -6233,307 +5869,80 @@ var author$project$Ports$incomingMessage = _Platform_incomingPort(
 							]))));
 		},
 		A2(elm$json$Json$Decode$field, 'operation', elm$json$Json$Decode$string)));
-var author$project$Page$TargetSelector$subscriptions = function (_n0) {
+var author$project$Page$SignIn$subscriptions = author$project$Ports$incomingMessage(author$project$Page$SignIn$AuthMsgReceived);
+var author$project$Page$SignUp$AuthMsgReceived = function (a) {
+	return {$: 'AuthMsgReceived', a: a};
+};
+var author$project$Page$SignUp$subscriptions = author$project$Ports$incomingMessage(author$project$Page$SignUp$AuthMsgReceived);
+var elm$core$Platform$Sub$map = _Platform_map;
+var elm$core$Platform$Sub$batch = _Platform_batch;
+var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
+var author$project$Main$pageSubscriptions = function (model) {
+	if (model.$ === 'Unauthenticated') {
+		if (model.a.$ === 'SignIn') {
+			return A2(elm$core$Platform$Sub$map, author$project$Main$GotSignInMsg, author$project$Page$SignIn$subscriptions);
+		} else {
+			return A2(elm$core$Platform$Sub$map, author$project$Main$GotSignUpMsg, author$project$Page$SignUp$subscriptions);
+		}
+	} else {
+		return elm$core$Platform$Sub$none;
+	}
+};
+var author$project$Main$subscriptions = function (model) {
 	return elm$core$Platform$Sub$batch(
 		_List_fromArray(
 			[
-				author$project$Ports$incomingMessage(author$project$Page$TargetSelector$MessageReceived)
+				author$project$Main$pageSubscriptions(model),
+				author$project$Ports$incomingMessage(author$project$Main$PortMessageReceived)
 			]));
 };
-var author$project$Page$Writer$SaveTimerTicked = function (a) {
-	return {$: 'SaveTimerTicked', a: a};
-};
-var elm$time$Time$Every = F2(
-	function (a, b) {
-		return {$: 'Every', a: a, b: b};
-	});
-var elm$time$Time$State = F2(
-	function (taggers, processes) {
-		return {processes: processes, taggers: taggers};
-	});
-var elm$time$Time$init = elm$core$Task$succeed(
-	A2(elm$time$Time$State, elm$core$Dict$empty, elm$core$Dict$empty));
-var elm$core$Dict$foldl = F3(
-	function (func, acc, dict) {
-		foldl:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return acc;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$func = func,
-					$temp$acc = A3(
-					func,
-					key,
-					value,
-					A3(elm$core$Dict$foldl, func, acc, left)),
-					$temp$dict = right;
-				func = $temp$func;
-				acc = $temp$acc;
-				dict = $temp$dict;
-				continue foldl;
-			}
-		}
-	});
-var elm$core$Dict$merge = F6(
-	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
-		var stepState = F3(
-			function (rKey, rValue, _n0) {
-				stepState:
-				while (true) {
-					var list = _n0.a;
-					var result = _n0.b;
-					if (!list.b) {
-						return _Utils_Tuple2(
-							list,
-							A3(rightStep, rKey, rValue, result));
-					} else {
-						var _n2 = list.a;
-						var lKey = _n2.a;
-						var lValue = _n2.b;
-						var rest = list.b;
-						if (_Utils_cmp(lKey, rKey) < 0) {
-							var $temp$rKey = rKey,
-								$temp$rValue = rValue,
-								$temp$_n0 = _Utils_Tuple2(
-								rest,
-								A3(leftStep, lKey, lValue, result));
-							rKey = $temp$rKey;
-							rValue = $temp$rValue;
-							_n0 = $temp$_n0;
-							continue stepState;
-						} else {
-							if (_Utils_cmp(lKey, rKey) > 0) {
-								return _Utils_Tuple2(
-									list,
-									A3(rightStep, rKey, rValue, result));
-							} else {
-								return _Utils_Tuple2(
-									rest,
-									A4(bothStep, lKey, lValue, rValue, result));
-							}
-						}
-					}
-				}
-			});
-		var _n3 = A3(
-			elm$core$Dict$foldl,
-			stepState,
-			_Utils_Tuple2(
-				elm$core$Dict$toList(leftDict),
-				initialResult),
-			rightDict);
-		var leftovers = _n3.a;
-		var intermediateResult = _n3.b;
-		return A3(
-			elm$core$List$foldl,
-			F2(
-				function (_n4, result) {
-					var k = _n4.a;
-					var v = _n4.b;
-					return A3(leftStep, k, v, result);
-				}),
-			intermediateResult,
-			leftovers);
-	});
-var elm$core$Process$kill = _Scheduler_kill;
-var elm$time$Time$addMySub = F2(
-	function (_n0, state) {
-		var interval = _n0.a;
-		var tagger = _n0.b;
-		var _n1 = A2(elm$core$Dict$get, interval, state);
-		if (_n1.$ === 'Nothing') {
-			return A3(
-				elm$core$Dict$insert,
-				interval,
-				_List_fromArray(
-					[tagger]),
-				state);
-		} else {
-			var taggers = _n1.a;
-			return A3(
-				elm$core$Dict$insert,
-				interval,
-				A2(elm$core$List$cons, tagger, taggers),
-				state);
-		}
-	});
-var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-var elm$core$Process$spawn = _Scheduler_spawn;
-var elm$time$Time$setInterval = _Time_setInterval;
-var elm$time$Time$spawnHelp = F3(
-	function (router, intervals, processes) {
-		if (!intervals.b) {
-			return elm$core$Task$succeed(processes);
-		} else {
-			var interval = intervals.a;
-			var rest = intervals.b;
-			var spawnTimer = elm$core$Process$spawn(
-				A2(
-					elm$time$Time$setInterval,
-					interval,
-					A2(elm$core$Platform$sendToSelf, router, interval)));
-			var spawnRest = function (id) {
-				return A3(
-					elm$time$Time$spawnHelp,
-					router,
-					rest,
-					A3(elm$core$Dict$insert, interval, id, processes));
-			};
-			return A2(elm$core$Task$andThen, spawnRest, spawnTimer);
-		}
-	});
-var elm$time$Time$onEffects = F3(
-	function (router, subs, _n0) {
-		var processes = _n0.processes;
-		var rightStep = F3(
-			function (_n6, id, _n7) {
-				var spawns = _n7.a;
-				var existing = _n7.b;
-				var kills = _n7.c;
-				return _Utils_Tuple3(
-					spawns,
-					existing,
-					A2(
-						elm$core$Task$andThen,
-						function (_n5) {
-							return kills;
-						},
-						elm$core$Process$kill(id)));
-			});
-		var newTaggers = A3(elm$core$List$foldl, elm$time$Time$addMySub, elm$core$Dict$empty, subs);
-		var leftStep = F3(
-			function (interval, taggers, _n4) {
-				var spawns = _n4.a;
-				var existing = _n4.b;
-				var kills = _n4.c;
-				return _Utils_Tuple3(
-					A2(elm$core$List$cons, interval, spawns),
-					existing,
-					kills);
-			});
-		var bothStep = F4(
-			function (interval, taggers, id, _n3) {
-				var spawns = _n3.a;
-				var existing = _n3.b;
-				var kills = _n3.c;
-				return _Utils_Tuple3(
-					spawns,
-					A3(elm$core$Dict$insert, interval, id, existing),
-					kills);
-			});
-		var _n1 = A6(
-			elm$core$Dict$merge,
-			leftStep,
-			bothStep,
-			rightStep,
-			newTaggers,
-			processes,
-			_Utils_Tuple3(
-				_List_Nil,
-				elm$core$Dict$empty,
-				elm$core$Task$succeed(_Utils_Tuple0)));
-		var spawnList = _n1.a;
-		var existingDict = _n1.b;
-		var killTask = _n1.c;
-		return A2(
-			elm$core$Task$andThen,
-			function (newProcesses) {
-				return elm$core$Task$succeed(
-					A2(elm$time$Time$State, newTaggers, newProcesses));
-			},
-			A2(
-				elm$core$Task$andThen,
-				function (_n2) {
-					return A3(elm$time$Time$spawnHelp, router, spawnList, existingDict);
-				},
-				killTask));
-	});
-var elm$time$Time$onSelfMsg = F3(
-	function (router, interval, state) {
-		var _n0 = A2(elm$core$Dict$get, interval, state.taggers);
-		if (_n0.$ === 'Nothing') {
-			return elm$core$Task$succeed(state);
-		} else {
-			var taggers = _n0.a;
-			var tellTaggers = function (time) {
-				return elm$core$Task$sequence(
-					A2(
-						elm$core$List$map,
-						function (tagger) {
-							return A2(
-								elm$core$Platform$sendToApp,
-								router,
-								tagger(time));
-						},
-						taggers));
-			};
-			return A2(
-				elm$core$Task$andThen,
-				function (_n1) {
-					return elm$core$Task$succeed(state);
-				},
-				A2(elm$core$Task$andThen, tellTaggers, elm$time$Time$now));
-		}
-	});
-var elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var elm$time$Time$subMap = F2(
-	function (f, _n0) {
-		var interval = _n0.a;
-		var tagger = _n0.b;
-		return A2(
-			elm$time$Time$Every,
-			interval,
-			A2(elm$core$Basics$composeL, f, tagger));
-	});
-_Platform_effectManagers['Time'] = _Platform_createManager(elm$time$Time$init, elm$time$Time$onEffects, elm$time$Time$onSelfMsg, 0, elm$time$Time$subMap);
-var elm$time$Time$subscription = _Platform_leaf('Time');
-var elm$time$Time$every = F2(
-	function (interval, tagger) {
-		return elm$time$Time$subscription(
-			A2(elm$time$Time$Every, interval, tagger));
-	});
-var author$project$Page$Writer$subscriptions = function (_n0) {
-	return A2(elm$time$Time$every, 1000, author$project$Page$Writer$SaveTimerTicked);
-};
-var elm$browser$Browser$Events$Window = {$: 'Window'};
-var elm$browser$Browser$Events$MySub = F3(
-	function (a, b, c) {
-		return {$: 'MySub', a: a, b: b, c: c};
-	});
-var elm$browser$Browser$Events$State = F2(
-	function (subs, pids) {
-		return {pids: pids, subs: subs};
-	});
-var elm$browser$Browser$Events$init = elm$core$Task$succeed(
-	A2(elm$browser$Browser$Events$State, _List_Nil, elm$core$Dict$empty));
-var elm$browser$Browser$Events$nodeToKey = function (node) {
-	if (node.$ === 'Document') {
-		return 'd_';
-	} else {
-		return 'w_';
+var author$project$Ports$AuthMsgReceived = {$: 'AuthMsgReceived'};
+var author$project$Ports$AuthStateChanged = {$: 'AuthStateChanged'};
+var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
+var author$project$Ports$DisplayMessageReceived = {$: 'DisplayMessageReceived'};
+var author$project$Ports$SettingsLoaded = {$: 'SettingsLoaded'};
+var author$project$Ports$SettingsSaved = {$: 'SettingsSaved'};
+var author$project$Ports$TargetListReturned = {$: 'TargetListReturned'};
+var author$project$Ports$Unknown = {$: 'Unknown'};
+var author$project$Ports$WordCountLoaded = {$: 'WordCountLoaded'};
+var author$project$Ports$WriterDataSaved = {$: 'WriterDataSaved'};
+var author$project$Ports$stringToInOperation = function (operation) {
+	switch (operation) {
+		case 'ContentLoaded':
+			return author$project$Ports$ContentLoaded;
+		case 'TargetListReturned':
+			return author$project$Ports$TargetListReturned;
+		case 'AuthStateChanged':
+			return author$project$Ports$AuthStateChanged;
+		case 'SettingsLoaded':
+			return author$project$Ports$SettingsLoaded;
+		case 'SettingsSaved':
+			return author$project$Ports$SettingsSaved;
+		case 'DisplayMessageReceived':
+			return author$project$Ports$DisplayMessageReceived;
+		case 'AuthMsgReceived':
+			return author$project$Ports$AuthMsgReceived;
+		case 'WriterDataSaved':
+			return author$project$Ports$WriterDataSaved;
+		case 'WordCountLoaded':
+			return author$project$Ports$WordCountLoaded;
+		default:
+			return author$project$Ports$Unknown;
 	}
 };
-var elm$browser$Browser$Events$addKey = function (sub) {
-	var node = sub.a;
-	var name = sub.b;
-	return _Utils_Tuple2(
-		_Utils_ap(
-			elm$browser$Browser$Events$nodeToKey(node),
-			name),
-		sub);
-};
-var elm$browser$Browser$Events$Event = F2(
-	function (key, event) {
-		return {event: event, key: key};
+var author$project$Main$resolvePortMessage = F2(
+	function (model, msg) {
+		var _n0 = author$project$Ports$stringToInOperation(msg.operation);
+		if (_n0.$ === 'AuthStateChanged') {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
 	});
+var author$project$Session$getKey = function (_n0) {
+	var key = _n0.a.key;
+	return key;
+};
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
 };
@@ -6552,6 +5961,86 @@ var elm$core$Basics$never = function (_n0) {
 		continue never;
 	}
 };
+var elm$core$Task$Perform = function (a) {
+	return {$: 'Perform', a: a};
+};
+var elm$core$Task$succeed = _Scheduler_succeed;
+var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
+var elm$core$Task$andThen = _Scheduler_andThen;
+var elm$core$Task$map = F2(
+	function (func, taskA) {
+		return A2(
+			elm$core$Task$andThen,
+			function (a) {
+				return elm$core$Task$succeed(
+					func(a));
+			},
+			taskA);
+	});
+var elm$core$Task$map2 = F3(
+	function (func, taskA, taskB) {
+		return A2(
+			elm$core$Task$andThen,
+			function (a) {
+				return A2(
+					elm$core$Task$andThen,
+					function (b) {
+						return elm$core$Task$succeed(
+							A2(func, a, b));
+					},
+					taskB);
+			},
+			taskA);
+	});
+var elm$core$Task$sequence = function (tasks) {
+	return A3(
+		elm$core$List$foldr,
+		elm$core$Task$map2(elm$core$List$cons),
+		elm$core$Task$succeed(_List_Nil),
+		tasks);
+};
+var elm$core$Platform$sendToApp = _Platform_sendToApp;
+var elm$core$Task$spawnCmd = F2(
+	function (router, _n0) {
+		var task = _n0.a;
+		return _Scheduler_spawn(
+			A2(
+				elm$core$Task$andThen,
+				elm$core$Platform$sendToApp(router),
+				task));
+	});
+var elm$core$Task$onEffects = F3(
+	function (router, commands, state) {
+		return A2(
+			elm$core$Task$map,
+			function (_n0) {
+				return _Utils_Tuple0;
+			},
+			elm$core$Task$sequence(
+				A2(
+					elm$core$List$map,
+					elm$core$Task$spawnCmd(router),
+					commands)));
+	});
+var elm$core$Task$onSelfMsg = F3(
+	function (_n0, _n1, _n2) {
+		return elm$core$Task$succeed(_Utils_Tuple0);
+	});
+var elm$core$Task$cmdMap = F2(
+	function (tagger, _n0) {
+		var task = _n0.a;
+		return elm$core$Task$Perform(
+			A2(elm$core$Task$map, tagger, task));
+	});
+_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
+var elm$core$Task$command = _Platform_leaf('Task');
+var elm$core$Task$perform = F2(
+	function (toMessage, task) {
+		return elm$core$Task$command(
+			elm$core$Task$Perform(
+				A2(elm$core$Task$map, toMessage, task)));
+	});
+var elm$json$Json$Decode$map2 = _Json_map2;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 'Normal':
@@ -6693,1160 +6182,6 @@ var elm$url$Url$fromString = function (str) {
 		elm$url$Url$Https,
 		A2(elm$core$String$dropLeft, 8, str)) : elm$core$Maybe$Nothing);
 };
-var elm$browser$Browser$Events$spawn = F3(
-	function (router, key, _n0) {
-		var node = _n0.a;
-		var name = _n0.b;
-		var actualNode = function () {
-			if (node.$ === 'Document') {
-				return _Browser_doc;
-			} else {
-				return _Browser_window;
-			}
-		}();
-		return A2(
-			elm$core$Task$map,
-			function (value) {
-				return _Utils_Tuple2(key, value);
-			},
-			A3(
-				_Browser_on,
-				actualNode,
-				name,
-				function (event) {
-					return A2(
-						elm$core$Platform$sendToSelf,
-						router,
-						A2(elm$browser$Browser$Events$Event, key, event));
-				}));
-	});
-var elm$core$Dict$fromList = function (assocs) {
-	return A3(
-		elm$core$List$foldl,
-		F2(
-			function (_n0, dict) {
-				var key = _n0.a;
-				var value = _n0.b;
-				return A3(elm$core$Dict$insert, key, value, dict);
-			}),
-		elm$core$Dict$empty,
-		assocs);
-};
-var elm$core$Dict$union = F2(
-	function (t1, t2) {
-		return A3(elm$core$Dict$foldl, elm$core$Dict$insert, t2, t1);
-	});
-var elm$browser$Browser$Events$onEffects = F3(
-	function (router, subs, state) {
-		var stepRight = F3(
-			function (key, sub, _n6) {
-				var deads = _n6.a;
-				var lives = _n6.b;
-				var news = _n6.c;
-				return _Utils_Tuple3(
-					deads,
-					lives,
-					A2(
-						elm$core$List$cons,
-						A3(elm$browser$Browser$Events$spawn, router, key, sub),
-						news));
-			});
-		var stepLeft = F3(
-			function (_n4, pid, _n5) {
-				var deads = _n5.a;
-				var lives = _n5.b;
-				var news = _n5.c;
-				return _Utils_Tuple3(
-					A2(elm$core$List$cons, pid, deads),
-					lives,
-					news);
-			});
-		var stepBoth = F4(
-			function (key, pid, _n2, _n3) {
-				var deads = _n3.a;
-				var lives = _n3.b;
-				var news = _n3.c;
-				return _Utils_Tuple3(
-					deads,
-					A3(elm$core$Dict$insert, key, pid, lives),
-					news);
-			});
-		var newSubs = A2(elm$core$List$map, elm$browser$Browser$Events$addKey, subs);
-		var _n0 = A6(
-			elm$core$Dict$merge,
-			stepLeft,
-			stepBoth,
-			stepRight,
-			state.pids,
-			elm$core$Dict$fromList(newSubs),
-			_Utils_Tuple3(_List_Nil, elm$core$Dict$empty, _List_Nil));
-		var deadPids = _n0.a;
-		var livePids = _n0.b;
-		var makeNewPids = _n0.c;
-		return A2(
-			elm$core$Task$andThen,
-			function (pids) {
-				return elm$core$Task$succeed(
-					A2(
-						elm$browser$Browser$Events$State,
-						newSubs,
-						A2(
-							elm$core$Dict$union,
-							livePids,
-							elm$core$Dict$fromList(pids))));
-			},
-			A2(
-				elm$core$Task$andThen,
-				function (_n1) {
-					return elm$core$Task$sequence(makeNewPids);
-				},
-				elm$core$Task$sequence(
-					A2(elm$core$List$map, elm$core$Process$kill, deadPids))));
-	});
-var elm$core$List$maybeCons = F3(
-	function (f, mx, xs) {
-		var _n0 = f(mx);
-		if (_n0.$ === 'Just') {
-			var x = _n0.a;
-			return A2(elm$core$List$cons, x, xs);
-		} else {
-			return xs;
-		}
-	});
-var elm$core$List$filterMap = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			elm$core$List$maybeCons(f),
-			_List_Nil,
-			xs);
-	});
-var elm$browser$Browser$Events$onSelfMsg = F3(
-	function (router, _n0, state) {
-		var key = _n0.key;
-		var event = _n0.event;
-		var toMessage = function (_n2) {
-			var subKey = _n2.a;
-			var _n3 = _n2.b;
-			var node = _n3.a;
-			var name = _n3.b;
-			var decoder = _n3.c;
-			return _Utils_eq(subKey, key) ? A2(_Browser_decodeEvent, decoder, event) : elm$core$Maybe$Nothing;
-		};
-		var messages = A2(elm$core$List$filterMap, toMessage, state.subs);
-		return A2(
-			elm$core$Task$andThen,
-			function (_n1) {
-				return elm$core$Task$succeed(state);
-			},
-			elm$core$Task$sequence(
-				A2(
-					elm$core$List$map,
-					elm$core$Platform$sendToApp(router),
-					messages)));
-	});
-var elm$browser$Browser$Events$subMap = F2(
-	function (func, _n0) {
-		var node = _n0.a;
-		var name = _n0.b;
-		var decoder = _n0.c;
-		return A3(
-			elm$browser$Browser$Events$MySub,
-			node,
-			name,
-			A2(elm$json$Json$Decode$map, func, decoder));
-	});
-_Platform_effectManagers['Browser.Events'] = _Platform_createManager(elm$browser$Browser$Events$init, elm$browser$Browser$Events$onEffects, elm$browser$Browser$Events$onSelfMsg, 0, elm$browser$Browser$Events$subMap);
-var elm$browser$Browser$Events$subscription = _Platform_leaf('Browser.Events');
-var elm$browser$Browser$Events$on = F3(
-	function (node, name, decoder) {
-		return elm$browser$Browser$Events$subscription(
-			A3(elm$browser$Browser$Events$MySub, node, name, decoder));
-	});
-var elm$browser$Browser$Events$onResize = function (func) {
-	return A3(
-		elm$browser$Browser$Events$on,
-		elm$browser$Browser$Events$Window,
-		'resize',
-		A2(
-			elm$json$Json$Decode$field,
-			'target',
-			A3(
-				elm$json$Json$Decode$map2,
-				func,
-				A2(elm$json$Json$Decode$field, 'innerWidth', elm$json$Json$Decode$int),
-				A2(elm$json$Json$Decode$field, 'innerHeight', elm$json$Json$Decode$int))));
-};
-var elm$core$Platform$Sub$map = _Platform_map;
-var author$project$Main$subscriptions = function (model) {
-	return function (subs) {
-		return elm$core$Platform$Sub$batch(
-			_List_fromArray(
-				[
-					subs,
-					author$project$Ports$incomingMessage(author$project$Main$PortMessageReceived),
-					A2(elm$time$Time$every, 1000, author$project$Main$TargetTimerTicked),
-					A2(elm$time$Time$every, 1000, author$project$Main$UpdateCurrentTime),
-					elm$browser$Browser$Events$onResize(author$project$Main$WindowResized)
-				]));
-	}(
-		function () {
-			var _n0 = model.page;
-			switch (_n0.$) {
-				case 'NotFound':
-					return elm$core$Platform$Sub$none;
-				case 'Writer':
-					var writerModel = _n0.a;
-					return A2(
-						elm$core$Platform$Sub$map,
-						author$project$Main$GotWriterMsg,
-						author$project$Page$Writer$subscriptions(writerModel));
-				case 'TargetSelector':
-					var targetSelectorModel = _n0.a;
-					return A2(
-						elm$core$Platform$Sub$map,
-						author$project$Main$GotTargetSelectorMsg,
-						author$project$Page$TargetSelector$subscriptions(targetSelectorModel));
-				case 'Authenticator':
-					var authenticatorModel = _n0.a;
-					return A2(
-						elm$core$Platform$Sub$map,
-						author$project$Main$GotAuthenticatorMsg,
-						author$project$Page$Authenticator$subscriptions(authenticatorModel));
-				case 'SignerOuter':
-					return elm$core$Platform$Sub$none;
-				default:
-					var settingsModel = _n0.a;
-					return A2(
-						elm$core$Platform$Sub$map,
-						author$project$Main$GotSettingsMsg,
-						author$project$Page$Settings$subscriptions(settingsModel));
-			}
-		}());
-};
-var author$project$Page$Authenticator$UserPass = {$: 'UserPass'};
-var author$project$DisplayMessage$Auth = {$: 'Auth'};
-var elm$core$Basics$neq = _Utils_notEqual;
-var elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var author$project$Page$Authenticator$clearAuthMessages = function (messages) {
-	return A2(
-		elm$core$List$filter,
-		function (msg) {
-			return !_Utils_eq(msg.source, author$project$DisplayMessage$Auth);
-		},
-		messages);
-};
-var author$project$Page$Authenticator$emailPassEncoder = F2(
-	function (email, pass) {
-		return elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'email',
-					elm$json$Json$Encode$string(email)),
-					_Utils_Tuple2(
-					'pass',
-					elm$json$Json$Encode$string(pass))
-				]));
-	});
-var author$project$Ports$SignIn = {$: 'SignIn'};
-var author$project$Ports$SignUp = {$: 'SignUp'};
-var author$project$Ports$sendMessageWithJustContent = F2(
-	function (operation, content) {
-		return A3(
-			author$project$Ports$sendMessage,
-			operation,
-			elm$core$Maybe$Just(content),
-			elm$core$Maybe$Nothing);
-	});
-var author$project$Page$Authenticator$update = F3(
-	function (msg, model, state) {
-		switch (msg.$) {
-			case 'SignInInputReceived':
-				var inputType = msg.a;
-				var value = msg.b;
-				if (inputType.$ === 'Email') {
-					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(
-							_Utils_update(
-								model,
-								{email: value}),
-							elm$core$Platform$Cmd$none));
-				} else {
-					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(
-							_Utils_update(
-								model,
-								{password: value}),
-							elm$core$Platform$Cmd$none));
-				}
-			case 'SignInButtonClicked':
-				return function (messages) {
-					return _Utils_Tuple2(
-						_Utils_update(
-							state,
-							{messages: messages}),
-						_Utils_Tuple2(
-							model,
-							A2(
-								author$project$Ports$sendMessageWithJustContent,
-								author$project$Ports$SignIn,
-								A2(author$project$Page$Authenticator$emailPassEncoder, model.email, model.password))));
-				}(
-					author$project$Page$Authenticator$clearAuthMessages(state.messages));
-			case 'SignUpButtonClicked':
-				return function (messages) {
-					return _Utils_Tuple2(
-						_Utils_update(
-							state,
-							{messages: messages}),
-						_Utils_Tuple2(
-							{currentSignUpPage: author$project$Page$Authenticator$UserPass, email: '', password: ''},
-							elm$core$Platform$Cmd$none));
-				}(
-					author$project$Page$Authenticator$clearAuthMessages(state.messages));
-			case 'ReturnToSignInButtonClicked':
-				return function (messages) {
-					return _Utils_Tuple2(
-						_Utils_update(
-							state,
-							{messages: messages}),
-						_Utils_Tuple2(
-							{currentSignUpPage: author$project$Page$Authenticator$None, email: '', password: ''},
-							elm$core$Platform$Cmd$none));
-				}(
-					author$project$Page$Authenticator$clearAuthMessages(state.messages));
-			default:
-				return function (messages) {
-					return _Utils_Tuple2(
-						_Utils_update(
-							state,
-							{messages: messages}),
-						_Utils_Tuple2(
-							model,
-							A2(
-								author$project$Ports$sendMessageWithJustContent,
-								author$project$Ports$SignUp,
-								A2(author$project$Page$Authenticator$emailPassEncoder, model.email, model.password))));
-				}(
-					author$project$Page$Authenticator$clearAuthMessages(state.messages));
-		}
-	});
-var author$project$Main$updateAuthenticator = F2(
-	function (msg, model) {
-		var _n0 = model.page;
-		if (_n0.$ === 'Authenticator') {
-			var authenticatorModel = _n0.a;
-			return function (_n1) {
-				var state = _n1.a;
-				var data = _n1.b;
-				return A2(
-					author$project$Main$stepAuthenticator,
-					_Utils_update(
-						model,
-						{state: state}),
-					data);
-			}(
-				A3(author$project$Page$Authenticator$update, msg, authenticatorModel, model.state));
-		} else {
-			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-		}
-	});
-var author$project$Ports$SaveContent = {$: 'SaveContent'};
-var elm$json$Json$Encode$int = _Json_wrap;
-var elm$time$Time$posixToMillis = function (_n0) {
-	var millis = _n0.a;
-	return millis;
-};
-var author$project$State$encodeSaveState = function (state) {
-	return elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'count',
-				elm$json$Json$Encode$int(state.additiveCount)),
-				_Utils_Tuple2(
-				'text',
-				elm$json$Json$Encode$string(state.currentText)),
-				_Utils_Tuple2(
-				'actualCount',
-				elm$json$Json$Encode$int(state.actualCount)),
-				_Utils_Tuple2(
-				'timestamp',
-				elm$json$Json$Encode$int(
-					elm$time$Time$posixToMillis(state.currentTime)))
-			]));
-};
-var author$project$Page$Writer$saveContent = function (state) {
-	return A2(
-		author$project$Ports$sendMessageWithJustContent,
-		author$project$Ports$SaveContent,
-		author$project$State$encodeSaveState(state));
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date = function (a) {
-	return {$: 'Date', a: a};
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day = function (a) {
-	return {$: 'Day', a: a};
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year = function (a) {
-	return {$: 'Year', a: a};
-};
-var elm$time$Time$flooredDiv = F2(
-	function (numerator, denominator) {
-		return elm$core$Basics$floor(numerator / denominator);
-	});
-var elm$time$Time$toAdjustedMinutesHelp = F3(
-	function (defaultOffset, posixMinutes, eras) {
-		toAdjustedMinutesHelp:
-		while (true) {
-			if (!eras.b) {
-				return posixMinutes + defaultOffset;
-			} else {
-				var era = eras.a;
-				var olderEras = eras.b;
-				if (_Utils_cmp(era.start, posixMinutes) < 0) {
-					return posixMinutes + era.offset;
-				} else {
-					var $temp$defaultOffset = defaultOffset,
-						$temp$posixMinutes = posixMinutes,
-						$temp$eras = olderEras;
-					defaultOffset = $temp$defaultOffset;
-					posixMinutes = $temp$posixMinutes;
-					eras = $temp$eras;
-					continue toAdjustedMinutesHelp;
-				}
-			}
-		}
-	});
-var elm$time$Time$toAdjustedMinutes = F2(
-	function (_n0, time) {
-		var defaultOffset = _n0.a;
-		var eras = _n0.b;
-		return A3(
-			elm$time$Time$toAdjustedMinutesHelp,
-			defaultOffset,
-			A2(
-				elm$time$Time$flooredDiv,
-				elm$time$Time$posixToMillis(time),
-				60000),
-			eras);
-	});
-var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var elm$time$Time$toCivil = function (minutes) {
-	var rawDay = A2(elm$time$Time$flooredDiv, minutes, 60 * 24) + 719468;
-	var era = (((rawDay >= 0) ? rawDay : (rawDay - 146096)) / 146097) | 0;
-	var dayOfEra = rawDay - (era * 146097);
-	var yearOfEra = ((((dayOfEra - ((dayOfEra / 1460) | 0)) + ((dayOfEra / 36524) | 0)) - ((dayOfEra / 146096) | 0)) / 365) | 0;
-	var dayOfYear = dayOfEra - (((365 * yearOfEra) + ((yearOfEra / 4) | 0)) - ((yearOfEra / 100) | 0));
-	var mp = (((5 * dayOfYear) + 2) / 153) | 0;
-	var month = mp + ((mp < 10) ? 3 : (-9));
-	var year = yearOfEra + (era * 400);
-	return {
-		day: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
-		month: month,
-		year: year + ((month <= 2) ? 1 : 0)
-	};
-};
-var elm$time$Time$toDay = F2(
-	function (zone, time) {
-		return elm$time$Time$toCivil(
-			A2(elm$time$Time$toAdjustedMinutes, zone, time)).day;
-	});
-var elm$time$Time$Apr = {$: 'Apr'};
-var elm$time$Time$Aug = {$: 'Aug'};
-var elm$time$Time$Dec = {$: 'Dec'};
-var elm$time$Time$Feb = {$: 'Feb'};
-var elm$time$Time$Jan = {$: 'Jan'};
-var elm$time$Time$Jul = {$: 'Jul'};
-var elm$time$Time$Jun = {$: 'Jun'};
-var elm$time$Time$Mar = {$: 'Mar'};
-var elm$time$Time$May = {$: 'May'};
-var elm$time$Time$Nov = {$: 'Nov'};
-var elm$time$Time$Oct = {$: 'Oct'};
-var elm$time$Time$Sep = {$: 'Sep'};
-var elm$time$Time$toMonth = F2(
-	function (zone, time) {
-		var _n0 = elm$time$Time$toCivil(
-			A2(elm$time$Time$toAdjustedMinutes, zone, time)).month;
-		switch (_n0) {
-			case 1:
-				return elm$time$Time$Jan;
-			case 2:
-				return elm$time$Time$Feb;
-			case 3:
-				return elm$time$Time$Mar;
-			case 4:
-				return elm$time$Time$Apr;
-			case 5:
-				return elm$time$Time$May;
-			case 6:
-				return elm$time$Time$Jun;
-			case 7:
-				return elm$time$Time$Jul;
-			case 8:
-				return elm$time$Time$Aug;
-			case 9:
-				return elm$time$Time$Sep;
-			case 10:
-				return elm$time$Time$Oct;
-			case 11:
-				return elm$time$Time$Nov;
-			default:
-				return elm$time$Time$Dec;
-		}
-	});
-var elm$time$Time$toYear = F2(
-	function (zone, time) {
-		return elm$time$Time$toCivil(
-			A2(elm$time$Time$toAdjustedMinutes, zone, time)).year;
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromPosix = function (posix) {
-	return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date(
-		{
-			day: PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(
-				A2(elm$time$Time$toDay, elm$time$Time$utc, posix)),
-			month: A2(elm$time$Time$toMonth, elm$time$Time$utc, posix),
-			year: PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year(
-				A2(elm$time$Time$toYear, elm$time$Time$utc, posix))
-		});
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$fromPosix = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromPosix;
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt = function (_n0) {
-	var day = _n0.a;
-	return day;
-};
-var elm$core$Basics$modBy = _Basics_modBy;
-var elm$core$Basics$not = _Basics_not;
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear = function (_n0) {
-	var _int = _n0.a;
-	return (!A2(elm$core$Basics$modBy, 4, _int)) && ((!A2(elm$core$Basics$modBy, 400, _int)) || (!(!A2(elm$core$Basics$modBy, 100, _int))));
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf = F2(
-	function (year, month) {
-		switch (month.$) {
-			case 'Jan':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Feb':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear(year) ? PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(29) : PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(28);
-			case 'Mar':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Apr':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
-			case 'May':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Jun':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
-			case 'Jul':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Aug':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Sep':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
-			case 'Oct':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-			case 'Nov':
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(30);
-			default:
-				return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(31);
-		}
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayFromInt = F3(
-	function (year, month, day) {
-		var maxValidDay = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(
-			A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf, year, month));
-		return ((day > 0) && (!_Utils_eq(
-			A2(elm$core$Basics$compare, day, maxValidDay),
-			elm$core$Basics$GT))) ? elm$core$Maybe$Just(
-			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Day(day)) : elm$core$Maybe$Nothing;
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$compareDays = F2(
-	function (lhs, rhs) {
-		return A2(
-			elm$core$Basics$compare,
-			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(lhs),
-			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(rhs));
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromYearMonthDay = F3(
-	function (y, m, d) {
-		var maxDay = A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf, y, m);
-		var _n0 = A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$compareDays, d, maxDay);
-		if (_n0.$ === 'GT') {
-			return elm$core$Maybe$Nothing;
-		} else {
-			return elm$core$Maybe$Just(
-				PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Date(
-					{day: d, month: m, year: y}));
-		}
-	});
-var elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (maybeValue.$ === 'Just') {
-			var value = maybeValue.a;
-			return callback(value);
-		} else {
-			return elm$core$Maybe$Nothing;
-		}
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawDay = F3(
-	function (year, month, day) {
-		return A2(
-			elm$core$Maybe$andThen,
-			A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromYearMonthDay, year, month),
-			A3(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayFromInt, year, month, day));
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearFromInt = function (year) {
-	return (year > 0) ? elm$core$Maybe$Just(
-		PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$Year(year)) : elm$core$Maybe$Nothing;
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawParts = function (_n0) {
-	var year = _n0.year;
-	var month = _n0.month;
-	var day = _n0.day;
-	return A2(
-		elm$core$Maybe$andThen,
-		function (y) {
-			return A3(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawDay, y, month, day);
-		},
-		PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearFromInt(year));
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$fromRawParts = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$fromRawParts;
-var elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
-var author$project$DateTimeHelpers$posixToDate = function (_n0) {
-	var zone = _n0.a;
-	var time = _n0.b;
-	return A2(
-		elm$core$Maybe$withDefault,
-		PanagiotisGeorgiadis$elm_datetime$Calendar$fromPosix(time),
-		PanagiotisGeorgiadis$elm_datetime$Calendar$fromRawParts(
-			{
-				day: A2(elm$time$Time$toDay, zone, time),
-				month: A2(elm$time$Time$toMonth, zone, time),
-				year: A2(elm$time$Time$toYear, zone, time)
-			}));
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getDay = function (_n0) {
-	var date = _n0.a;
-	return date.day;
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$getDay = A2(elm$core$Basics$composeL, PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt, PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getDay);
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getMonth = function (_n0) {
-	var month = _n0.a.month;
-	return month;
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$getMonth = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getMonth;
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getYear = function (_n0) {
-	var year = _n0.a.year;
-	return year;
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearToInt = function (_n0) {
-	var year = _n0.a;
-	return year;
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$getYear = A2(elm$core$Basics$composeL, PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearToInt, PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getYear);
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$monthToInt = function (month) {
-	switch (month.$) {
-		case 'Jan':
-			return 1;
-		case 'Feb':
-			return 2;
-		case 'Mar':
-			return 3;
-		case 'Apr':
-			return 4;
-		case 'May':
-			return 5;
-		case 'Jun':
-			return 6;
-		case 'Jul':
-			return 7;
-		case 'Aug':
-			return 8;
-		case 'Sep':
-			return 9;
-		case 'Oct':
-			return 10;
-		case 'Nov':
-			return 11;
-		default:
-			return 12;
-	}
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$monthToInt = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$monthToInt;
-var elm$core$String$cons = _String_cons;
-var elm$core$String$fromChar = function (_char) {
-	return A2(elm$core$String$cons, _char, '');
-};
-var elm$core$Bitwise$and = _Bitwise_and;
-var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
-var elm$core$String$repeatHelp = F3(
-	function (n, chunk, result) {
-		return (n <= 0) ? result : A3(
-			elm$core$String$repeatHelp,
-			n >> 1,
-			_Utils_ap(chunk, chunk),
-			(!(n & 1)) ? result : _Utils_ap(result, chunk));
-	});
-var elm$core$String$repeat = F2(
-	function (n, chunk) {
-		return A3(elm$core$String$repeatHelp, n, chunk, '');
-	});
-var elm$core$String$padLeft = F3(
-	function (n, _char, string) {
-		return _Utils_ap(
-			A2(
-				elm$core$String$repeat,
-				n - elm$core$String$length(string),
-				elm$core$String$fromChar(_char)),
-			string);
-	});
-var author$project$DateTimeHelpers$dateToSortableString = function (date) {
-	return _Utils_ap(
-		elm$core$String$fromInt(
-			PanagiotisGeorgiadis$elm_datetime$Calendar$getYear(date)),
-		_Utils_ap(
-			A3(
-				elm$core$String$padLeft,
-				2,
-				_Utils_chr('0'),
-				elm$core$String$fromInt(
-					PanagiotisGeorgiadis$elm_datetime$Calendar$monthToInt(
-						PanagiotisGeorgiadis$elm_datetime$Calendar$getMonth(date)))),
-			A3(
-				elm$core$String$padLeft,
-				2,
-				_Utils_chr('0'),
-				elm$core$String$fromInt(
-					PanagiotisGeorgiadis$elm_datetime$Calendar$getDay(date)))));
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay = ((1000 * 60) * 60) * 24;
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInYear = function (year) {
-	return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$isLeapYear(year) ? (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay * 366) : (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay * 365);
-};
-var elm$core$List$sum = function (numbers) {
-	return A3(elm$core$List$foldl, elm$core$Basics$add, 0, numbers);
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceEpoch = function (_n0) {
-	var year = _n0.a;
-	var getTotalMillis = A2(
-		elm$core$Basics$composeL,
-		A2(
-			elm$core$Basics$composeL,
-			elm$core$List$sum,
-			elm$core$List$map(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInYear)),
-		elm$core$List$filterMap(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$yearFromInt));
-	var epochYear = 1970;
-	return (year >= 1970) ? getTotalMillis(
-		A2(elm$core$List$range, epochYear, year - 1)) : (-getTotalMillis(
-		A2(elm$core$List$range, year, epochYear - 1)));
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceStartOfTheMonth = function (day) {
-	return PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay * (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(day) - 1);
-};
-var elm$core$Array$fromListHelp = F3(
-	function (list, nodeList, nodeListSize) {
-		fromListHelp:
-		while (true) {
-			var _n0 = A2(elm$core$Elm$JsArray$initializeFromList, elm$core$Array$branchFactor, list);
-			var jsArray = _n0.a;
-			var remainingItems = _n0.b;
-			if (_Utils_cmp(
-				elm$core$Elm$JsArray$length(jsArray),
-				elm$core$Array$branchFactor) < 0) {
-				return A2(
-					elm$core$Array$builderToArray,
-					true,
-					{nodeList: nodeList, nodeListSize: nodeListSize, tail: jsArray});
-			} else {
-				var $temp$list = remainingItems,
-					$temp$nodeList = A2(
-					elm$core$List$cons,
-					elm$core$Array$Leaf(jsArray),
-					nodeList),
-					$temp$nodeListSize = nodeListSize + 1;
-				list = $temp$list;
-				nodeList = $temp$nodeList;
-				nodeListSize = $temp$nodeListSize;
-				continue fromListHelp;
-			}
-		}
-	});
-var elm$core$Array$fromList = function (list) {
-	if (!list.b) {
-		return elm$core$Array$empty;
-	} else {
-		return A3(elm$core$Array$fromListHelp, list, _List_Nil, 0);
-	}
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$months = elm$core$Array$fromList(
-	_List_fromArray(
-		[elm$time$Time$Jan, elm$time$Time$Feb, elm$time$Time$Mar, elm$time$Time$Apr, elm$time$Time$May, elm$time$Time$Jun, elm$time$Time$Jul, elm$time$Time$Aug, elm$time$Time$Sep, elm$time$Time$Oct, elm$time$Time$Nov, elm$time$Time$Dec]));
-var elm$core$Elm$JsArray$appendN = _JsArray_appendN;
-var elm$core$Elm$JsArray$slice = _JsArray_slice;
-var elm$core$Array$appendHelpBuilder = F2(
-	function (tail, builder) {
-		var tailLen = elm$core$Elm$JsArray$length(tail);
-		var notAppended = (elm$core$Array$branchFactor - elm$core$Elm$JsArray$length(builder.tail)) - tailLen;
-		var appended = A3(elm$core$Elm$JsArray$appendN, elm$core$Array$branchFactor, builder.tail, tail);
-		return (notAppended < 0) ? {
-			nodeList: A2(
-				elm$core$List$cons,
-				elm$core$Array$Leaf(appended),
-				builder.nodeList),
-			nodeListSize: builder.nodeListSize + 1,
-			tail: A3(elm$core$Elm$JsArray$slice, notAppended, tailLen, tail)
-		} : ((!notAppended) ? {
-			nodeList: A2(
-				elm$core$List$cons,
-				elm$core$Array$Leaf(appended),
-				builder.nodeList),
-			nodeListSize: builder.nodeListSize + 1,
-			tail: elm$core$Elm$JsArray$empty
-		} : {nodeList: builder.nodeList, nodeListSize: builder.nodeListSize, tail: appended});
-	});
-var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
-var elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
-var elm$core$Array$tailIndex = function (len) {
-	return (len >>> 5) << 5;
-};
-var elm$core$List$drop = F2(
-	function (n, list) {
-		drop:
-		while (true) {
-			if (n <= 0) {
-				return list;
-			} else {
-				if (!list.b) {
-					return list;
-				} else {
-					var x = list.a;
-					var xs = list.b;
-					var $temp$n = n - 1,
-						$temp$list = xs;
-					n = $temp$n;
-					list = $temp$list;
-					continue drop;
-				}
-			}
-		}
-	});
-var elm$core$Array$sliceLeft = F2(
-	function (from, array) {
-		var len = array.a;
-		var tree = array.c;
-		var tail = array.d;
-		if (!from) {
-			return array;
-		} else {
-			if (_Utils_cmp(
-				from,
-				elm$core$Array$tailIndex(len)) > -1) {
-				return A4(
-					elm$core$Array$Array_elm_builtin,
-					len - from,
-					elm$core$Array$shiftStep,
-					elm$core$Elm$JsArray$empty,
-					A3(
-						elm$core$Elm$JsArray$slice,
-						from - elm$core$Array$tailIndex(len),
-						elm$core$Elm$JsArray$length(tail),
-						tail));
-			} else {
-				var skipNodes = (from / elm$core$Array$branchFactor) | 0;
-				var helper = F2(
-					function (node, acc) {
-						if (node.$ === 'SubTree') {
-							var subTree = node.a;
-							return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
-						} else {
-							var leaf = node.a;
-							return A2(elm$core$List$cons, leaf, acc);
-						}
-					});
-				var leafNodes = A3(
-					elm$core$Elm$JsArray$foldr,
-					helper,
-					_List_fromArray(
-						[tail]),
-					tree);
-				var nodesToInsert = A2(elm$core$List$drop, skipNodes, leafNodes);
-				if (!nodesToInsert.b) {
-					return elm$core$Array$empty;
-				} else {
-					var head = nodesToInsert.a;
-					var rest = nodesToInsert.b;
-					var firstSlice = from - (skipNodes * elm$core$Array$branchFactor);
-					var initialBuilder = {
-						nodeList: _List_Nil,
-						nodeListSize: 0,
-						tail: A3(
-							elm$core$Elm$JsArray$slice,
-							firstSlice,
-							elm$core$Elm$JsArray$length(head),
-							head)
-					};
-					return A2(
-						elm$core$Array$builderToArray,
-						true,
-						A3(elm$core$List$foldl, elm$core$Array$appendHelpBuilder, initialBuilder, rest));
-				}
-			}
-		}
-	});
-var elm$core$Array$bitMask = 4294967295 >>> (32 - elm$core$Array$shiftStep);
-var elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
-var elm$core$Array$fetchNewTail = F4(
-	function (shift, end, treeEnd, tree) {
-		fetchNewTail:
-		while (true) {
-			var pos = elm$core$Array$bitMask & (treeEnd >>> shift);
-			var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, pos, tree);
-			if (_n0.$ === 'SubTree') {
-				var sub = _n0.a;
-				var $temp$shift = shift - elm$core$Array$shiftStep,
-					$temp$end = end,
-					$temp$treeEnd = treeEnd,
-					$temp$tree = sub;
-				shift = $temp$shift;
-				end = $temp$end;
-				treeEnd = $temp$treeEnd;
-				tree = $temp$tree;
-				continue fetchNewTail;
-			} else {
-				var values = _n0.a;
-				return A3(elm$core$Elm$JsArray$slice, 0, elm$core$Array$bitMask & end, values);
-			}
-		}
-	});
-var elm$core$Array$hoistTree = F3(
-	function (oldShift, newShift, tree) {
-		hoistTree:
-		while (true) {
-			if ((_Utils_cmp(oldShift, newShift) < 1) || (!elm$core$Elm$JsArray$length(tree))) {
-				return tree;
-			} else {
-				var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, 0, tree);
-				if (_n0.$ === 'SubTree') {
-					var sub = _n0.a;
-					var $temp$oldShift = oldShift - elm$core$Array$shiftStep,
-						$temp$newShift = newShift,
-						$temp$tree = sub;
-					oldShift = $temp$oldShift;
-					newShift = $temp$newShift;
-					tree = $temp$tree;
-					continue hoistTree;
-				} else {
-					return tree;
-				}
-			}
-		}
-	});
-var elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
-var elm$core$Array$sliceTree = F3(
-	function (shift, endIdx, tree) {
-		var lastPos = elm$core$Array$bitMask & (endIdx >>> shift);
-		var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, lastPos, tree);
-		if (_n0.$ === 'SubTree') {
-			var sub = _n0.a;
-			var newSub = A3(elm$core$Array$sliceTree, shift - elm$core$Array$shiftStep, endIdx, sub);
-			return (!elm$core$Elm$JsArray$length(newSub)) ? A3(elm$core$Elm$JsArray$slice, 0, lastPos, tree) : A3(
-				elm$core$Elm$JsArray$unsafeSet,
-				lastPos,
-				elm$core$Array$SubTree(newSub),
-				A3(elm$core$Elm$JsArray$slice, 0, lastPos + 1, tree));
-		} else {
-			return A3(elm$core$Elm$JsArray$slice, 0, lastPos, tree);
-		}
-	});
-var elm$core$Array$sliceRight = F2(
-	function (end, array) {
-		var len = array.a;
-		var startShift = array.b;
-		var tree = array.c;
-		var tail = array.d;
-		if (_Utils_eq(end, len)) {
-			return array;
-		} else {
-			if (_Utils_cmp(
-				end,
-				elm$core$Array$tailIndex(len)) > -1) {
-				return A4(
-					elm$core$Array$Array_elm_builtin,
-					end,
-					startShift,
-					tree,
-					A3(elm$core$Elm$JsArray$slice, 0, elm$core$Array$bitMask & end, tail));
-			} else {
-				var endIdx = elm$core$Array$tailIndex(end);
-				var depth = elm$core$Basics$floor(
-					A2(
-						elm$core$Basics$logBase,
-						elm$core$Array$branchFactor,
-						A2(elm$core$Basics$max, 1, endIdx - 1)));
-				var newShift = A2(elm$core$Basics$max, 5, depth * elm$core$Array$shiftStep);
-				return A4(
-					elm$core$Array$Array_elm_builtin,
-					end,
-					newShift,
-					A3(
-						elm$core$Array$hoistTree,
-						startShift,
-						newShift,
-						A3(elm$core$Array$sliceTree, startShift, endIdx, tree)),
-					A4(elm$core$Array$fetchNewTail, startShift, end, endIdx, tree));
-			}
-		}
-	});
-var elm$core$Array$translateIndex = F2(
-	function (index, _n0) {
-		var len = _n0.a;
-		var posIndex = (index < 0) ? (len + index) : index;
-		return (posIndex < 0) ? 0 : ((_Utils_cmp(posIndex, len) > 0) ? len : posIndex);
-	});
-var elm$core$Array$slice = F3(
-	function (from, to, array) {
-		var correctTo = A2(elm$core$Array$translateIndex, to, array);
-		var correctFrom = A2(elm$core$Array$translateIndex, from, array);
-		return (_Utils_cmp(correctFrom, correctTo) > 0) ? elm$core$Array$empty : A2(
-			elm$core$Array$sliceLeft,
-			correctFrom,
-			A2(elm$core$Array$sliceRight, correctTo, array));
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getPrecedingMonths = function (month) {
-	return elm$core$Array$toList(
-		A3(
-			elm$core$Array$slice,
-			0,
-			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$monthToInt(month) - 1,
-			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$months));
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceStartOfTheYear = F2(
-	function (year, month) {
-		return A3(
-			elm$core$List$foldl,
-			F2(
-				function (m, res) {
-					return res + (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisInADay * PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$dayToInt(
-						A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$lastDayOf, year, m)));
-				}),
-			0,
-			PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$getPrecedingMonths(month));
-	});
-var PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$toMillis = function (_n0) {
-	var year = _n0.a.year;
-	var month = _n0.a.month;
-	var day = _n0.a.day;
-	return (PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceEpoch(year) + A2(PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceStartOfTheYear, year, month)) + PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$millisSinceStartOfTheMonth(day);
-};
-var PanagiotisGeorgiadis$elm_datetime$Calendar$toMillis = PanagiotisGeorgiadis$elm_datetime$Calendar$Internal$toMillis;
-var author$project$Page$Writer$encodeWordCount = F2(
-	function (date, count) {
-		return elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'count',
-					elm$json$Json$Encode$int(count)),
-					_Utils_Tuple2(
-					'date',
-					elm$json$Json$Encode$int(
-						PanagiotisGeorgiadis$elm_datetime$Calendar$toMillis(date)))
-				]));
-	});
-var author$project$Page$Writer$encodeWordcountSave = F3(
-	function (userId, count, date) {
-		return elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'collection',
-					elm$json$Json$Encode$string('users')),
-					_Utils_Tuple2(
-					'doc',
-					elm$json$Json$Encode$string(userId)),
-					_Utils_Tuple2(
-					'subcollection',
-					elm$json$Json$Encode$string('days')),
-					_Utils_Tuple2(
-					'subdoc',
-					elm$json$Json$Encode$string(
-						author$project$DateTimeHelpers$dateToSortableString(date))),
-					_Utils_Tuple2(
-					'data',
-					A2(author$project$Page$Writer$encodeWordCount, date, count))
-				]));
-	});
-var author$project$Ports$SaveToDbSubcollection = {$: 'SaveToDbSubcollection'};
-var author$project$Ports$WriterDataSaved = {$: 'WriterDataSaved'};
-var author$project$Page$Writer$saveToDb = function (state) {
-	var _n0 = state.user;
-	if (_n0.$ === 'Just') {
-		var user = _n0.a;
-		return A3(
-			author$project$Ports$sendMessageWithContentAndResponse,
-			author$project$Ports$SaveToDbSubcollection,
-			A3(
-				author$project$Page$Writer$encodeWordcountSave,
-				user.uid,
-				state.additiveCount,
-				author$project$DateTimeHelpers$posixToDate(
-					_Utils_Tuple2(state.timeZone, state.currentTime))),
-			author$project$Ports$WriterDataSaved);
-	} else {
-		return elm$core$Platform$Cmd$none;
-	}
-};
-var author$project$Page$Writer$updatePageLinkClick = function (state) {
-	return elm$core$Platform$Cmd$batch(
-		_List_fromArray(
-			[
-				author$project$Page$Writer$saveContent(state),
-				author$project$Page$Writer$saveToDb(state)
-			]));
-};
-var author$project$Main$updatePageLinkClick = function (model) {
-	var _n0 = model.page;
-	switch (_n0.$) {
-		case 'Writer':
-			return author$project$Page$Writer$updatePageLinkClick(model.state);
-		case 'TargetSelector':
-			var targetSelectorModel = _n0.a;
-			return elm$core$Platform$Cmd$none;
-		case 'Authenticator':
-			var authenticatorModel = _n0.a;
-			return elm$core$Platform$Cmd$none;
-		case 'SignerOuter':
-			return elm$core$Platform$Cmd$none;
-		case 'Settings':
-			var settingsModel = _n0.a;
-			return elm$core$Platform$Cmd$none;
-		default:
-			return elm$core$Platform$Cmd$none;
-	}
-};
 var elm$browser$Browser$Navigation$load = _Browser_load;
 var elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
 var elm$url$Url$addPort = F2(
@@ -7894,1050 +6229,383 @@ var elm$url$Url$toString = function (url) {
 				url.path)));
 };
 var author$project$Main$updateLinkClick = F2(
-	function (urlRequest, model) {
-		if (urlRequest.$ === 'Internal') {
-			var url = urlRequest.a;
-			return _Utils_Tuple2(
-				model,
-				elm$core$Platform$Cmd$batch(
-					_List_fromArray(
-						[
-							A2(
-							elm$browser$Browser$Navigation$pushUrl,
-							model.state.key,
-							elm$url$Url$toString(url)),
-							author$project$Main$updatePageLinkClick(model)
-						])));
+	function (request, model) {
+		if (request.$ === 'Internal') {
+			var url = request.a;
+			return function (key) {
+				return _Utils_Tuple2(
+					model,
+					A2(
+						elm$browser$Browser$Navigation$pushUrl,
+						key,
+						elm$url$Url$toString(url)));
+			}(
+				author$project$Session$getKey(
+					author$project$Main$toSession(model)));
 		} else {
-			var href = urlRequest.a;
+			var href = request.a;
 			return _Utils_Tuple2(
 				model,
 				elm$browser$Browser$Navigation$load(href));
 		}
 	});
-var author$project$Ports$QueryDbSingle = {$: 'QueryDbSingle'};
-var author$project$Ports$SettingsLoaded = {$: 'SettingsLoaded'};
-var author$project$Main$loadSettings = function (user) {
-	if (user.$ === 'Just') {
-		var user_ = user.a;
-		return A3(
-			author$project$Ports$sendMessageWithContentAndResponse,
-			author$project$Ports$QueryDbSingle,
-			elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'collection',
-						elm$json$Json$Encode$string('users')),
-						_Utils_Tuple2(
-						'doc',
-						elm$json$Json$Encode$string(user_.uid))
-					])),
-			author$project$Ports$SettingsLoaded);
-	} else {
-		return elm$core$Platform$Cmd$none;
-	}
+var author$project$Credentials$Credentials = function (a) {
+	return {$: 'Credentials', a: a};
 };
-var author$project$DisplayMessage$Internal = {$: 'Internal'};
-var author$project$DisplayMessage$NoMessage = {$: 'NoMessage'};
-var author$project$DisplayMessage$Warning = {$: 'Warning'};
-var author$project$DisplayMessage$ParseError = {$: 'ParseError'};
-var author$project$DisplayMessage$Message = F4(
-	function (body, severity, source, code) {
-		return {body: body, code: code, severity: severity, source: source};
+var author$project$Credentials$create = F2(
+	function (email, pass) {
+		return author$project$Credentials$Credentials(
+			{email: email, password: pass});
 	});
-var author$project$DisplayMessage$BadPass = {$: 'BadPass'};
-var author$project$DisplayMessage$BadUser = {$: 'BadUser'};
-var author$project$DisplayMessage$EmailAlreadyInUse = {$: 'EmailAlreadyInUse'};
-var author$project$DisplayMessage$InvalidEmail = {$: 'InvalidEmail'};
-var author$project$DisplayMessage$Unknown = {$: 'Unknown'};
-var author$project$DisplayMessage$WeakPassword = {$: 'WeakPassword'};
-var author$project$DisplayMessage$codeFromString = function (code) {
-	switch (code) {
-		case 'bad-user':
-			return author$project$DisplayMessage$BadUser;
-		case 'bad-pass':
-			return author$project$DisplayMessage$BadPass;
-		case 'invalid-email':
-			return author$project$DisplayMessage$InvalidEmail;
-		case 'weak-password':
-			return author$project$DisplayMessage$WeakPassword;
-		case 'email-already-in-use':
-			return author$project$DisplayMessage$EmailAlreadyInUse;
-		default:
-			return author$project$DisplayMessage$Unknown;
-	}
+var elm$json$Json$Encode$string = _Json_wrap;
+var author$project$Email$encode = function (_n0) {
+	var email = _n0.a;
+	return elm$json$Json$Encode$string(email);
 };
-var author$project$DisplayMessage$codeDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (code) {
-		return elm$json$Json$Decode$succeed(
-			author$project$DisplayMessage$codeFromString(code));
-	},
-	elm$json$Json$Decode$string);
-var author$project$DisplayMessage$Error = {$: 'Error'};
-var author$project$DisplayMessage$Info = {$: 'Info'};
-var author$project$DisplayMessage$severityFromString = function (severity) {
-	switch (severity) {
-		case 'error':
-			return author$project$DisplayMessage$Error;
-		case 'warning':
-			return author$project$DisplayMessage$Warning;
-		default:
-			return author$project$DisplayMessage$Info;
-	}
+var author$project$Password$encode = function (_n0) {
+	var pass = _n0.a;
+	return elm$json$Json$Encode$string(pass);
 };
-var author$project$DisplayMessage$severityDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (severity) {
-		return elm$json$Json$Decode$succeed(
-			author$project$DisplayMessage$severityFromString(severity));
-	},
-	elm$json$Json$Decode$string);
-var author$project$DisplayMessage$Db = {$: 'Db'};
-var author$project$DisplayMessage$sourceFromString = function (source) {
-	switch (source) {
-		case 'db':
-			return author$project$DisplayMessage$Db;
-		case 'auth':
-			return author$project$DisplayMessage$Auth;
-		default:
-			return author$project$DisplayMessage$Internal;
-	}
-};
-var author$project$DisplayMessage$sourceDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (source) {
-		return elm$json$Json$Decode$succeed(
-			author$project$DisplayMessage$sourceFromString(source));
-	},
-	elm$json$Json$Decode$string);
-var author$project$DisplayMessage$messageDecoder = A3(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'code',
-	author$project$DisplayMessage$codeDecoder,
-	A3(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'source',
-		author$project$DisplayMessage$sourceDecoder,
+var elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
 		A3(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-			'severity',
-			author$project$DisplayMessage$severityDecoder,
-			A3(
-				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-				'body',
-				elm$json$Json$Decode$string,
-				elm$json$Json$Decode$succeed(author$project$DisplayMessage$Message)))));
-var author$project$DisplayMessage$decodeDisplayMessage = function (message) {
-	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$DisplayMessage$messageDecoder, message);
-	if (_n0.$ === 'Ok') {
-		var message_ = _n0.a;
-		return message_;
-	} else {
-		return {body: 'Error parsing messages to display', code: author$project$DisplayMessage$ParseError, severity: author$project$DisplayMessage$Warning, source: author$project$DisplayMessage$Internal};
-	}
+			elm$core$List$foldl,
+			F2(
+				function (_n0, obj) {
+					var k = _n0.a;
+					var v = _n0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
 };
-var author$project$Main$parseMessages = F2(
-	function (newMessage, oldMessages) {
-		if (newMessage.$ === 'Just') {
-			var message = newMessage.a;
-			return _Utils_ap(
-				oldMessages,
-				_List_fromArray(
-					[
-						author$project$DisplayMessage$decodeDisplayMessage(message)
-					]));
-		} else {
-			return _Utils_ap(
-				oldMessages,
-				_List_fromArray(
-					[
-						{body: 'I was told to display a message, but no message was given.', code: author$project$DisplayMessage$NoMessage, severity: author$project$DisplayMessage$Warning, source: author$project$DisplayMessage$Internal}
-					]));
-		}
-	});
-var elm$json$Json$Decode$fail = _Json_fail;
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder = F3(
-	function (pathDecoder, valDecoder, fallback) {
-		var nullOr = function (decoder) {
-			return elm$json$Json$Decode$oneOf(
-				_List_fromArray(
-					[
-						decoder,
-						elm$json$Json$Decode$null(fallback)
-					]));
-		};
-		var handleResult = function (input) {
-			var _n0 = A2(elm$json$Json$Decode$decodeValue, pathDecoder, input);
-			if (_n0.$ === 'Ok') {
-				var rawValue = _n0.a;
-				var _n1 = A2(
-					elm$json$Json$Decode$decodeValue,
-					nullOr(valDecoder),
-					rawValue);
-				if (_n1.$ === 'Ok') {
-					var finalResult = _n1.a;
-					return elm$json$Json$Decode$succeed(finalResult);
-				} else {
-					var finalErr = _n1.a;
-					return elm$json$Json$Decode$fail(
-						elm$json$Json$Decode$errorToString(finalErr));
-				}
-			} else {
-				return elm$json$Json$Decode$succeed(fallback);
-			}
-		};
-		return A2(elm$json$Json$Decode$andThen, handleResult, elm$json$Json$Decode$value);
-	});
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional = F4(
-	function (key, valDecoder, fallback, decoder) {
-		return A2(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
-			A3(
-				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder,
-				A2(elm$json$Json$Decode$field, key, elm$json$Json$Decode$value),
-				valDecoder,
-				fallback),
-			decoder);
-	});
-var author$project$State$Settings = F2(
-	function (displayName, countMethod) {
-		return {countMethod: countMethod, displayName: displayName};
-	});
-var author$project$State$Subtractive = {$: 'Subtractive'};
-var author$project$State$methodDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (str) {
-		switch (str) {
-			case 'additive':
-				return elm$json$Json$Decode$succeed(author$project$State$Additive);
-			case 'subtractive':
-				return elm$json$Json$Decode$succeed(author$project$State$Subtractive);
-			default:
-				var wrongValue = str;
-				return elm$json$Json$Decode$fail('Count method decoding failed. Value: ' + wrongValue);
-		}
-	},
-	elm$json$Json$Decode$string);
-var author$project$State$settingsDecoder = A4(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
-	'countMethod',
-	author$project$State$methodDecoder,
-	author$project$State$defaultSettings.countMethod,
-	A4(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
-		'displayName',
-		elm$json$Json$Decode$string,
-		author$project$State$defaultSettings.displayName,
-		elm$json$Json$Decode$succeed(author$project$State$Settings)));
-var author$project$State$decodeSettings = function (value) {
-	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$settingsDecoder, value);
-	if (_n0.$ === 'Ok') {
-		var settings = _n0.a;
-		return settings;
-	} else {
-		return author$project$State$defaultSettings;
-	}
-};
-var author$project$Main$updateNewSettings = F2(
-	function (value, model) {
-		if (value.$ === 'Just') {
-			var settings = value.a;
-			return function (state) {
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{state: state}),
-					elm$core$Platform$Cmd$none);
-			}(
-				function (state) {
-					return _Utils_update(
-						state,
-						{
-							settings: author$project$State$decodeSettings(settings)
-						});
-				}(model.state));
-		} else {
-			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-		}
-	});
-var author$project$Main$getLocalDateString = function (timeStamp) {
-	return author$project$DateTimeHelpers$dateToSortableString(
-		author$project$DateTimeHelpers$posixToDate(timeStamp));
-};
-var author$project$Ports$QueryDbSingleSubCollection = {$: 'QueryDbSingleSubCollection'};
-var author$project$Ports$WordCountLoaded = {$: 'WordCountLoaded'};
-var author$project$Main$loadWordCountForToday = F2(
-	function (user, timeStamp) {
-		if (user.$ === 'Just') {
-			var user_ = user.a;
-			return A3(
-				author$project$Ports$sendMessageWithContentAndResponse,
-				author$project$Ports$QueryDbSingleSubCollection,
-				elm$json$Json$Encode$object(
-					_List_fromArray(
-						[
-							_Utils_Tuple2(
-							'collection',
-							elm$json$Json$Encode$string('users')),
-							_Utils_Tuple2(
-							'doc',
-							elm$json$Json$Encode$string(user_.uid)),
-							_Utils_Tuple2(
-							'subcollection',
-							elm$json$Json$Encode$string('days')),
-							_Utils_Tuple2(
-							'subdoc',
-							elm$json$Json$Encode$string(
-								author$project$Main$getLocalDateString(timeStamp)))
-						])),
-				author$project$Ports$WordCountLoaded);
-		} else {
-			return elm$core$Platform$Cmd$none;
-		}
-	});
-var author$project$Main$pageToReturnPage = function (page) {
-	switch (page.$) {
-		case 'TargetSelector':
-			return author$project$Main$ToTargetSelector;
-		case 'Settings':
-			return author$project$Main$ToSettings;
-		case 'Writer':
-			return author$project$Main$ToWriter;
-		case 'Authenticator':
-			return author$project$Main$ToWriter;
-		case 'SignerOuter':
-			return author$project$Main$ToWriter;
-		default:
-			return author$project$Main$ToWriter;
-	}
-};
-var author$project$Main$returnPageToUrlString = function (page) {
-	switch (page.$) {
-		case 'ToTargetSelector':
-			return 'target';
-		case 'ToSettings':
-			return 'settings';
-		default:
-			return '';
-	}
-};
-var author$project$State$User = F2(
-	function (email, uid) {
-		return {email: email, uid: uid};
-	});
-var author$project$State$userDecoder = A3(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'uid',
-	elm$json$Json$Decode$string,
-	A3(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'email',
-		elm$json$Json$Decode$string,
-		elm$json$Json$Decode$succeed(author$project$State$User)));
-var author$project$State$decodeUser = function (value) {
-	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$State$userDecoder, value);
-	if (_n0.$ === 'Ok') {
-		var user = _n0.a;
-		return elm$core$Maybe$Just(user);
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
-var elm$url$Url$Builder$toQueryPair = function (_n0) {
-	var key = _n0.a;
-	var value = _n0.b;
-	return key + ('=' + value);
-};
-var elm$url$Url$Builder$toQuery = function (parameters) {
-	if (!parameters.b) {
-		return '';
-	} else {
-		return '?' + A2(
-			elm$core$String$join,
-			'&',
-			A2(elm$core$List$map, elm$url$Url$Builder$toQueryPair, parameters));
-	}
-};
-var elm$url$Url$Builder$absolute = F2(
-	function (pathSegments, parameters) {
-		return '/' + (A2(elm$core$String$join, '/', pathSegments) + elm$url$Url$Builder$toQuery(parameters));
-	});
-var author$project$Main$updateUser = F2(
-	function (value, model) {
-		if (value.$ === 'Nothing') {
-			return function (state) {
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							returnPage: author$project$Main$pageToReturnPage(model.page),
-							state: state
-						}),
-					A2(
-						elm$browser$Browser$Navigation$pushUrl,
-						model.state.key,
-						A2(
-							elm$url$Url$Builder$absolute,
-							_List_fromArray(
-								['signin']),
-							_List_Nil)));
-			}(
-				function (state) {
-					return _Utils_update(
-						state,
-						{user: elm$core$Maybe$Nothing});
-				}(model.state));
-		} else {
-			var user = value.a;
-			return function (state) {
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{state: state}),
-					elm$core$Platform$Cmd$batch(
-						_List_fromArray(
-							[
-								A2(
-								elm$browser$Browser$Navigation$pushUrl,
-								model.state.key,
-								A2(
-									elm$url$Url$Builder$absolute,
-									_List_fromArray(
-										[
-											author$project$Main$returnPageToUrlString(model.returnPage)
-										]),
-									_List_Nil)),
-								author$project$Main$loadSettings(state.user),
-								A2(
-								author$project$Main$loadWordCountForToday,
-								state.user,
-								_Utils_Tuple2(state.timeZone, state.currentTime))
-							])));
-			}(
-				function (state) {
-					return _Utils_update(
-						state,
-						{
-							user: author$project$State$decodeUser(user)
-						});
-				}(model.state));
-		}
-	});
-var author$project$Ports$AuthStateChanged = {$: 'AuthStateChanged'};
-var author$project$Ports$DisplayMessageReceived = {$: 'DisplayMessageReceived'};
-var author$project$Ports$SettingsSaved = {$: 'SettingsSaved'};
-var author$project$Ports$Unknown = {$: 'Unknown'};
-var author$project$Ports$stringToInOperation = function (operation) {
-	switch (operation) {
-		case 'ContentLoaded':
-			return author$project$Ports$ContentLoaded;
-		case 'TargetListReturned':
-			return author$project$Ports$TargetListReturned;
-		case 'AuthStateChanged':
-			return author$project$Ports$AuthStateChanged;
-		case 'SettingsLoaded':
-			return author$project$Ports$SettingsLoaded;
-		case 'SettingsSaved':
-			return author$project$Ports$SettingsSaved;
-		case 'DisplayMessageReceived':
-			return author$project$Ports$DisplayMessageReceived;
-		case 'WriterDataSaved':
-			return author$project$Ports$WriterDataSaved;
-		case 'WordCountLoaded':
-			return author$project$Ports$WordCountLoaded;
-		default:
-			return author$project$Ports$Unknown;
-	}
-};
-var author$project$State$actualCountDecoder = A2(elm$json$Json$Decode$field, 'actualCount', elm$json$Json$Decode$int);
-var author$project$State$getValue = F3(
-	function (decoder, string, errorVal) {
-		var _n0 = A2(elm$json$Json$Decode$decodeValue, decoder, string);
-		if (_n0.$ === 'Err') {
-			return errorVal;
-		} else {
-			var value = _n0.a;
-			return value;
-		}
-	});
-var author$project$State$textDecoder = A2(elm$json$Json$Decode$field, 'text', elm$json$Json$Decode$string);
-var author$project$State$wordCountDecoder = A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int);
-var author$project$State$decodeLoadedState = F2(
-	function (content, state) {
-		if (content.$ === 'Just') {
-			var data = content.a;
-			return _Utils_update(
-				state,
-				{
-					actualCount: A3(author$project$State$getValue, author$project$State$actualCountDecoder, data, 0),
-					additiveCount: A3(author$project$State$getValue, author$project$State$wordCountDecoder, data, 0),
-					currentText: A3(author$project$State$getValue, author$project$State$textDecoder, data, '')
-				});
-		} else {
-			return state;
-		}
-	});
-var author$project$Main$updateMessageReceived = F2(
-	function (message, model) {
-		var _n0 = author$project$Ports$stringToInOperation(message.operation);
-		switch (_n0.$) {
-			case 'ContentLoaded':
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							state: A2(author$project$State$decodeLoadedState, message.content, model.state)
-						}),
-					elm$core$Platform$Cmd$none);
-			case 'AuthStateChanged':
-				return A2(author$project$Main$updateUser, message.content, model);
-			case 'SettingsLoaded':
-				return A2(author$project$Main$updateNewSettings, message.content, model);
-			case 'SettingsSaved':
-				return _Utils_Tuple2(
-					model,
-					author$project$Main$loadSettings(model.state.user));
-			case 'DisplayMessageReceived':
-				return function (state) {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{state: state}),
-						elm$core$Platform$Cmd$none);
-				}(
-					function (state) {
-						return _Utils_update(
-							state,
-							{
-								messages: A2(author$project$Main$parseMessages, message.content, state.messages)
-							});
-					}(model.state));
-			default:
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-		}
-	});
-var author$project$Page$Settings$countMethodFromBool = function (bool) {
-	return bool ? author$project$State$Additive : author$project$State$Subtractive;
-};
-var author$project$State$methodEncoder = function (method) {
-	if (method.$ === 'Additive') {
-		return elm$json$Json$Encode$string('additive');
-	} else {
-		return elm$json$Json$Encode$string('subtractive');
-	}
-};
-var elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return elm$core$Maybe$Nothing;
-		}
-	});
-var author$project$Page$Settings$encodeSettings = function (model) {
-	var liftMaybe = function (_n0) {
-		var first = _n0.a;
-		var second = _n0.b;
-		return A2(
-			elm$core$Maybe$map,
-			function (second_) {
-				return _Utils_Tuple2(first, second_);
-			},
-			second);
-	};
-	var encodeField = F2(
-		function (selector, encoder) {
-			return A2(
-				elm$core$Maybe$map,
-				encoder,
-				selector(model));
-		});
-	var fields = _List_fromArray(
-		[
-			_Utils_Tuple2(
-			'displayName',
-			A2(
-				encodeField,
-				function ($) {
-					return $.displayName;
-				},
-				elm$json$Json$Encode$string)),
-			_Utils_Tuple2(
-			'countMethod',
-			A2(
-				encodeField,
-				function ($) {
-					return $.countMethod;
-				},
-				author$project$State$methodEncoder))
-		]);
+var author$project$Credentials$encode = function (_n0) {
+	var creds = _n0.a;
 	return elm$json$Json$Encode$object(
-		A2(elm$core$List$filterMap, liftMaybe, fields));
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'email',
+				author$project$Email$encode(creds.email)),
+				_Utils_Tuple2(
+				'pass',
+				author$project$Password$encode(creds.password))
+			]));
 };
-var author$project$Page$Settings$encodeSave = F2(
-	function (userId, model) {
+var author$project$Email$Email = function (a) {
+	return {$: 'Email', a: a};
+};
+var author$project$Email$create = function (email) {
+	return author$project$Email$Email(email);
+};
+var author$project$ValidationMessage$decode = function (message) {
+	return author$project$ValidationMessage$ValidationMessage(
+		A2(
+			elm$core$Result$withDefault,
+			'Could not decode validation message.',
+			A2(elm$json$Json$Decode$decodeValue, elm$json$Json$Decode$string, message)));
+};
+var author$project$Page$SignIn$addValidationMessage = F2(
+	function (message, model) {
+		if (message.$ === 'Just') {
+			var msg = message.a;
+			return function (decoded) {
+				return _Utils_update(
+					model,
+					{validationMessage: decoded});
+			}(
+				author$project$ValidationMessage$decode(msg));
+		} else {
+			return model;
+		}
+	});
+var author$project$Password$Password = function (a) {
+	return {$: 'Password', a: a};
+};
+var author$project$Password$create = function (pass) {
+	return author$project$Password$Password(pass);
+};
+var author$project$Ports$SignIn = {$: 'SignIn'};
+var author$project$Ports$inOperationToString = function (operation) {
+	switch (operation.$) {
+		case 'ContentLoaded':
+			return 'ContentLoaded';
+		case 'Unknown':
+			return 'Unknown';
+		case 'TargetListReturned':
+			return 'TargetListReturned';
+		case 'AuthStateChanged':
+			return 'AuthStateChanged';
+		case 'SettingsLoaded':
+			return 'SettingsLoaded';
+		case 'SettingsSaved':
+			return 'SettingsSaved';
+		case 'DisplayMessageReceived':
+			return 'DisplayMessageReceived';
+		case 'AuthMsgReceived':
+			return 'AuthMsgReceived';
+		case 'WriterDataSaved':
+			return 'WriterDataSaved';
+		default:
+			return 'WordCountLoaded';
+	}
+};
+var author$project$Ports$outOperationToString = function (operation) {
+	switch (operation.$) {
+		case 'SaveContent':
+			return 'SaveContent';
+		case 'LoadContent':
+			return 'LoadContent';
+		case 'QueryDbMultiple':
+			return 'QueryDbMultiple';
+		case 'QueryDbSingle':
+			return 'QueryDbSingle';
+		case 'QueryDbSingleSubCollection':
+			return 'QueryDbSingleSubCollection';
+		case 'SignIn':
+			return 'SignIn';
+		case 'SignOut':
+			return 'SignOut';
+		case 'SignUp':
+			return 'SignUp';
+		case 'SaveToDbCollection':
+			return 'SaveToDbCollection';
+		default:
+			return 'SaveToDbSubcollection';
+	}
+};
+var elm$core$Maybe$destruct = F3(
+	function (_default, func, maybe) {
+		if (maybe.$ === 'Just') {
+			var a = maybe.a;
+			return func(a);
+		} else {
+			return _default;
+		}
+	});
+var elm$json$Json$Encode$null = _Json_encodeNull;
+var author$project$Ports$outgoingMessage = _Platform_outgoingPort(
+	'outgoingMessage',
+	function ($) {
 		return elm$json$Json$Encode$object(
 			_List_fromArray(
 				[
 					_Utils_Tuple2(
-					'collection',
-					elm$json$Json$Encode$string('users')),
+					'content',
+					function ($) {
+						return A3(elm$core$Maybe$destruct, elm$json$Json$Encode$null, elm$core$Basics$identity, $);
+					}($.content)),
 					_Utils_Tuple2(
-					'doc',
-					elm$json$Json$Encode$string(userId)),
+					'operation',
+					elm$json$Json$Encode$string($.operation)),
 					_Utils_Tuple2(
-					'data',
-					author$project$Page$Settings$encodeSettings(model))
+					'returnOperation',
+					function ($) {
+						return A3(elm$core$Maybe$destruct, elm$json$Json$Encode$null, elm$json$Json$Encode$string, $);
+					}($.returnOperation))
 				]));
 	});
-var author$project$Ports$SaveToDbCollection = {$: 'SaveToDbCollection'};
-var author$project$Page$Settings$update = F3(
-	function (msg, model, state) {
-		switch (msg.$) {
-			case 'DisplayNameInputRecived':
-				var text = msg.a;
-				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(
-						_Utils_update(
-							model,
-							{
-								displayName: elm$core$Maybe$Just(text)
-							}),
-						elm$core$Platform$Cmd$none));
-			case 'CountMethodChanged':
-				var checked = msg.a;
-				return function (method) {
-					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(
-							_Utils_update(
-								model,
-								{
-									countMethod: elm$core$Maybe$Just(method)
-								}),
-							elm$core$Platform$Cmd$none));
-				}(
-					author$project$Page$Settings$countMethodFromBool(checked));
-			default:
-				var _n1 = state.user;
-				if (_n1.$ === 'Just') {
-					var user = _n1.a;
-					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(
-							model,
-							A3(
-								author$project$Ports$sendMessageWithContentAndResponse,
-								author$project$Ports$SaveToDbCollection,
-								A2(author$project$Page$Settings$encodeSave, user.uid, model),
-								author$project$Ports$SettingsSaved)));
-				} else {
-					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-				}
-		}
-	});
-var author$project$Main$updateSettings = F2(
-	function (msg, model) {
-		var _n0 = model.page;
-		if (_n0.$ === 'Settings') {
-			var settingsModel = _n0.a;
-			return function (_n1) {
-				var state = _n1.a;
-				var data = _n1.b;
-				return A2(
-					author$project$Main$stepSettings,
-					_Utils_update(
-						model,
-						{state: state}),
-					data);
-			}(
-				A3(author$project$Page$Settings$update, msg, settingsModel, model.state));
-		} else {
-			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-		}
-	});
-var author$project$Main$updateSignerOuter = F2(
-	function (msg, model) {
-		return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-	});
-var author$project$Data$Target$Target = F6(
-	function (name, imgSource, portraitSource, count, minutes, _new) {
-		return {count: count, imgSource: imgSource, minutes: minutes, name: name, _new: _new, portraitSource: portraitSource};
-	});
-var elm$json$Json$Decode$map6 = _Json_map6;
-var author$project$Page$TargetSelector$targetDecoder = A7(
-	elm$json$Json$Decode$map6,
-	author$project$Data$Target$Target,
-	A2(elm$json$Json$Decode$field, 'name', elm$json$Json$Decode$string),
-	A2(elm$json$Json$Decode$field, 'imgSource', elm$json$Json$Decode$string),
-	A2(elm$json$Json$Decode$field, 'portraitSource', elm$json$Json$Decode$string),
-	A2(elm$json$Json$Decode$field, 'count', elm$json$Json$Decode$int),
-	A2(elm$json$Json$Decode$field, 'minutes', elm$json$Json$Decode$int),
-	elm$json$Json$Decode$succeed(true));
-var elm$json$Json$Decode$list = _Json_decodeList;
-var author$project$Page$TargetSelector$decodeTargets = function (targetsValue) {
-	var _n0 = A2(
-		elm$json$Json$Decode$decodeValue,
-		elm$json$Json$Decode$list(author$project$Page$TargetSelector$targetDecoder),
-		targetsValue);
-	if (_n0.$ === 'Ok') {
-		var targets = _n0.a;
-		return A3(
-			elm$core$List$foldl,
-			function (target) {
-				return A2(elm$core$Dict$insert, target.name, target);
-			},
-			elm$core$Dict$empty,
-			targets);
-	} else {
-		return elm$core$Dict$empty;
-	}
-};
-var author$project$Page$TargetSelector$update = F3(
-	function (msg, model, state) {
-		if (msg.$ === 'TargetButtonClicked') {
-			var target = msg.a;
-			return _Utils_Tuple2(
-				_Utils_update(
-					state,
-					{
-						currentTarget: elm$core$Maybe$Just(target)
-					}),
-				_Utils_Tuple2(
-					model,
-					A2(
-						elm$browser$Browser$Navigation$pushUrl,
-						state.key,
-						A2(elm$url$Url$Builder$absolute, _List_Nil, _List_Nil))));
-		} else {
-			var message = msg.a;
-			var _n1 = author$project$Ports$stringToInOperation(message.operation);
-			if (_n1.$ === 'TargetListReturned') {
-				var _n2 = message.content;
-				if (_n2.$ === 'Just') {
-					var content = _n2.a;
-					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(
-							_Utils_update(
-								model,
-								{
-									targets: author$project$Page$TargetSelector$decodeTargets(content)
-								}),
-							elm$core$Platform$Cmd$none));
-				} else {
-					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-				}
-			} else {
-				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
-			}
-		}
-	});
-var author$project$Main$updateTargetSelector = F2(
-	function (msg, model) {
-		var _n0 = model.page;
-		if (_n0.$ === 'TargetSelector') {
-			var targetSelectorModel = _n0.a;
-			return function (_n1) {
-				var state = _n1.a;
-				var data = _n1.b;
-				return A2(
-					author$project$Main$stepTargetSelector,
-					_Utils_update(
-						model,
-						{state: state}),
-					data);
-			}(
-				A3(author$project$Page$TargetSelector$update, msg, targetSelectorModel, model.state));
-		} else {
-			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-		}
-	});
-var author$project$State$TimeExpired = {$: 'TimeExpired'};
-var author$project$State$WordsReached = {$: 'WordsReached'};
-var author$project$Main$updateTargetTimer = function (state) {
-	var _n0 = state.currentTarget;
-	if (_n0.$ === 'Nothing') {
-		return state;
-	} else {
-		var target = _n0.a;
-		return target._new ? _Utils_update(
-			state,
+var author$project$Ports$sendMessage = F3(
+	function (operation, content, returnOperation) {
+		return author$project$Ports$outgoingMessage(
 			{
-				currentTarget: elm$core$Maybe$Just(
-					_Utils_update(
-						target,
-						{_new: false})),
-				currentTargetTimerInSecs: target.minutes * 60,
-				ended: author$project$State$No,
-				winProgress: 0
-			}) : (((state.currentTargetTimerInSecs <= 0) && (!_Utils_eq(state.ended, author$project$State$WordsReached))) ? _Utils_update(
-			state,
-			{ended: author$project$State$TimeExpired}) : ((_Utils_cmp(state.winProgress, target.count) > -1) ? _Utils_update(
-			state,
-			{ended: author$project$State$WordsReached}) : _Utils_update(
-			state,
-			{currentTargetTimerInSecs: state.currentTargetTimerInSecs - 1})));
-	}
-};
-var author$project$Page$Writer$saveContentIfNeeded = F2(
-	function (model, state) {
-		return model.needsLocalSave ? _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{needsLocalSave: false}),
-			author$project$Page$Writer$saveContent(state)) : _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				content: content,
+				operation: author$project$Ports$outOperationToString(operation),
+				returnOperation: function () {
+					if (returnOperation.$ === 'Just') {
+						var op = returnOperation.a;
+						return elm$core$Maybe$Just(
+							author$project$Ports$inOperationToString(op));
+					} else {
+						return elm$core$Maybe$Nothing;
+					}
+				}()
+			});
 	});
-var author$project$Page$Writer$saveToDbIfNeeded = F2(
-	function (model, state) {
-		return (model.needsDbSave && ((elm$time$Time$posixToMillis(state.currentTime) - elm$time$Time$posixToMillis(model.timeSinceLastTouch)) > 5000)) ? _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{needsDbSave: false}),
-			author$project$Page$Writer$saveToDb(state)) : _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+var author$project$Ports$sendMessageWithJustContent = F2(
+	function (operation, content) {
+		return A3(
+			author$project$Ports$sendMessage,
+			operation,
+			elm$core$Maybe$Just(content),
+			elm$core$Maybe$Nothing);
 	});
-var author$project$Page$Writer$calculateProgress = F2(
-	function (state, dif) {
-		var _n0 = state.currentTarget;
-		if (_n0.$ === 'Just') {
-			var target = _n0.a;
-			return ((dif > 0) && _Utils_eq(state.ended, author$project$State$No)) ? ((_Utils_cmp(state.winProgress + dif, target.count) > -1) ? target.count : (state.winProgress + dif)) : state.winProgress;
-		} else {
-			return -1;
-		}
-	});
-var elm$core$String$any = _String_any;
-var elm$core$String$replace = F3(
-	function (before, after, string) {
-		return A2(
-			elm$core$String$join,
-			after,
-			A2(elm$core$String$split, before, string));
-	});
-var elm$core$String$words = _String_words;
-var author$project$Page$Writer$countWords = function (document) {
-	return elm$core$List$length(
-		A2(
-			elm$core$List$filter,
-			elm$core$String$any(elm$core$Char$isAlphaNum),
-			elm$core$String$words(
-				A3(
-					elm$core$String$replace,
-					'–',
-					' ',
-					A3(elm$core$String$replace, '—', ' ', document)))));
-};
-var author$project$Page$Writer$updateWrittenCount = F4(
-	function (writtenCount, trimmedWordCount, state, dif) {
-		return (dif > 0) ? (writtenCount + dif) : (_Utils_eq(state.settings.countMethod, author$project$State$Additive) ? writtenCount : trimmedWordCount);
-	});
-var author$project$Page$Writer$updateCounts = F3(
-	function (document, model, state) {
-		var trimmedWordCount = author$project$Page$Writer$countWords(document);
-		var dif = trimmedWordCount - state.actualCount;
-		return _Utils_Tuple3(
-			A4(author$project$Page$Writer$updateWrittenCount, state.additiveCount, trimmedWordCount, state, dif),
-			_Utils_update(
-				model,
-				{needsDbSave: true, needsLocalSave: true}),
-			_Utils_update(
-				state,
-				{
-					actualCount: trimmedWordCount,
-					currentText: document,
-					winProgress: A2(author$project$Page$Writer$calculateProgress, state, dif)
-				}));
-	});
-var author$project$Page$Writer$update = F3(
-	function (msg, model, state) {
-		switch (msg.$) {
-			case 'WordsWritten':
-				var document = msg.a;
-				return function (_n1) {
-					var count = _n1.a;
-					var updatedModel = _n1.b;
-					var newState = _n1.c;
+var elm$core$Debug$log = _Debug_log;
+var author$project$Page$SignIn$update = F2(
+	function (msg, model) {
+		var _n0 = A2(elm$core$Debug$log, 'SigIn.update', msg);
+		switch (_n0.$) {
+			case 'InputReceived':
+				var inputType = _n0.a;
+				var value = _n0.b;
+				if (inputType.$ === 'Email') {
 					return _Utils_Tuple2(
 						_Utils_update(
-							newState,
-							{additiveCount: count}),
-						_Utils_Tuple2(
-							_Utils_update(
-								updatedModel,
-								{timeSinceLastTouch: state.currentTime}),
-							elm$core$Platform$Cmd$none));
-				}(
-					A3(author$project$Page$Writer$updateCounts, document, model, state));
-			case 'SaveTimerTicked':
-				var time = msg.a;
-				return function (_n3) {
-					var contentMsg = _n3.a;
-					var _n4 = _n3.b;
-					var updatedModel = _n4.a;
-					var dbMsg = _n4.b;
+							model,
+							{email: value}),
+						elm$core$Platform$Cmd$none);
+				} else {
 					return _Utils_Tuple2(
-						state,
-						_Utils_Tuple2(
-							updatedModel,
-							elm$core$Platform$Cmd$batch(
-								_List_fromArray(
-									[contentMsg, dbMsg]))));
+						_Utils_update(
+							model,
+							{password: value}),
+						elm$core$Platform$Cmd$none);
+				}
+			case 'SignInButtonClicked':
+				return function (cmd) {
+					return _Utils_Tuple2(model, cmd);
 				}(
-					function (_n2) {
-						var updatedModel = _n2.a;
-						var contentMsg = _n2.b;
-						return _Utils_Tuple2(
-							contentMsg,
-							A2(author$project$Page$Writer$saveToDbIfNeeded, updatedModel, state));
-					}(
-						A2(author$project$Page$Writer$saveContentIfNeeded, model, state)));
+					A2(
+						author$project$Ports$sendMessageWithJustContent,
+						author$project$Ports$SignIn,
+						author$project$Credentials$encode(
+							A2(
+								author$project$Credentials$create,
+								author$project$Email$create(model.email),
+								author$project$Password$create(model.password)))));
 			default:
-				return _Utils_Tuple2(
-					state,
-					_Utils_Tuple2(model, elm$core$Platform$Cmd$none));
+				var message = _n0.a;
+				var _n2 = author$project$Ports$stringToInOperation(message.operation);
+				if (_n2.$ === 'AuthMsgReceived') {
+					return function (updated) {
+						return _Utils_Tuple2(updated, elm$core$Platform$Cmd$none);
+					}(
+						A2(author$project$Page$SignIn$addValidationMessage, message.content, model));
+				} else {
+					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				}
 		}
 	});
-var author$project$Main$updateWriter = F2(
+var author$project$Main$updateSignIn = F2(
 	function (msg, model) {
-		var _n0 = model.page;
-		if (_n0.$ === 'Writer') {
-			var writerModel = _n0.a;
-			return function (_n1) {
-				var state = _n1.a;
-				var data = _n1.b;
-				return A2(
-					author$project$Main$stepWriter,
-					_Utils_update(
-						model,
-						{state: state}),
-					data);
+		if ((model.$ === 'Unauthenticated') && (model.a.$ === 'SignIn')) {
+			var subModel = model.a.a;
+			var session = model.b;
+			return A2(
+				author$project$Main$routeToSignIn,
+				session,
+				A2(author$project$Page$SignIn$update, msg, subModel));
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
+	});
+var author$project$Page$SignUp$addValidationMessage = F2(
+	function (message, model) {
+		if (message.$ === 'Just') {
+			var msg = message.a;
+			return function (decoded) {
+				return _Utils_update(
+					model,
+					{validationMessage: decoded});
 			}(
-				A3(author$project$Page$Writer$update, msg, writerModel, model.state));
+				author$project$ValidationMessage$decode(msg));
+		} else {
+			return model;
+		}
+	});
+var author$project$Ports$SignUp = {$: 'SignUp'};
+var author$project$Page$SignUp$update = F2(
+	function (msg, model) {
+		var _n0 = A2(elm$core$Debug$log, 'SigIn.update', msg);
+		switch (_n0.$) {
+			case 'InputReceived':
+				var inputType = _n0.a;
+				var value = _n0.b;
+				switch (inputType.$) {
+					case 'Email':
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{email: value}),
+							elm$core$Platform$Cmd$none);
+					case 'Password':
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{password: value}),
+							elm$core$Platform$Cmd$none);
+					default:
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{confirmPassword: value}),
+							elm$core$Platform$Cmd$none);
+				}
+			case 'SignUpButtonClicked':
+				return _Utils_eq(model.password, model.confirmPassword) ? function (cmd) {
+					return _Utils_Tuple2(model, cmd);
+				}(
+					A2(
+						author$project$Ports$sendMessageWithJustContent,
+						author$project$Ports$SignUp,
+						author$project$Credentials$encode(
+							A2(
+								author$project$Credentials$create,
+								author$project$Email$create(model.email),
+								author$project$Password$create(model.password))))) : function (msgModel) {
+					return _Utils_Tuple2(msgModel, elm$core$Platform$Cmd$none);
+				}(
+					function (message) {
+						return _Utils_update(
+							model,
+							{validationMessage: message});
+					}(
+						author$project$ValidationMessage$create('Password and confirm password must match.')));
+			default:
+				var message = _n0.a;
+				var _n2 = author$project$Ports$stringToInOperation(message.operation);
+				if (_n2.$ === 'AuthMsgReceived') {
+					return function (updated) {
+						return _Utils_Tuple2(updated, elm$core$Platform$Cmd$none);
+					}(
+						A2(author$project$Page$SignUp$addValidationMessage, message.content, model));
+				} else {
+					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				}
+		}
+	});
+var author$project$Main$updateSignUp = F2(
+	function (msg, model) {
+		if ((model.$ === 'Unauthenticated') && (model.a.$ === 'SignUp')) {
+			var subModel = model.a.a;
+			var session = model.b;
+			return A2(
+				author$project$Main$routeToSignUp,
+				session,
+				A2(author$project$Page$SignUp$update, msg, subModel));
 		} else {
 			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
 var author$project$Main$update = F2(
-	function (message, model) {
-		switch (message.$) {
-			case 'LinkClicked':
-				var urlRequest = message.a;
-				return A2(author$project$Main$updateLinkClick, urlRequest, model);
+	function (msg, model) {
+		switch (msg.$) {
 			case 'UrlChanged':
-				var url = message.a;
-				return A2(author$project$Main$stepUrl, url, model);
+				var url = msg.a;
+				return A2(author$project$Main$changeRouteTo, url, model);
+			case 'LinkClicked':
+				var request = msg.a;
+				return A2(author$project$Main$updateLinkClick, request, model);
 			case 'PortMessageReceived':
-				var msg = message.a;
-				return A2(author$project$Main$updateMessageReceived, msg, model);
-			case 'TargetTimerTicked':
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							state: author$project$Main$updateTargetTimer(model.state)
-						}),
-					elm$core$Platform$Cmd$none);
-			case 'UpdateCurrentTime':
-				var time = message.a;
-				return function (state) {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{state: state}),
-						elm$core$Platform$Cmd$none);
-				}(
-					function (state) {
-						return _Utils_update(
-							state,
-							{currentTime: time});
-					}(model.state));
-			case 'InitialTimeLoaded':
-				var time = message.a;
-				return function (state) {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{state: state}),
-						elm$core$Platform$Cmd$none);
-				}(
-					function (state) {
-						return _Utils_update(
-							state,
-							{currentTime: time});
-					}(model.state));
-			case 'GotWriterMsg':
-				var msg = message.a;
-				return A2(author$project$Main$updateWriter, msg, model);
-			case 'GotTargetSelectorMsg':
-				var msg = message.a;
-				return A2(author$project$Main$updateTargetSelector, msg, model);
-			case 'GotAuthenticatorMsg':
-				var msg = message.a;
-				return A2(author$project$Main$updateAuthenticator, msg, model);
-			case 'GotSignerOuterMsg':
-				var msg = message.a;
-				return A2(author$project$Main$updateSignerOuter, msg, model);
-			case 'GotSettingsMsg':
-				var msg = message.a;
-				return A2(author$project$Main$updateSettings, msg, model);
-			case 'WindowResized':
-				var width = message.a;
-				var height = message.b;
-				return function (state) {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{state: state}),
-						elm$core$Platform$Cmd$none);
-				}(
-					function (state) {
-						return _Utils_update(
-							state,
-							{
-								windowDimensions: {height: height, width: width}
-							});
-					}(model.state));
+				var portMsg = msg.a;
+				return A2(author$project$Main$resolvePortMessage, model, portMsg);
+			case 'GotSignInMsg':
+				var subMsg = msg.a;
+				return A2(author$project$Main$updateSignIn, subMsg, model);
 			default:
-				var zone = message.a;
-				return function (state) {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{state: state}),
-						elm$core$Platform$Cmd$none);
-				}(
-					function (state) {
-						return _Utils_update(
-							state,
-							{timeZone: zone});
-					}(model.state));
+				var subMsg = msg.a;
+				return A2(author$project$Main$updateSignUp, subMsg, model);
 		}
 	});
-var author$project$Page$Authenticator$CreateUserButtonClicked = {$: 'CreateUserButtonClicked'};
-var author$project$Page$Authenticator$ReturnToSignInButtonClicked = {$: 'ReturnToSignInButtonClicked'};
-var author$project$Page$Authenticator$SignInButtonClicked = {$: 'SignInButtonClicked'};
-var author$project$Page$Authenticator$SignUpButtonClicked = {$: 'SignUpButtonClicked'};
-var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
-	function (a, b, c, d) {
-		return {$: 'Rgba', a: a, b: b, c: c, d: d};
+var author$project$DisplayData$DisplayData = function (a) {
+	return {$: 'DisplayData', a: a};
+};
+var author$project$DisplayData$create = F3(
+	function (title, body, header) {
+		return author$project$DisplayData$DisplayData(
+			{body: body, header: header, title: title});
 	});
-var mdgriffith$elm_ui$Element$rgb255 = F3(
-	function (red, green, blue) {
-		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, red / 255, green / 255, blue / 255, 1);
-	});
-var author$project$Appearance$siteBackgroundDark = A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113);
-var author$project$Appearance$siteLightFontColor = A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240);
+var elm$json$Json$Decode$fail = _Json_fail;
 var author$project$CustomHtmlEvents$enterPressedDecoder = function (msg) {
 	return A2(
 		elm$json$Json$Decode$andThen,
@@ -8972,29 +6640,151 @@ var author$project$CustomHtmlEvents$onEnter = function (msg) {
 			'keydown',
 			author$project$CustomHtmlEvents$enterPressedDecoder(msg)));
 };
-var author$project$Page$Authenticator$Email = {$: 'Email'};
-var author$project$Page$Authenticator$Password = {$: 'Password'};
-var author$project$Page$Authenticator$SignInInputReceived = F2(
+var author$project$Page$SignIn$SignInButtonClicked = {$: 'SignInButtonClicked'};
+var author$project$Page$SignIn$Email = {$: 'Email'};
+var author$project$Page$SignIn$InputReceived = F2(
 	function (a, b) {
-		return {$: 'SignInInputReceived', a: a, b: b};
+		return {$: 'InputReceived', a: a, b: b};
 	});
-var author$project$Page$Authenticator$badUserOrPass = 'Invalid email address or password.';
-var author$project$Page$Authenticator$textForMessage = function (message) {
-	var _n0 = message.code;
-	switch (_n0.$) {
-		case 'BadPass':
-			return author$project$Page$Authenticator$badUserOrPass;
-		case 'BadUser':
-			return author$project$Page$Authenticator$badUserOrPass;
-		case 'InvalidEmail':
-			return message.body;
-		case 'WeakPassword':
-			return message.body;
-		case 'EmailAlreadyInUse':
-			return message.body;
-		default:
-			return 'Unhandled message: ' + message.body;
-	}
+var elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$string(string));
+	});
+var elm$html$Html$Attributes$placeholder = elm$html$Html$Attributes$stringProperty('placeholder');
+var elm$json$Json$Encode$bool = _Json_wrap;
+var elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$bool(bool));
+	});
+var elm$html$Html$Attributes$autofocus = elm$html$Html$Attributes$boolProperty('autofocus');
+var mdgriffith$elm_ui$Element$Input$focusedOnLoad = mdgriffith$elm_ui$Internal$Model$Attr(
+	elm$html$Html$Attributes$autofocus(true));
+var mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
+	return {$: 'HiddenLabel', a: a};
+};
+var mdgriffith$elm_ui$Element$Input$labelHidden = mdgriffith$elm_ui$Element$Input$HiddenLabel;
+var mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
+	return {$: 'TextInputNode', a: a};
+};
+var elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var elm$core$Basics$not = _Basics_not;
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
+var elm$html$Html$Attributes$type_ = elm$html$Html$Attributes$stringProperty('type');
+var elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
+	});
+var elm$html$Html$Events$targetValue = A2(
+	elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	elm$json$Json$Decode$string);
+var elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			elm$json$Json$Decode$map,
+			elm$html$Html$Events$alwaysStop,
+			A2(elm$json$Json$Decode$map, tagger, elm$html$Html$Events$targetValue)));
+};
+var elm$core$Basics$min = F2(
+	function (x, y) {
+		return (_Utils_cmp(x, y) < 0) ? x : y;
+	});
+var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
+	return {$: 'Flag', a: a};
+};
+var mdgriffith$elm_ui$Internal$Flag$Second = function (a) {
+	return {$: 'Second', a: a};
+};
+var mdgriffith$elm_ui$Internal$Flag$flag = function (i) {
+	return (i > 31) ? mdgriffith$elm_ui$Internal$Flag$Second(1 << (i - 32)) : mdgriffith$elm_ui$Internal$Flag$Flag(1 << i);
+};
+var mdgriffith$elm_ui$Internal$Flag$transparency = mdgriffith$elm_ui$Internal$Flag$flag(0);
+var mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
+	function (a, b) {
+		return {$: 'StyleClass', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Internal$Model$Transparency = F2(
+	function (a, b) {
+		return {$: 'Transparency', a: a, b: b};
+	});
+var elm$core$Basics$round = _Basics_round;
+var mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
+	return elm$core$String$fromInt(
+		elm$core$Basics$round(x * 255));
+};
+var mdgriffith$elm_ui$Element$alpha = function (o) {
+	var transparency = function (x) {
+		return 1 - x;
+	}(
+		A2(
+			elm$core$Basics$min,
+			1.0,
+			A2(elm$core$Basics$max, 0.0, o)));
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$transparency,
+		A2(
+			mdgriffith$elm_ui$Internal$Model$Transparency,
+			'transparency-' + mdgriffith$elm_ui$Internal$Model$floatClass(transparency),
+			transparency));
 };
 var mdgriffith$elm_ui$Internal$Model$Height = function (a) {
 	return {$: 'Height', a: a};
@@ -9129,13 +6919,6 @@ var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$p = _VirtualDom_node('p');
 var elm$html$Html$s = _VirtualDom_node('s');
 var elm$html$Html$u = _VirtualDom_node('u');
-var elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$string(string));
-	});
 var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
 var elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 	return _VirtualDom_keyedNode(
@@ -9145,21 +6928,13 @@ var elm$virtual_dom$VirtualDom$node = function (tag) {
 	return _VirtualDom_node(
 		_VirtualDom_noScript(tag));
 };
-var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
-	return {$: 'Flag', a: a};
-};
-var mdgriffith$elm_ui$Internal$Flag$Second = function (a) {
-	return {$: 'Second', a: a};
-};
-var mdgriffith$elm_ui$Internal$Flag$flag = function (i) {
-	return (i > 31) ? mdgriffith$elm_ui$Internal$Flag$Second(1 << (i - 32)) : mdgriffith$elm_ui$Internal$Flag$Flag(1 << i);
-};
 var mdgriffith$elm_ui$Internal$Flag$alignBottom = mdgriffith$elm_ui$Internal$Flag$flag(41);
 var mdgriffith$elm_ui$Internal$Flag$alignRight = mdgriffith$elm_ui$Internal$Flag$flag(40);
 var mdgriffith$elm_ui$Internal$Flag$centerX = mdgriffith$elm_ui$Internal$Flag$flag(42);
 var mdgriffith$elm_ui$Internal$Flag$centerY = mdgriffith$elm_ui$Internal$Flag$flag(43);
 var mdgriffith$elm_ui$Internal$Flag$heightBetween = mdgriffith$elm_ui$Internal$Flag$flag(45);
 var mdgriffith$elm_ui$Internal$Flag$heightFill = mdgriffith$elm_ui$Internal$Flag$flag(37);
+var elm$core$Bitwise$and = _Bitwise_and;
 var mdgriffith$elm_ui$Internal$Flag$present = F2(
 	function (myFlag, _n0) {
 		var fieldOne = _n0.a;
@@ -9221,11 +6996,6 @@ var mdgriffith$elm_ui$Internal$Model$lengthClassName = function (x) {
 			var len = x.b;
 			return 'max' + (elm$core$String$fromInt(max) + mdgriffith$elm_ui$Internal$Model$lengthClassName(len));
 	}
-};
-var elm$core$Basics$round = _Basics_round;
-var mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
-	return elm$core$String$fromInt(
-		elm$core$Basics$round(x * 255));
 };
 var mdgriffith$elm_ui$Internal$Model$transformClass = function (transform) {
 	switch (transform.$) {
@@ -9356,6 +7126,24 @@ var mdgriffith$elm_ui$Internal$Model$reduceStyles = F2(
 			A2(elm$core$Set$insert, styleName, cache),
 			A2(elm$core$List$cons, style, existing));
 	});
+var elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _n0 = f(mx);
+		if (_n0.$ === 'Just') {
+			var x = _n0.a;
+			return A2(elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			elm$core$List$foldr,
+			elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
+	});
 var elm$core$Tuple$mapFirst = F2(
 	function (func, _n0) {
 		var x = _n0.a;
@@ -9466,7 +7254,6 @@ var mdgriffith$elm_ui$Internal$Model$renderFocusStyle = function (focus) {
 					A2(mdgriffith$elm_ui$Internal$Model$Property, 'outline', 'none'))
 				])));
 };
-var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var mdgriffith$elm_ui$Internal$Style$Batch = function (a) {
 	return {$: 'Batch', a: a};
 };
@@ -11344,10 +9131,9 @@ var mdgriffith$elm_ui$Internal$Model$staticRoot = A3(
 		[
 			elm$virtual_dom$VirtualDom$text(mdgriffith$elm_ui$Internal$Style$rules)
 		]));
-var elm$core$Basics$min = F2(
-	function (x, y) {
-		return (_Utils_cmp(x, y) < 0) ? x : y;
-	});
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
 var elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -11476,6 +9262,7 @@ var mdgriffith$elm_ui$Internal$Model$renderNullAdjustmentRule = F2(
 						]))
 				]));
 	});
+var elm$core$Basics$neq = _Utils_notEqual;
 var elm$core$List$maximum = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -12481,7 +10268,6 @@ var mdgriffith$elm_ui$Internal$Model$finalizeNode = F6(
 				return html;
 		}
 	});
-var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
 var mdgriffith$elm_ui$Internal$Model$textElement = function (str) {
 	return A2(
 		elm$html$Html$div,
@@ -13174,6 +10960,7 @@ var mdgriffith$elm_ui$Internal$Model$renderWidth = function (w) {
 				A2(elm$core$List$cons, style, newStyle));
 	}
 };
+var elm$core$Basics$ge = _Utils_ge;
 var mdgriffith$elm_ui$Internal$Flag$borderWidth = mdgriffith$elm_ui$Internal$Flag$flag(27);
 var mdgriffith$elm_ui$Internal$Model$skippable = F2(
 	function (flag, style) {
@@ -14129,385 +11916,6 @@ var mdgriffith$elm_ui$Element$el = F2(
 				_List_fromArray(
 					[child])));
 	});
-var mdgriffith$elm_ui$Internal$Model$Text = function (a) {
-	return {$: 'Text', a: a};
-};
-var mdgriffith$elm_ui$Element$text = function (content) {
-	return mdgriffith$elm_ui$Internal$Model$Text(content);
-};
-var author$project$Page$Authenticator$parseMessages = function (messages) {
-	return A2(
-		elm$core$List$map,
-		function (msg) {
-			return A2(
-				mdgriffith$elm_ui$Element$el,
-				_List_Nil,
-				mdgriffith$elm_ui$Element$text(
-					author$project$Page$Authenticator$textForMessage(msg)));
-		},
-		A2(
-			elm$core$List$filter,
-			function (msg) {
-				return _Utils_eq(msg.source, author$project$DisplayMessage$Auth);
-			},
-			messages));
-};
-var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
-	return {$: 'AlignX', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
-var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
-var mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
-var mdgriffith$elm_ui$Internal$Model$asColumn = mdgriffith$elm_ui$Internal$Model$AsColumn;
-var mdgriffith$elm_ui$Internal$Model$htmlClass = function (cls) {
-	return mdgriffith$elm_ui$Internal$Model$Attr(
-		elm$html$Html$Attributes$class(cls));
-};
-var mdgriffith$elm_ui$Element$column = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asColumn,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentTop + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentLeft)),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
-var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
-var mdgriffith$elm_ui$Internal$Model$Colored = F3(
-	function (a, b, c) {
-		return {$: 'Colored', a: a, b: b, c: c};
-	});
-var mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
-	function (a, b) {
-		return {$: 'StyleClass', a: a, b: b};
-	});
-var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
-	var red = _n0.a;
-	var green = _n0.b;
-	var blue = _n0.c;
-	var alpha = _n0.d;
-	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
-};
-var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontColor,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Colored,
-			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
-			'color',
-			fontColor));
-};
-var author$project$Page$Authenticator$validationMessages = function (messages) {
-	return A2(
-		mdgriffith$elm_ui$Element$column,
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-				mdgriffith$elm_ui$Element$centerX,
-				mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-			]),
-		author$project$Page$Authenticator$parseMessages(messages));
-};
-var elm$html$Html$Attributes$placeholder = elm$html$Html$Attributes$stringProperty('placeholder');
-var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
-	return {$: 'AlignY', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
-var mdgriffith$elm_ui$Element$centerY = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$CenterY);
-var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
-var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
-	function (a, b, c, d, e) {
-		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
-	});
-var mdgriffith$elm_ui$Element$padding = function (x) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			'p-' + elm$core$String$fromInt(x),
-			x,
-			x,
-			x,
-			x));
-};
-var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
-var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
-var mdgriffith$elm_ui$Element$row = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asRow,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
-var mdgriffith$elm_ui$Internal$Flag$spacing = mdgriffith$elm_ui$Internal$Flag$flag(3);
-var mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
-	function (a, b, c) {
-		return {$: 'SpacingStyle', a: a, b: b, c: c};
-	});
-var mdgriffith$elm_ui$Internal$Model$spacingName = F2(
-	function (x, y) {
-		return 'spacing-' + (elm$core$String$fromInt(x) + ('-' + elm$core$String$fromInt(y)));
-	});
-var mdgriffith$elm_ui$Element$spacing = function (x) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$spacing,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$SpacingStyle,
-			A2(mdgriffith$elm_ui$Internal$Model$spacingName, x, x),
-			x,
-			x));
-};
-var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
-var mdgriffith$elm_ui$Element$Background$color = function (clr) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$bgColor,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Colored,
-			'bg-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
-			'background-color',
-			clr));
-};
-var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
-var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderRound,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Single,
-			'br-' + elm$core$String$fromInt(radius),
-			'border-radius',
-			elm$core$String$fromInt(radius) + 'px'));
-};
-var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
-	function (a, b, c, d, e) {
-		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
-	});
-var mdgriffith$elm_ui$Element$Border$width = function (v) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderWidth,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$BorderWidth,
-			'b-' + elm$core$String$fromInt(v),
-			v,
-			v,
-			v,
-			v));
-};
-var mdgriffith$elm_ui$Internal$Flag$fontWeight = mdgriffith$elm_ui$Internal$Flag$flag(13);
-var mdgriffith$elm_ui$Internal$Model$Class = F2(
-	function (a, b) {
-		return {$: 'Class', a: a, b: b};
-	});
-var mdgriffith$elm_ui$Element$Font$bold = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontWeight, mdgriffith$elm_ui$Internal$Style$classes.bold);
-var mdgriffith$elm_ui$Element$Font$underline = mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.underline);
-var elm$json$Json$Encode$bool = _Json_wrap;
-var elm$html$Html$Attributes$boolProperty = F2(
-	function (key, bool) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$bool(bool));
-	});
-var elm$html$Html$Attributes$disabled = elm$html$Html$Attributes$boolProperty('disabled');
-var elm$html$Html$Attributes$tabindex = function (n) {
-	return A2(
-		_VirtualDom_attribute,
-		'tabIndex',
-		elm$core$String$fromInt(n));
-};
-var mdgriffith$elm_ui$Internal$Flag$cursor = mdgriffith$elm_ui$Internal$Flag$flag(21);
-var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
-var elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		elm$html$Html$Events$on,
-		'click',
-		elm$json$Json$Decode$succeed(msg));
-};
-var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
-var mdgriffith$elm_ui$Element$Input$hasFocusStyle = function (attr) {
-	if (((attr.$ === 'StyleClass') && (attr.b.$ === 'PseudoSelector')) && (attr.b.a.$ === 'Focus')) {
-		var _n1 = attr.b;
-		var _n2 = _n1.a;
-		return true;
-	} else {
-		return false;
-	}
-};
-var mdgriffith$elm_ui$Internal$Model$NoAttribute = {$: 'NoAttribute'};
-var mdgriffith$elm_ui$Element$Input$focusDefault = function (attrs) {
-	return A2(elm$core$List$any, mdgriffith$elm_ui$Element$Input$hasFocusStyle, attrs) ? mdgriffith$elm_ui$Internal$Model$NoAttribute : mdgriffith$elm_ui$Internal$Model$htmlClass('focusable');
-};
-var mdgriffith$elm_ui$Element$Input$enter = 'Enter';
-var elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
-	return {$: 'MayPreventDefault', a: a};
-};
-var elm$html$Html$Events$preventDefaultOn = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$MayPreventDefault(decoder));
-	});
-var mdgriffith$elm_ui$Element$Input$onKey = F2(
-	function (desiredCode, msg) {
-		var decode = function (code) {
-			return _Utils_eq(code, desiredCode) ? elm$json$Json$Decode$succeed(msg) : elm$json$Json$Decode$fail('Not the enter key');
-		};
-		var isKey = A2(
-			elm$json$Json$Decode$andThen,
-			decode,
-			A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
-		return mdgriffith$elm_ui$Internal$Model$Attr(
-			A2(
-				elm$html$Html$Events$preventDefaultOn,
-				'keyup',
-				A2(
-					elm$json$Json$Decode$map,
-					function (fired) {
-						return _Utils_Tuple2(fired, true);
-					},
-					isKey)));
-	});
-var mdgriffith$elm_ui$Element$Input$onEnter = function (msg) {
-	return A2(mdgriffith$elm_ui$Element$Input$onKey, mdgriffith$elm_ui$Element$Input$enter, msg);
-};
-var mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
-var mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
-	return {$: 'Describe', a: a};
-};
-var mdgriffith$elm_ui$Element$Input$button = F2(
-	function (attrs, _n0) {
-		var onPress = _n0.onPress;
-		var label = _n0.label;
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asEl,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentCenterX + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.contentCenterY + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.seButton + (' ' + mdgriffith$elm_ui$Internal$Style$classes.noTextSelection)))))),
-						A2(
-							elm$core$List$cons,
-							mdgriffith$elm_ui$Element$pointer,
-							A2(
-								elm$core$List$cons,
-								mdgriffith$elm_ui$Element$Input$focusDefault(attrs),
-								A2(
-									elm$core$List$cons,
-									mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$Button),
-									A2(
-										elm$core$List$cons,
-										mdgriffith$elm_ui$Internal$Model$Attr(
-											elm$html$Html$Attributes$tabindex(0)),
-										function () {
-											if (onPress.$ === 'Nothing') {
-												return A2(
-													elm$core$List$cons,
-													mdgriffith$elm_ui$Internal$Model$Attr(
-														elm$html$Html$Attributes$disabled(true)),
-													attrs);
-											} else {
-												var msg = onPress.a;
-												return A2(
-													elm$core$List$cons,
-													mdgriffith$elm_ui$Element$Events$onClick(msg),
-													A2(
-														elm$core$List$cons,
-														mdgriffith$elm_ui$Element$Input$onEnter(msg),
-														attrs));
-											}
-										}()))))))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[label])));
-	});
-var mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
-	return {$: 'TextInputNode', a: a};
-};
-var elm$html$Html$Attributes$type_ = elm$html$Html$Attributes$stringProperty('type');
-var elm$html$Html$Events$alwaysStop = function (x) {
-	return _Utils_Tuple2(x, true);
-};
-var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
-	return {$: 'MayStopPropagation', a: a};
-};
-var elm$html$Html$Events$stopPropagationOn = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
-	});
-var elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
-	});
-var elm$html$Html$Events$targetValue = A2(
-	elm$json$Json$Decode$at,
-	_List_fromArray(
-		['target', 'value']),
-	elm$json$Json$Decode$string);
-var elm$html$Html$Events$onInput = function (tagger) {
-	return A2(
-		elm$html$Html$Events$stopPropagationOn,
-		'input',
-		A2(
-			elm$json$Json$Decode$map,
-			elm$html$Html$Events$alwaysStop,
-			A2(elm$json$Json$Decode$map, tagger, elm$html$Html$Events$targetValue)));
-};
-var mdgriffith$elm_ui$Internal$Flag$transparency = mdgriffith$elm_ui$Internal$Flag$flag(0);
-var mdgriffith$elm_ui$Internal$Model$Transparency = F2(
-	function (a, b) {
-		return {$: 'Transparency', a: a, b: b};
-	});
-var mdgriffith$elm_ui$Element$alpha = function (o) {
-	var transparency = function (x) {
-		return 1 - x;
-	}(
-		A2(
-			elm$core$Basics$min,
-			1.0,
-			A2(elm$core$Basics$max, 0.0, o)));
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$transparency,
-		A2(
-			mdgriffith$elm_ui$Internal$Model$Transparency,
-			'transparency-' + mdgriffith$elm_ui$Internal$Model$floatClass(transparency),
-			transparency));
-};
 var mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
 	return {$: 'Fill', a: a};
 };
@@ -14520,6 +11928,11 @@ var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
 var mdgriffith$elm_ui$Element$inFront = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$InFront, element);
 };
+var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
+var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
+	function (a, b, c, d, e) {
+		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
+	});
 var mdgriffith$elm_ui$Internal$Model$paddingName = F4(
 	function (top, right, bottom, left) {
 		return 'pad-' + (elm$core$String$fromInt(top) + ('-' + (elm$core$String$fromInt(right) + ('-' + (elm$core$String$fromInt(bottom) + ('-' + elm$core$String$fromInt(left)))))));
@@ -14549,7 +11962,52 @@ var mdgriffith$elm_ui$Element$paddingEach = function (_n0) {
 			bottom,
 			left));
 };
+var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
+	function (a, b, c, d) {
+		return {$: 'Rgba', a: a, b: b, c: c, d: d};
+	});
 var mdgriffith$elm_ui$Element$rgba = mdgriffith$elm_ui$Internal$Model$Rgba;
+var mdgriffith$elm_ui$Internal$Flag$spacing = mdgriffith$elm_ui$Internal$Flag$flag(3);
+var mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
+	function (a, b, c) {
+		return {$: 'SpacingStyle', a: a, b: b, c: c};
+	});
+var mdgriffith$elm_ui$Internal$Model$spacingName = F2(
+	function (x, y) {
+		return 'spacing-' + (elm$core$String$fromInt(x) + ('-' + elm$core$String$fromInt(y)));
+	});
+var mdgriffith$elm_ui$Element$spacing = function (x) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$spacing,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$SpacingStyle,
+			A2(mdgriffith$elm_ui$Internal$Model$spacingName, x, x),
+			x,
+			x));
+};
+var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
+var mdgriffith$elm_ui$Internal$Model$Colored = F3(
+	function (a, b, c) {
+		return {$: 'Colored', a: a, b: b, c: c};
+	});
+var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
+	var red = _n0.a;
+	var green = _n0.b;
+	var blue = _n0.c;
+	var alpha = _n0.d;
+	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
+};
+var mdgriffith$elm_ui$Element$Background$color = function (clr) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$bgColor,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Colored,
+			'bg-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
+			'background-color',
+			clr));
+};
 var mdgriffith$elm_ui$Internal$Flag$borderColor = mdgriffith$elm_ui$Internal$Flag$flag(28);
 var mdgriffith$elm_ui$Element$Border$color = function (clr) {
 	return A2(
@@ -14561,10 +12019,25 @@ var mdgriffith$elm_ui$Element$Border$color = function (clr) {
 			'border-color',
 			clr));
 };
+var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
+var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontColor,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Colored,
+			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
+			'color',
+			fontColor));
+};
 var mdgriffith$elm_ui$Element$Input$Padding = F4(
 	function (a, b, c, d) {
 		return {$: 'Padding', a: a, b: b, c: c, d: d};
 	});
+var mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
+var mdgriffith$elm_ui$Internal$Model$asColumn = mdgriffith$elm_ui$Internal$Model$AsColumn;
+var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
+var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
 var mdgriffith$elm_ui$Element$Input$applyLabel = F3(
 	function (attrs, label, input) {
 		if (label.$ === 'HiddenLabel') {
@@ -14639,6 +12112,33 @@ var mdgriffith$elm_ui$Element$rgb = F3(
 		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
 	});
 var mdgriffith$elm_ui$Element$Input$charcoal = A3(mdgriffith$elm_ui$Element$rgb, 136 / 255, 138 / 255, 133 / 255);
+var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
+var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderRound,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Single,
+			'br-' + elm$core$String$fromInt(radius),
+			'border-radius',
+			elm$core$String$fromInt(radius) + 'px'));
+};
+var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
+	function (a, b, c, d, e) {
+		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
+	});
+var mdgriffith$elm_ui$Element$Border$width = function (v) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderWidth,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$BorderWidth,
+			'b-' + elm$core$String$fromInt(v),
+			v,
+			v,
+			v,
+			v));
+};
 var mdgriffith$elm_ui$Element$Input$darkGrey = A3(mdgriffith$elm_ui$Element$rgb, 186 / 255, 189 / 255, 182 / 255);
 var mdgriffith$elm_ui$Element$paddingXY = F2(
 	function (x, y) {
@@ -14674,6 +12174,26 @@ var mdgriffith$elm_ui$Element$Input$defaultTextBoxStyle = _List_fromArray(
 		mdgriffith$elm_ui$Element$spacing(3),
 		mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 	]);
+var mdgriffith$elm_ui$Element$Input$hasFocusStyle = function (attr) {
+	if (((attr.$ === 'StyleClass') && (attr.b.$ === 'PseudoSelector')) && (attr.b.a.$ === 'Focus')) {
+		var _n1 = attr.b;
+		var _n2 = _n1.a;
+		return true;
+	} else {
+		return false;
+	}
+};
+var mdgriffith$elm_ui$Internal$Model$NoAttribute = {$: 'NoAttribute'};
+var mdgriffith$elm_ui$Internal$Model$htmlClass = function (cls) {
+	return mdgriffith$elm_ui$Internal$Model$Attr(
+		elm$html$Html$Attributes$class(cls));
+};
+var mdgriffith$elm_ui$Element$Input$focusDefault = function (attrs) {
+	return A2(elm$core$List$any, mdgriffith$elm_ui$Element$Input$hasFocusStyle, attrs) ? mdgriffith$elm_ui$Internal$Model$NoAttribute : mdgriffith$elm_ui$Internal$Model$htmlClass('focusable');
+};
+var mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
+	return {$: 'Describe', a: a};
+};
 var mdgriffith$elm_ui$Internal$Model$Label = function (a) {
 	return {$: 'Label', a: a};
 };
@@ -14754,6 +12274,11 @@ var elm$html$Html$Attributes$value = elm$html$Html$Attributes$stringProperty('va
 var mdgriffith$elm_ui$Element$Input$value = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$value);
 var mdgriffith$elm_ui$Internal$Model$LivePolite = {$: 'LivePolite'};
 var mdgriffith$elm_ui$Element$Region$announce = mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$LivePolite);
+var mdgriffith$elm_ui$Internal$Flag$cursor = mdgriffith$elm_ui$Internal$Flag$flag(21);
+var mdgriffith$elm_ui$Internal$Model$Class = F2(
+	function (a, b) {
+		return {$: 'Class', a: a, b: b};
+	});
 var mdgriffith$elm_ui$Internal$Model$filter = function (attrs) {
 	return A3(
 		elm$core$List$foldr,
@@ -15205,6 +12730,29 @@ var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 			textOptions.label,
 			inputElement);
 	});
+var mdgriffith$elm_ui$Element$Input$username = mdgriffith$elm_ui$Element$Input$textHelper(
+	{
+		autofill: elm$core$Maybe$Just('username'),
+		spellchecked: false,
+		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
+	});
+var author$project$Page$SignIn$emailInput = function (email) {
+	return A2(
+		mdgriffith$elm_ui$Element$Input$username,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$Input$focusedOnLoad,
+				mdgriffith$elm_ui$Element$htmlAttribute(
+				elm$html$Html$Attributes$placeholder('Email Address'))
+			]),
+		{
+			label: mdgriffith$elm_ui$Element$Input$labelHidden('Email address'),
+			onChange: author$project$Page$SignIn$InputReceived(author$project$Page$SignIn$Email),
+			placeholder: elm$core$Maybe$Nothing,
+			text: email
+		});
+};
+var author$project$Page$SignIn$Password = {$: 'Password'};
 var mdgriffith$elm_ui$Element$Input$currentPassword = F2(
 	function (attrs, pass) {
 		return A3(
@@ -15218,1073 +12766,187 @@ var mdgriffith$elm_ui$Element$Input$currentPassword = F2(
 			attrs,
 			{label: pass.label, onChange: pass.onChange, placeholder: pass.placeholder, text: pass.text});
 	});
-var elm$html$Html$Attributes$autofocus = elm$html$Html$Attributes$boolProperty('autofocus');
-var mdgriffith$elm_ui$Element$Input$focusedOnLoad = mdgriffith$elm_ui$Internal$Model$Attr(
-	elm$html$Html$Attributes$autofocus(true));
-var mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
-	return {$: 'HiddenLabel', a: a};
-};
-var mdgriffith$elm_ui$Element$Input$labelHidden = mdgriffith$elm_ui$Element$Input$HiddenLabel;
-var mdgriffith$elm_ui$Element$Input$username = mdgriffith$elm_ui$Element$Input$textHelper(
-	{
-		autofill: elm$core$Maybe$Just('username'),
-		spellchecked: false,
-		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
-	});
-var author$project$Page$Authenticator$showDetails = F3(
-	function (model, messages, fieldValues) {
-		return A2(
-			mdgriffith$elm_ui$Element$column,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					mdgriffith$elm_ui$Element$spacing(10),
-					mdgriffith$elm_ui$Element$centerX,
-					mdgriffith$elm_ui$Element$centerY,
-					author$project$CustomHtmlEvents$onEnter(fieldValues.clickEvent)
-				]),
-			_List_fromArray(
-				[
-					author$project$Page$Authenticator$validationMessages(messages),
-					A2(
-					mdgriffith$elm_ui$Element$Input$username,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$Input$focusedOnLoad,
-							mdgriffith$elm_ui$Element$htmlAttribute(
-							elm$html$Html$Attributes$placeholder('Email Address'))
-						]),
-					{
-						label: mdgriffith$elm_ui$Element$Input$labelHidden('Email address'),
-						onChange: author$project$Page$Authenticator$SignInInputReceived(author$project$Page$Authenticator$Email),
-						placeholder: elm$core$Maybe$Nothing,
-						text: model.email
-					}),
-					A2(
-					mdgriffith$elm_ui$Element$Input$currentPassword,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$htmlAttribute(
-							elm$html$Html$Attributes$placeholder('Password'))
-						]),
-					{
-						label: mdgriffith$elm_ui$Element$Input$labelHidden('Password'),
-						onChange: author$project$Page$Authenticator$SignInInputReceived(author$project$Page$Authenticator$Password),
-						placeholder: elm$core$Maybe$Nothing,
-						show: false,
-						text: model.password
-					}),
-					A2(
-					mdgriffith$elm_ui$Element$Input$button,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$centerX,
-							mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-							mdgriffith$elm_ui$Element$padding(5),
-							mdgriffith$elm_ui$Element$Border$width(2),
-							mdgriffith$elm_ui$Element$Border$rounded(5),
-							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundDark),
-							mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-						]),
-					{
-						label: mdgriffith$elm_ui$Element$text(fieldValues.buttonText),
-						onPress: elm$core$Maybe$Just(fieldValues.clickEvent)
-					}),
-					A2(
-					mdgriffith$elm_ui$Element$row,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor),
-							mdgriffith$elm_ui$Element$centerX,
-							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
-						]),
-					_List_fromArray(
-						[
-							A2(
-							mdgriffith$elm_ui$Element$el,
-							_List_Nil,
-							mdgriffith$elm_ui$Element$text(fieldValues.underText)),
-							A2(
-							mdgriffith$elm_ui$Element$Input$button,
-							_List_fromArray(
-								[mdgriffith$elm_ui$Element$Font$bold, mdgriffith$elm_ui$Element$Font$underline]),
-							{
-								label: mdgriffith$elm_ui$Element$text(fieldValues.underButtonText),
-								onPress: elm$core$Maybe$Just(fieldValues.underClickEvent)
-							})
-						]))
-				]));
-	});
-var author$project$Page$Authenticator$showBody = F2(
-	function (model, messages) {
-		var _n0 = model.currentSignUpPage;
-		if (_n0.$ === 'None') {
-			return A3(
-				author$project$Page$Authenticator$showDetails,
-				model,
-				messages,
-				{buttonText: 'Sign in!', clickEvent: author$project$Page$Authenticator$SignInButtonClicked, underButtonText: 'Sign up!', underClickEvent: author$project$Page$Authenticator$SignUpButtonClicked, underText: 'Don\'t have an account yet? '});
-		} else {
-			return A3(
-				author$project$Page$Authenticator$showDetails,
-				model,
-				messages,
-				{buttonText: 'Sign up!', clickEvent: author$project$Page$Authenticator$CreateUserButtonClicked, underButtonText: 'Go back!', underClickEvent: author$project$Page$Authenticator$ReturnToSignInButtonClicked, underText: 'Oops, I already have an account! '});
-		}
-	});
-var author$project$Page$Authenticator$view = F2(
-	function (model, messages) {
-		return {
-			body: A2(author$project$Page$Authenticator$showBody, model, messages),
-			headerSettings: elm$core$Maybe$Nothing,
-			title: 'Sign In'
-		};
-	});
-var author$project$Appearance$siteBackgroundMediumDark = A3(mdgriffith$elm_ui$Element$rgb255, 23, 80, 123);
-var author$project$Page$Settings$CountMethodChanged = function (a) {
-	return {$: 'CountMethodChanged', a: a};
-};
-var author$project$Page$Settings$countMethodToBool = function (method) {
-	if (method.$ === 'Additive') {
-		return true;
-	} else {
-		return false;
-	}
-};
-var author$project$Appearance$mediumGray = A3(mdgriffith$elm_ui$Element$rgb255, 110, 110, 110);
-var author$project$Appearance$siteActionButtonColor = A3(mdgriffith$elm_ui$Element$rgb255, 78, 160, 37);
-var mdgriffith$elm_ui$Element$Border$roundEach = function (_n0) {
-	var topLeft = _n0.topLeft;
-	var topRight = _n0.topRight;
-	var bottomLeft = _n0.bottomLeft;
-	var bottomRight = _n0.bottomRight;
+var author$project$Page$SignIn$passwordInput = function (password) {
 	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderRound,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Single,
-			'br-' + (elm$core$String$fromInt(topLeft) + ('-' + (elm$core$String$fromInt(topRight) + (elm$core$String$fromInt(bottomLeft) + ('-' + elm$core$String$fromInt(bottomRight)))))),
-			'border-radius',
-			elm$core$String$fromInt(topLeft) + ('px ' + (elm$core$String$fromInt(topRight) + ('px ' + (elm$core$String$fromInt(bottomRight) + ('px ' + (elm$core$String$fromInt(bottomLeft) + 'px'))))))));
-};
-var mdgriffith$elm_ui$Element$Border$widthXY = F2(
-	function (x, y) {
-		return A2(
-			mdgriffith$elm_ui$Internal$Model$StyleClass,
-			mdgriffith$elm_ui$Internal$Flag$borderWidth,
-			A5(
-				mdgriffith$elm_ui$Internal$Model$BorderWidth,
-				'b-' + (elm$core$String$fromInt(x) + ('-' + elm$core$String$fromInt(y))),
-				y,
-				x,
-				y,
-				x));
-	});
-var mdgriffith$elm_ui$Element$Border$widthEach = function (_n0) {
-	var bottom = _n0.bottom;
-	var top = _n0.top;
-	var left = _n0.left;
-	var right = _n0.right;
-	return (_Utils_eq(top, bottom) && _Utils_eq(left, right)) ? (_Utils_eq(top, right) ? mdgriffith$elm_ui$Element$Border$width(top) : A2(mdgriffith$elm_ui$Element$Border$widthXY, left, top)) : A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderWidth,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$BorderWidth,
-			'b-' + (elm$core$String$fromInt(top) + ('-' + (elm$core$String$fromInt(right) + ('-' + (elm$core$String$fromInt(bottom) + ('-' + elm$core$String$fromInt(left))))))),
-			top,
-			right,
-			bottom,
-			left));
-};
-var author$project$Page$Settings$showCheckBox = F3(
-	function (leftValue, rightValue, checked) {
-		var _n0 = checked ? _Utils_Tuple2(author$project$Appearance$siteActionButtonColor, author$project$Appearance$mediumGray) : _Utils_Tuple2(author$project$Appearance$mediumGray, author$project$Appearance$siteActionButtonColor);
-		var leftColor = _n0.a;
-		var rightColor = _n0.b;
-		return A2(
-			mdgriffith$elm_ui$Element$row,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$Border$color(author$project$Appearance$siteLightFontColor),
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					mdgriffith$elm_ui$Element$centerX,
-					mdgriffith$elm_ui$Element$centerY,
-					mdgriffith$elm_ui$Element$pointer
-				]),
-			_List_fromArray(
-				[
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$centerX,
-							mdgriffith$elm_ui$Element$centerY,
-							mdgriffith$elm_ui$Element$Background$color(leftColor),
-							mdgriffith$elm_ui$Element$Border$roundEach(
-							{bottomLeft: 5, bottomRight: 0, topLeft: 5, topRight: 0}),
-							mdgriffith$elm_ui$Element$Border$width(2),
-							mdgriffith$elm_ui$Element$padding(10)
-						]),
-					mdgriffith$elm_ui$Element$text(leftValue)),
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$centerX,
-							mdgriffith$elm_ui$Element$centerY,
-							mdgriffith$elm_ui$Element$Background$color(rightColor),
-							mdgriffith$elm_ui$Element$Border$roundEach(
-							{bottomLeft: 0, bottomRight: 5, topLeft: 0, topRight: 5}),
-							mdgriffith$elm_ui$Element$Border$widthEach(
-							{bottom: 2, left: 0, right: 2, top: 2}),
-							mdgriffith$elm_ui$Element$padding(10)
-						]),
-					mdgriffith$elm_ui$Element$text(rightValue))
-				]));
-	});
-var mdgriffith$elm_ui$Internal$Model$Top = {$: 'Top'};
-var mdgriffith$elm_ui$Element$alignTop = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$Top);
-var mdgriffith$elm_ui$Element$fillPortion = mdgriffith$elm_ui$Internal$Model$Fill;
-var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
-var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
-var mdgriffith$elm_ui$Element$Input$onKeyLookup = function (lookup) {
-	var decode = function (code) {
-		var _n0 = lookup(code);
-		if (_n0.$ === 'Nothing') {
-			return elm$json$Json$Decode$fail('No key matched');
-		} else {
-			var msg = _n0.a;
-			return elm$json$Json$Decode$succeed(msg);
-		}
-	};
-	var isKey = A2(
-		elm$json$Json$Decode$andThen,
-		decode,
-		A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
-	return mdgriffith$elm_ui$Internal$Model$Attr(
-		A2(elm$html$Html$Events$on, 'keyup', isKey));
-};
-var mdgriffith$elm_ui$Element$Input$space = ' ';
-var mdgriffith$elm_ui$Element$Input$tabindex = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$tabindex);
-var mdgriffith$elm_ui$Element$Input$checkbox = F2(
-	function (attrs, _n0) {
-		var label = _n0.label;
-		var icon = _n0.icon;
-		var checked = _n0.checked;
-		var onChange = _n0.onChange;
-		var attributes = _Utils_ap(
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$Input$isHiddenLabel(label) ? mdgriffith$elm_ui$Internal$Model$NoAttribute : mdgriffith$elm_ui$Element$spacing(6),
-					mdgriffith$elm_ui$Internal$Model$Attr(
-					elm$html$Html$Events$onClick(
-						onChange(!checked))),
-					mdgriffith$elm_ui$Element$Region$announce,
-					mdgriffith$elm_ui$Element$Input$onKeyLookup(
-					function (code) {
-						return _Utils_eq(code, mdgriffith$elm_ui$Element$Input$enter) ? elm$core$Maybe$Just(
-							onChange(!checked)) : (_Utils_eq(code, mdgriffith$elm_ui$Element$Input$space) ? elm$core$Maybe$Just(
-							onChange(!checked)) : elm$core$Maybe$Nothing);
-					}),
-					mdgriffith$elm_ui$Element$Input$tabindex(0),
-					mdgriffith$elm_ui$Element$pointer,
-					mdgriffith$elm_ui$Element$alignLeft,
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
-				]),
-			attrs);
-		return A3(
-			mdgriffith$elm_ui$Element$Input$applyLabel,
-			attributes,
-			label,
-			A4(
-				mdgriffith$elm_ui$Internal$Model$element,
-				mdgriffith$elm_ui$Internal$Model$asEl,
-				mdgriffith$elm_ui$Internal$Model$div,
-				_List_fromArray(
-					[
-						mdgriffith$elm_ui$Internal$Model$Attr(
-						A2(elm$html$Html$Attributes$attribute, 'role', 'checkbox')),
-						mdgriffith$elm_ui$Internal$Model$Attr(
-						A2(
-							elm$html$Html$Attributes$attribute,
-							'aria-checked',
-							checked ? 'true' : 'false')),
-						mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute(label),
-						mdgriffith$elm_ui$Element$centerY,
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
-					]),
-				mdgriffith$elm_ui$Internal$Model$Unkeyed(
-					_List_fromArray(
-						[
-							icon(checked)
-						]))));
-	});
-var author$project$Page$Settings$countMethod = function (method) {
-	return {
-		description: 'Your words can be counted in two different ways, depending on your preference. \'New words\' means that every word you type will be added to your word count. \'Actual words\' means that if you delete words, they will also be removed from your word count. This only affects your daily word count. Progress towards completing a target will always count every word written.',
-		header: 'Counting Method',
-		input: A2(
-			mdgriffith$elm_ui$Element$Input$checkbox,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$width(
-					mdgriffith$elm_ui$Element$fillPortion(1)),
-					mdgriffith$elm_ui$Element$centerX,
-					mdgriffith$elm_ui$Element$alignTop
-				]),
-			{
-				checked: author$project$Page$Settings$countMethodToBool(method),
-				icon: A2(author$project$Page$Settings$showCheckBox, 'New words', 'Actual words'),
-				label: mdgriffith$elm_ui$Element$Input$labelHidden('Counting Method'),
-				onChange: author$project$Page$Settings$CountMethodChanged
-			})
-	};
-};
-var author$project$Appearance$black = A3(mdgriffith$elm_ui$Element$rgb255, 0, 0, 0);
-var author$project$Page$Settings$DisplayNameInputRecived = function (a) {
-	return {$: 'DisplayNameInputRecived', a: a};
-};
-var mdgriffith$elm_ui$Element$Input$Placeholder = F2(
-	function (a, b) {
-		return {$: 'Placeholder', a: a, b: b};
-	});
-var mdgriffith$elm_ui$Element$Input$placeholder = mdgriffith$elm_ui$Element$Input$Placeholder;
-var mdgriffith$elm_ui$Element$Input$text = mdgriffith$elm_ui$Element$Input$textHelper(
-	{
-		autofill: elm$core$Maybe$Nothing,
-		spellchecked: false,
-		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
-	});
-var author$project$Page$Settings$displayName = function (name) {
-	return {
-		description: 'Your Display Name is your identity on GameYourWords.com. This name will be how you are seen by anyone else in the GameYourWords community. Please choose a name that isn\'t obscene or offensive.',
-		header: 'Display Name',
-		input: A2(
-			mdgriffith$elm_ui$Element$Input$text,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$width(
-					mdgriffith$elm_ui$Element$fillPortion(1)),
-					mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$black),
-					mdgriffith$elm_ui$Element$alignTop
-				]),
-			{
-				label: mdgriffith$elm_ui$Element$Input$labelHidden('Display Name'),
-				onChange: author$project$Page$Settings$DisplayNameInputRecived,
-				placeholder: elm$core$Maybe$Just(
-					A2(
-						mdgriffith$elm_ui$Element$Input$placeholder,
-						_List_Nil,
-						mdgriffith$elm_ui$Element$text('Display Name'))),
-				text: name
-			})
-	};
-};
-var author$project$Page$Settings$SaveButtonPressed = {$: 'SaveButtonPressed'};
-var author$project$Page$Settings$saveSettingsButton = A2(
-	mdgriffith$elm_ui$Element$Input$button,
-	_List_fromArray(
-		[
-			mdgriffith$elm_ui$Element$Border$color(author$project$Appearance$siteLightFontColor),
-			mdgriffith$elm_ui$Element$Border$width(2),
-			mdgriffith$elm_ui$Element$Border$rounded(5),
-			mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteActionButtonColor),
-			mdgriffith$elm_ui$Element$padding(10)
-		]),
-	{
-		label: mdgriffith$elm_ui$Element$text('Save settings'),
-		onPress: elm$core$Maybe$Just(author$project$Page$Settings$SaveButtonPressed)
-	});
-var author$project$Appearance$siteHeaderSize = 18;
-var author$project$Page$Settings$defaultPadding = {bottom: 0, left: 0, right: 0, top: 0};
-var mdgriffith$elm_ui$Internal$Model$Paragraph = {$: 'Paragraph'};
-var mdgriffith$elm_ui$Element$paragraph = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asParagraph,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$Paragraph),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$spacing(5),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
-var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
-var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
-	return {$: 'FontSize', a: a};
-};
-var mdgriffith$elm_ui$Element$Font$size = function (i) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontSize,
-		mdgriffith$elm_ui$Internal$Model$FontSize(i));
-};
-var author$project$Page$Settings$showSetting = function (setting) {
-	return A2(
-		mdgriffith$elm_ui$Element$column,
-		_List_Nil,
+		mdgriffith$elm_ui$Element$Input$currentPassword,
 		_List_fromArray(
 			[
-				A2(
-				mdgriffith$elm_ui$Element$el,
-				_List_fromArray(
-					[
-						mdgriffith$elm_ui$Element$Font$size(author$project$Appearance$siteHeaderSize),
-						mdgriffith$elm_ui$Element$paddingEach(
-						_Utils_update(
-							author$project$Page$Settings$defaultPadding,
-							{bottom: 10}))
-					]),
-				mdgriffith$elm_ui$Element$text(setting.header)),
-				A2(
-				mdgriffith$elm_ui$Element$row,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$width(
-								mdgriffith$elm_ui$Element$fillPortion(4)),
-								mdgriffith$elm_ui$Element$paddingEach(
-								_Utils_update(
-									author$project$Page$Settings$defaultPadding,
-									{left: 10, right: 10})),
-								mdgriffith$elm_ui$Element$alignTop
-							]),
-						A2(
-							mdgriffith$elm_ui$Element$paragraph,
-							_List_Nil,
-							_List_fromArray(
-								[
-									mdgriffith$elm_ui$Element$text(setting.description)
-								]))),
-						setting.input
-					]))
-			]));
-};
-var author$project$Page$Settings$touchedOrState = F4(
-	function (modelSelector, model, settingsSelector, settings) {
-		var _n0 = modelSelector(model);
-		if (_n0.$ === 'Just') {
-			var setting = _n0.a;
-			return setting;
-		} else {
-			return settingsSelector(settings);
-		}
-	});
-var author$project$Page$Settings$showBody = F2(
-	function (model, state) {
-		return A2(
-			mdgriffith$elm_ui$Element$column,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundMediumDark),
-					mdgriffith$elm_ui$Element$padding(10),
-					mdgriffith$elm_ui$Element$spacing(10),
-					mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-				]),
-			_List_fromArray(
-				[
-					author$project$Page$Settings$showSetting(
-					author$project$Page$Settings$displayName(
-						A4(
-							author$project$Page$Settings$touchedOrState,
-							function ($) {
-								return $.displayName;
-							},
-							model,
-							function ($) {
-								return $.displayName;
-							},
-							state.settings))),
-					author$project$Page$Settings$showSetting(
-					author$project$Page$Settings$countMethod(
-						A4(
-							author$project$Page$Settings$touchedOrState,
-							function ($) {
-								return $.countMethod;
-							},
-							model,
-							function ($) {
-								return $.countMethod;
-							},
-							state.settings))),
-					author$project$Page$Settings$saveSettingsButton
-				]));
-	});
-var author$project$Page$Settings$view = F2(
-	function (model, state) {
-		return {
-			body: A2(author$project$Page$Settings$showBody, model, state),
-			headerSettings: elm$core$Maybe$Just(
-				{actionButtonSettings: elm$core$Maybe$Nothing}),
-			title: 'Settings'
-		};
-	});
-var author$project$Appearance$siteBackgroundLight = A3(mdgriffith$elm_ui$Element$rgb255, 255, 255, 255);
-var author$project$Page$SignerOuter$view = {
-	body: A2(
-		mdgriffith$elm_ui$Element$el,
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundLight)
+				mdgriffith$elm_ui$Element$htmlAttribute(
+				elm$html$Html$Attributes$placeholder('Password'))
 			]),
-		A2(
-			mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-					mdgriffith$elm_ui$Element$centerX,
-					mdgriffith$elm_ui$Element$centerY
-				]),
-			mdgriffith$elm_ui$Element$text('Signing you out.'))),
-	headerSettings: elm$core$Maybe$Nothing,
-	title: 'Sign Out'
+		{
+			label: mdgriffith$elm_ui$Element$Input$labelHidden('Password'),
+			onChange: author$project$Page$SignIn$InputReceived(author$project$Page$SignIn$Password),
+			placeholder: elm$core$Maybe$Nothing,
+			show: false,
+			text: password
+		});
 };
-var author$project$Page$TargetSelector$getHeaderSettings = function (state) {
-	return {
-		actionButtonSettings: elm$core$Maybe$Just(
-			{action: '/', label: 'CANCEL'})
-	};
+var mdgriffith$elm_ui$Element$rgb255 = F3(
+	function (red, green, blue) {
+		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, red / 255, green / 255, blue / 255, 1);
+	});
+var author$project$Appearance$siteBackgroundDark = A3(mdgriffith$elm_ui$Element$rgb255, 13, 70, 113);
+var author$project$Appearance$siteLightFontColor = A3(mdgriffith$elm_ui$Element$rgb255, 240, 240, 240);
+var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
+	return {$: 'AlignX', a: a};
 };
-var author$project$Appearance$siteBackgroundTargetSelection = A3(mdgriffith$elm_ui$Element$rgb255, 108, 160, 229);
-var author$project$Page$TargetSelector$TargetButtonClicked = function (a) {
-	return {$: 'TargetButtonClicked', a: a};
-};
-var elm$html$Html$Attributes$alt = elm$html$Html$Attributes$stringProperty('alt');
-var elm$html$Html$Attributes$src = function (url) {
+var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
+var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
+var mdgriffith$elm_ui$Element$padding = function (x) {
 	return A2(
-		elm$html$Html$Attributes$stringProperty,
-		'src',
-		_VirtualDom_noJavaScriptOrHtmlUri(url));
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + elm$core$String$fromInt(x),
+			x,
+			x,
+			x,
+			x));
 };
-var mdgriffith$elm_ui$Element$image = F2(
+var mdgriffith$elm_ui$Internal$Model$Text = function (a) {
+	return {$: 'Text', a: a};
+};
+var mdgriffith$elm_ui$Element$text = function (content) {
+	return mdgriffith$elm_ui$Internal$Model$Text(content);
+};
+var elm$html$Html$Attributes$disabled = elm$html$Html$Attributes$boolProperty('disabled');
+var elm$html$Html$Attributes$tabindex = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'tabIndex',
+		elm$core$String$fromInt(n));
+};
+var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
+var elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'click',
+		elm$json$Json$Decode$succeed(msg));
+};
+var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
+var mdgriffith$elm_ui$Element$Input$enter = 'Enter';
+var elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
+	return {$: 'MayPreventDefault', a: a};
+};
+var elm$html$Html$Events$preventDefaultOn = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayPreventDefault(decoder));
+	});
+var mdgriffith$elm_ui$Element$Input$onKey = F2(
+	function (desiredCode, msg) {
+		var decode = function (code) {
+			return _Utils_eq(code, desiredCode) ? elm$json$Json$Decode$succeed(msg) : elm$json$Json$Decode$fail('Not the enter key');
+		};
+		var isKey = A2(
+			elm$json$Json$Decode$andThen,
+			decode,
+			A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+		return mdgriffith$elm_ui$Internal$Model$Attr(
+			A2(
+				elm$html$Html$Events$preventDefaultOn,
+				'keyup',
+				A2(
+					elm$json$Json$Decode$map,
+					function (fired) {
+						return _Utils_Tuple2(fired, true);
+					},
+					isKey)));
+	});
+var mdgriffith$elm_ui$Element$Input$onEnter = function (msg) {
+	return A2(mdgriffith$elm_ui$Element$Input$onKey, mdgriffith$elm_ui$Element$Input$enter, msg);
+};
+var mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
+var mdgriffith$elm_ui$Element$Input$button = F2(
 	function (attrs, _n0) {
-		var src = _n0.src;
-		var description = _n0.description;
-		var imageAttributes = A2(
-			elm$core$List$filter,
-			function (a) {
-				switch (a.$) {
-					case 'Width':
-						return true;
-					case 'Height':
-						return true;
-					default:
-						return false;
-				}
-			},
-			attrs);
+		var onPress = _n0.onPress;
+		var label = _n0.label;
 		return A4(
 			mdgriffith$elm_ui$Internal$Model$element,
 			mdgriffith$elm_ui$Internal$Model$asEl,
 			mdgriffith$elm_ui$Internal$Model$div,
 			A2(
 				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.imageContainer),
-				attrs),
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentCenterX + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.contentCenterY + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.seButton + (' ' + mdgriffith$elm_ui$Internal$Style$classes.noTextSelection)))))),
+						A2(
+							elm$core$List$cons,
+							mdgriffith$elm_ui$Element$pointer,
+							A2(
+								elm$core$List$cons,
+								mdgriffith$elm_ui$Element$Input$focusDefault(attrs),
+								A2(
+									elm$core$List$cons,
+									mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$Button),
+									A2(
+										elm$core$List$cons,
+										mdgriffith$elm_ui$Internal$Model$Attr(
+											elm$html$Html$Attributes$tabindex(0)),
+										function () {
+											if (onPress.$ === 'Nothing') {
+												return A2(
+													elm$core$List$cons,
+													mdgriffith$elm_ui$Internal$Model$Attr(
+														elm$html$Html$Attributes$disabled(true)),
+													attrs);
+											} else {
+												var msg = onPress.a;
+												return A2(
+													elm$core$List$cons,
+													mdgriffith$elm_ui$Element$Events$onClick(msg),
+													A2(
+														elm$core$List$cons,
+														mdgriffith$elm_ui$Element$Input$onEnter(msg),
+														attrs));
+											}
+										}()))))))),
 			mdgriffith$elm_ui$Internal$Model$Unkeyed(
 				_List_fromArray(
-					[
-						A4(
-						mdgriffith$elm_ui$Internal$Model$element,
-						mdgriffith$elm_ui$Internal$Model$asEl,
-						mdgriffith$elm_ui$Internal$Model$NodeName('img'),
-						_Utils_ap(
-							_List_fromArray(
-								[
-									mdgriffith$elm_ui$Internal$Model$Attr(
-									elm$html$Html$Attributes$src(src)),
-									mdgriffith$elm_ui$Internal$Model$Attr(
-									elm$html$Html$Attributes$alt(description))
-								]),
-							imageAttributes),
-						mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil))
-					])));
+					[label])));
 	});
-var mdgriffith$elm_ui$Internal$Model$Px = function (a) {
-	return {$: 'Px', a: a};
-};
-var mdgriffith$elm_ui$Element$px = mdgriffith$elm_ui$Internal$Model$Px;
-var author$project$Page$TargetSelector$buildSingleTargetSelector = F2(
-	function (imageWidth, target) {
-		return A2(
-			mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$Events$onClick(
-					author$project$Page$TargetSelector$TargetButtonClicked(target)),
-					mdgriffith$elm_ui$Element$pointer
-				]),
-			A2(
-				mdgriffith$elm_ui$Element$column,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						mdgriffith$elm_ui$Element$image,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$width(
-								mdgriffith$elm_ui$Element$px(imageWidth))
-							]),
-						{description: target.name, src: target.imgSource}),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[mdgriffith$elm_ui$Element$centerX]),
-						mdgriffith$elm_ui$Element$text(target.name)),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[mdgriffith$elm_ui$Element$centerX]),
-						mdgriffith$elm_ui$Element$text(
-							elm$core$String$fromInt(target.count) + ' words')),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[mdgriffith$elm_ui$Element$centerX]),
-						mdgriffith$elm_ui$Element$text(
-							elm$core$String$fromInt(target.minutes) + ' minutes')),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[mdgriffith$elm_ui$Element$centerX]),
-						mdgriffith$elm_ui$Element$text(
-							elm$core$String$fromInt((target.count / target.minutes) | 0) + ' wpm'))
-					])));
+var author$project$Page$SignIn$signInButton = A2(
+	mdgriffith$elm_ui$Element$Input$button,
+	_List_fromArray(
+		[
+			mdgriffith$elm_ui$Element$centerX,
+			mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+			mdgriffith$elm_ui$Element$padding(5),
+			mdgriffith$elm_ui$Element$Border$width(2),
+			mdgriffith$elm_ui$Element$Border$rounded(5),
+			mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundDark),
+			mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+		]),
+	{
+		label: mdgriffith$elm_ui$Element$text('Sign in!'),
+		onPress: elm$core$Maybe$Just(author$project$Page$SignIn$SignInButtonClicked)
 	});
-var author$project$Page$TargetSelector$buildSingleTargetRow = F2(
-	function (imageWidth, targets) {
-		return A2(
-			mdgriffith$elm_ui$Element$row,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$padding(5)
-				]),
-			A2(
-				elm$core$List$map,
-				author$project$Page$TargetSelector$buildSingleTargetSelector(imageWidth),
-				targets));
-	});
-var elm$core$List$takeReverse = F3(
-	function (n, list, kept) {
-		takeReverse:
-		while (true) {
-			if (n <= 0) {
-				return kept;
-			} else {
-				if (!list.b) {
-					return kept;
-				} else {
-					var x = list.a;
-					var xs = list.b;
-					var $temp$n = n - 1,
-						$temp$list = xs,
-						$temp$kept = A2(elm$core$List$cons, x, kept);
-					n = $temp$n;
-					list = $temp$list;
-					kept = $temp$kept;
-					continue takeReverse;
-				}
-			}
-		}
-	});
-var elm$core$List$takeTailRec = F2(
-	function (n, list) {
-		return elm$core$List$reverse(
-			A3(elm$core$List$takeReverse, n, list, _List_Nil));
-	});
-var elm$core$List$takeFast = F3(
-	function (ctr, n, list) {
-		if (n <= 0) {
-			return _List_Nil;
-		} else {
-			var _n0 = _Utils_Tuple2(n, list);
-			_n0$1:
-			while (true) {
-				_n0$5:
-				while (true) {
-					if (!_n0.b.b) {
-						return list;
-					} else {
-						if (_n0.b.b.b) {
-							switch (_n0.a) {
-								case 1:
-									break _n0$1;
-								case 2:
-									var _n2 = _n0.b;
-									var x = _n2.a;
-									var _n3 = _n2.b;
-									var y = _n3.a;
-									return _List_fromArray(
-										[x, y]);
-								case 3:
-									if (_n0.b.b.b.b) {
-										var _n4 = _n0.b;
-										var x = _n4.a;
-										var _n5 = _n4.b;
-										var y = _n5.a;
-										var _n6 = _n5.b;
-										var z = _n6.a;
-										return _List_fromArray(
-											[x, y, z]);
-									} else {
-										break _n0$5;
-									}
-								default:
-									if (_n0.b.b.b.b && _n0.b.b.b.b.b) {
-										var _n7 = _n0.b;
-										var x = _n7.a;
-										var _n8 = _n7.b;
-										var y = _n8.a;
-										var _n9 = _n8.b;
-										var z = _n9.a;
-										var _n10 = _n9.b;
-										var w = _n10.a;
-										var tl = _n10.b;
-										return (ctr > 1000) ? A2(
-											elm$core$List$cons,
-											x,
-											A2(
-												elm$core$List$cons,
-												y,
-												A2(
-													elm$core$List$cons,
-													z,
-													A2(
-														elm$core$List$cons,
-														w,
-														A2(elm$core$List$takeTailRec, n - 4, tl))))) : A2(
-											elm$core$List$cons,
-											x,
-											A2(
-												elm$core$List$cons,
-												y,
-												A2(
-													elm$core$List$cons,
-													z,
-													A2(
-														elm$core$List$cons,
-														w,
-														A3(elm$core$List$takeFast, ctr + 1, n - 4, tl)))));
-									} else {
-										break _n0$5;
-									}
-							}
-						} else {
-							if (_n0.a === 1) {
-								break _n0$1;
-							} else {
-								break _n0$5;
-							}
-						}
-					}
-				}
-				return list;
-			}
-			var _n1 = _n0.b;
-			var x = _n1.a;
-			return _List_fromArray(
-				[x]);
-		}
-	});
-var elm$core$List$take = F2(
-	function (n, list) {
-		return A3(elm$core$List$takeFast, 0, n, list);
-	});
-var elm_community$list_extra$List$Extra$greedyGroupsOfWithStep = F3(
-	function (size, step, xs) {
-		var xs_ = A2(elm$core$List$drop, step, xs);
-		var okayXs = elm$core$List$length(xs) > 0;
-		var okayArgs = (size > 0) && (step > 0);
-		return (okayArgs && okayXs) ? A2(
-			elm$core$List$cons,
-			A2(elm$core$List$take, size, xs),
-			A3(elm_community$list_extra$List$Extra$greedyGroupsOfWithStep, size, step, xs_)) : _List_Nil;
-	});
-var elm_community$list_extra$List$Extra$greedyGroupsOf = F2(
-	function (size, xs) {
-		return A3(elm_community$list_extra$List$Extra$greedyGroupsOfWithStep, size, size, xs);
-	});
-var author$project$Page$TargetSelector$buildTargetRows = F3(
-	function (imagesPerRow, imageWidth, targets) {
-		var targetRows = A2(elm_community$list_extra$List$Extra$greedyGroupsOf, imagesPerRow, targets);
-		return A2(
-			elm$core$List$map,
-			author$project$Page$TargetSelector$buildSingleTargetRow(imageWidth),
-			targetRows);
-	});
-var elm$core$Dict$values = function (dict) {
-	return A3(
-		elm$core$Dict$foldr,
-		F3(
-			function (key, value, valueList) {
-				return A2(elm$core$List$cons, value, valueList);
-			}),
-		_List_Nil,
-		dict);
-};
-var mdgriffith$elm_ui$Internal$Flag$overflow = mdgriffith$elm_ui$Internal$Flag$flag(20);
-var mdgriffith$elm_ui$Element$scrollbarY = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$overflow, mdgriffith$elm_ui$Internal$Style$classes.scrollbarsY);
-var author$project$Page$TargetSelector$showBody = F2(
-	function (model, state) {
-		var imageWidth = 150;
-		var imagesPerRow = (state.windowDimensions.width / (imageWidth + 10)) | 0;
-		return A2(
-			mdgriffith$elm_ui$Element$column,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundTargetSelection),
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$padding(25),
-					mdgriffith$elm_ui$Element$scrollbarY
-				]),
-			A3(
-				author$project$Page$TargetSelector$buildTargetRows,
-				imagesPerRow,
-				imageWidth,
-				elm$core$Dict$values(model.targets)));
-	});
-var author$project$Page$TargetSelector$view = F2(
-	function (model, state) {
-		return {
-			body: A2(author$project$Page$TargetSelector$showBody, model, state),
-			headerSettings: elm$core$Maybe$Just(
-				author$project$Page$TargetSelector$getHeaderSettings(state)),
-			title: 'Target Selector'
-		};
-	});
-var author$project$Page$Writer$getHeaderSettings = function (state) {
-	return {
-		actionButtonSettings: elm$core$Maybe$Just(
-			{action: '/target', label: 'TARGET'})
-	};
-};
-var author$project$Page$Writer$WordsWritten = function (a) {
-	return {$: 'WordsWritten', a: a};
-};
-var author$project$Appearance$progressBarBackground = A3(mdgriffith$elm_ui$Element$rgb255, 200, 200, 200);
-var author$project$Appearance$progressBarForeground = A3(mdgriffith$elm_ui$Element$rgb255, 78, 185, 37);
-var author$project$Page$Writer$currentTargetCounts = F2(
-	function (winProgress, winCount) {
-		return '  ' + (elm$core$String$fromInt(winProgress) + (' / ' + elm$core$String$fromInt(winCount)));
-	});
-var author$project$Page$Writer$formatSecondsToStringHourCheck = F2(
-	function (seconds, hasHour) {
-		return (((seconds < 3600) && (seconds >= 60)) || hasHour) ? (A3(
-			elm$core$String$padLeft,
-			2,
-			_Utils_chr('0'),
-			elm$core$String$fromInt((seconds / 60) | 0)) + (':' + A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds % 60, false))) : ((seconds < 60) ? A3(
-			elm$core$String$padLeft,
-			2,
-			_Utils_chr('0'),
-			elm$core$String$fromInt(seconds)) : (elm$core$String$fromInt((seconds / 3600) | 0) + (':' + A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds % 3600, true))));
-	});
-var author$project$Page$Writer$formatSecondsToString = function (seconds) {
-	return A2(author$project$Page$Writer$formatSecondsToStringHourCheck, seconds, false);
-};
-var author$project$State$endReasonToString = function (ended) {
-	switch (ended.$) {
-		case 'No':
-			return '';
-		case 'TimeExpired':
-			return 'Time\'s up!';
+var author$project$Link$SignUp = {$: 'SignUp'};
+var author$project$Link$getUrl = function (dest) {
+	switch (dest.$) {
+		case 'Home':
+			return '/';
+		case 'SignIn':
+			return '/signin';
+		case 'SignUp':
+			return '/signup';
+		case 'SignOut':
+			return '/signout';
+		case 'Settings':
+			return '/settings';
+		case 'Dashboard':
+			return '/dashboard';
 		default:
-			return 'You win!';
+			return '/target';
 	}
-};
-var author$project$Page$Writer$currentTargetFightStatus = F2(
-	function (model, state) {
-		return '  ' + ((!_Utils_eq(state.ended, author$project$State$No)) ? author$project$State$endReasonToString(state.ended) : author$project$Page$Writer$formatSecondsToString(state.currentTargetTimerInSecs));
-	});
-var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
-var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
-var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
-var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
-var mdgriffith$elm_ui$Internal$Model$OnLeft = {$: 'OnLeft'};
-var mdgriffith$elm_ui$Element$onLeft = function (element) {
-	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnLeft, element);
-};
-var mdgriffith$elm_ui$Internal$Model$OnRight = {$: 'OnRight'};
-var mdgriffith$elm_ui$Element$onRight = function (element) {
-	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$OnRight, element);
-};
-var author$project$Page$Writer$showProgressBar = F3(
-	function (model, state, target) {
-		return A2(
-			mdgriffith$elm_ui$Element$row,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$height(
-					mdgriffith$elm_ui$Element$px(38)),
-					mdgriffith$elm_ui$Element$centerY,
-					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundLight),
-					mdgriffith$elm_ui$Element$inFront(
-					A2(
-						mdgriffith$elm_ui$Element$image,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$width(
-								mdgriffith$elm_ui$Element$px(35)),
-								mdgriffith$elm_ui$Element$centerX,
-								mdgriffith$elm_ui$Element$onLeft(
-								A2(
-									mdgriffith$elm_ui$Element$el,
-									_List_fromArray(
-										[mdgriffith$elm_ui$Element$alignRight, mdgriffith$elm_ui$Element$centerY]),
-									mdgriffith$elm_ui$Element$text(target.name + '  '))),
-								mdgriffith$elm_ui$Element$onRight(
-								A2(
-									mdgriffith$elm_ui$Element$row,
-									_List_fromArray(
-										[mdgriffith$elm_ui$Element$centerY]),
-									_List_fromArray(
-										[
-											A2(
-											mdgriffith$elm_ui$Element$el,
-											_List_fromArray(
-												[
-													mdgriffith$elm_ui$Element$alignLeft,
-													mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
-												]),
-											mdgriffith$elm_ui$Element$text(
-												A2(author$project$Page$Writer$currentTargetCounts, state.winProgress, target.count))),
-											A2(
-											mdgriffith$elm_ui$Element$el,
-											_List_fromArray(
-												[mdgriffith$elm_ui$Element$alignLeft]),
-											mdgriffith$elm_ui$Element$text(
-												A2(author$project$Page$Writer$currentTargetFightStatus, model, state)))
-										])))
-							]),
-						{description: target.name + ' portrait', src: target.portraitSource}))
-				]),
-			_List_fromArray(
-				[
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$width(
-							mdgriffith$elm_ui$Element$fillPortion(state.winProgress)),
-							mdgriffith$elm_ui$Element$height(
-							mdgriffith$elm_ui$Element$px(20)),
-							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$progressBarForeground)
-						]),
-					mdgriffith$elm_ui$Element$none),
-					A2(
-					mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$width(
-							mdgriffith$elm_ui$Element$fillPortion(target.count - state.winProgress)),
-							mdgriffith$elm_ui$Element$height(
-							mdgriffith$elm_ui$Element$px(20)),
-							mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$progressBarBackground)
-						]),
-					mdgriffith$elm_ui$Element$none)
-				]));
-	});
-var mdgriffith$elm_ui$Element$Input$TextArea = {$: 'TextArea'};
-var mdgriffith$elm_ui$Element$Input$multiline = F2(
-	function (attrs, multi) {
-		return A3(
-			mdgriffith$elm_ui$Element$Input$textHelper,
-			{autofill: elm$core$Maybe$Nothing, spellchecked: multi.spellcheck, type_: mdgriffith$elm_ui$Element$Input$TextArea},
-			attrs,
-			{label: multi.label, onChange: multi.onChange, placeholder: multi.placeholder, text: multi.text});
-	});
-var author$project$Page$Writer$showBody = F2(
-	function (model, state) {
-		return A2(
-			mdgriffith$elm_ui$Element$column,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill)
-				]),
-			_List_fromArray(
-				[
-					function () {
-					var _n0 = state.currentTarget;
-					if (_n0.$ === 'Nothing') {
-						return mdgriffith$elm_ui$Element$none;
-					} else {
-						var currentTarget = _n0.a;
-						return A3(author$project$Page$Writer$showProgressBar, model, state, currentTarget);
-					}
-				}(),
-					A2(
-					mdgriffith$elm_ui$Element$Input$multiline,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-							mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-							mdgriffith$elm_ui$Element$padding(25),
-							mdgriffith$elm_ui$Element$Border$width(0),
-							mdgriffith$elm_ui$Element$Border$rounded(0),
-							mdgriffith$elm_ui$Element$htmlAttribute(
-							elm$html$Html$Attributes$placeholder('Tap target to select one, then write your words here!'))
-						]),
-					{
-						label: mdgriffith$elm_ui$Element$Input$labelHidden(''),
-						onChange: author$project$Page$Writer$WordsWritten,
-						placeholder: elm$core$Maybe$Nothing,
-						spellcheck: true,
-						text: state.currentText
-					})
-				]));
-	});
-var author$project$Page$Writer$view = F2(
-	function (model, state) {
-		return {
-			body: A2(author$project$Page$Writer$showBody, model, state),
-			headerSettings: elm$core$Maybe$Just(
-				author$project$Page$Writer$getHeaderSettings(state)),
-			title: 'Writing page'
-		};
-	});
-var author$project$Skeleton$noPageFound = {
-	body: A2(
-		mdgriffith$elm_ui$Element$el,
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteLightFontColor)
-			]),
-		A2(
-			mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					mdgriffith$elm_ui$Element$centerX,
-					mdgriffith$elm_ui$Element$centerY
-				]),
-			mdgriffith$elm_ui$Element$text('No page found here!'))),
-	headerSettings: elm$core$Maybe$Nothing,
-	title: 'No page found!'
 };
 var elm$html$Html$Attributes$href = function (url) {
 	return A2(
@@ -16323,139 +12985,275 @@ var mdgriffith$elm_ui$Element$link = F2(
 				_List_fromArray(
 					[label])));
 	});
-var author$project$Skeleton$actionButton = function (settings) {
+var mdgriffith$elm_ui$Element$row = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asRow,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
+var mdgriffith$elm_ui$Internal$Flag$fontWeight = mdgriffith$elm_ui$Internal$Flag$flag(13);
+var mdgriffith$elm_ui$Element$Font$bold = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontWeight, mdgriffith$elm_ui$Internal$Style$classes.bold);
+var mdgriffith$elm_ui$Element$Font$underline = mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.underline);
+var author$project$Page$SignIn$signUpLink = A2(
+	mdgriffith$elm_ui$Element$row,
+	_List_fromArray(
+		[
+			mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor),
+			mdgriffith$elm_ui$Element$centerX,
+			mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
+		]),
+	_List_fromArray(
+		[
+			A2(
+			mdgriffith$elm_ui$Element$el,
+			_List_Nil,
+			mdgriffith$elm_ui$Element$text('Don\'t have an account yet? ')),
+			A2(
+			mdgriffith$elm_ui$Element$link,
+			_List_fromArray(
+				[mdgriffith$elm_ui$Element$Font$bold, mdgriffith$elm_ui$Element$Font$underline]),
+			{
+				label: mdgriffith$elm_ui$Element$text('Sign up!'),
+				url: author$project$Link$getUrl(author$project$Link$SignUp)
+			})
+		]));
+var author$project$ValidationMessage$getMessage = function (_n0) {
+	var message = _n0.a;
+	return message;
+};
+var author$project$Page$SignIn$validationMessage = function (message) {
 	return A2(
-		mdgriffith$elm_ui$Element$link,
+		mdgriffith$elm_ui$Element$el,
 		_List_fromArray(
 			[
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
 				mdgriffith$elm_ui$Element$centerX,
-				mdgriffith$elm_ui$Element$centerY,
-				mdgriffith$elm_ui$Element$padding(2),
-				mdgriffith$elm_ui$Element$Border$width(2),
-				mdgriffith$elm_ui$Element$Border$rounded(2),
-				mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteActionButtonColor),
 				mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
 			]),
+		mdgriffith$elm_ui$Element$text(
+			author$project$ValidationMessage$getMessage(message)));
+};
+var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
+	return {$: 'AlignY', a: a};
+};
+var mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
+var mdgriffith$elm_ui$Element$centerY = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$CenterY);
+var mdgriffith$elm_ui$Element$column = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asColumn,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentTop + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentLeft)),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
+var author$project$Page$SignIn$body = function (model) {
+	return A2(
+		mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				mdgriffith$elm_ui$Element$spacing(10),
+				mdgriffith$elm_ui$Element$centerX,
+				mdgriffith$elm_ui$Element$centerY,
+				author$project$CustomHtmlEvents$onEnter(author$project$Page$SignIn$SignInButtonClicked)
+			]),
+		_List_fromArray(
+			[
+				author$project$Page$SignIn$validationMessage(model.validationMessage),
+				author$project$Page$SignIn$emailInput(model.email),
+				author$project$Page$SignIn$passwordInput(model.password),
+				author$project$Page$SignIn$signInButton,
+				author$project$Page$SignIn$signUpLink
+			]));
+};
+var author$project$Page$SignIn$view = function (model) {
+	return A3(
+		author$project$DisplayData$create,
+		'Sign in!',
+		author$project$Page$SignIn$body(model),
+		elm$core$Maybe$Nothing);
+};
+var author$project$Page$SignUp$SignUpButtonClicked = {$: 'SignUpButtonClicked'};
+var author$project$Page$SignUp$ConfirmPassword = {$: 'ConfirmPassword'};
+var author$project$Page$SignUp$InputReceived = F2(
+	function (a, b) {
+		return {$: 'InputReceived', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$Input$newPassword = F2(
+	function (attrs, pass) {
+		return A3(
+			mdgriffith$elm_ui$Element$Input$textHelper,
+			{
+				autofill: elm$core$Maybe$Just('new-password'),
+				spellchecked: false,
+				type_: mdgriffith$elm_ui$Element$Input$TextInputNode(
+					pass.show ? 'text' : 'password')
+			},
+			attrs,
+			{label: pass.label, onChange: pass.onChange, placeholder: pass.placeholder, text: pass.text});
+	});
+var author$project$Page$SignUp$confirmPasswordInput = function (password) {
+	return A2(
+		mdgriffith$elm_ui$Element$Input$newPassword,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$htmlAttribute(
+				elm$html$Html$Attributes$placeholder('Confirm password'))
+			]),
 		{
-			label: mdgriffith$elm_ui$Element$text(settings.label),
-			url: settings.action
+			label: mdgriffith$elm_ui$Element$Input$labelHidden('Confirm Password'),
+			onChange: author$project$Page$SignUp$InputReceived(author$project$Page$SignUp$ConfirmPassword),
+			placeholder: elm$core$Maybe$Nothing,
+			show: false,
+			text: password
 		});
 };
-var author$project$Skeleton$homeButton = A2(
-	mdgriffith$elm_ui$Element$link,
+var author$project$Page$SignUp$Email = {$: 'Email'};
+var author$project$Page$SignUp$emailInput = function (email) {
+	return A2(
+		mdgriffith$elm_ui$Element$Input$username,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$Input$focusedOnLoad,
+				mdgriffith$elm_ui$Element$htmlAttribute(
+				elm$html$Html$Attributes$placeholder('Email Address'))
+			]),
+		{
+			label: mdgriffith$elm_ui$Element$Input$labelHidden('Email address'),
+			onChange: author$project$Page$SignUp$InputReceived(author$project$Page$SignUp$Email),
+			placeholder: elm$core$Maybe$Nothing,
+			text: email
+		});
+};
+var author$project$Page$SignUp$Password = {$: 'Password'};
+var author$project$Page$SignUp$passwordInput = function (password) {
+	return A2(
+		mdgriffith$elm_ui$Element$Input$newPassword,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$htmlAttribute(
+				elm$html$Html$Attributes$placeholder('Password'))
+			]),
+		{
+			label: mdgriffith$elm_ui$Element$Input$labelHidden('Password'),
+			onChange: author$project$Page$SignUp$InputReceived(author$project$Page$SignUp$Password),
+			placeholder: elm$core$Maybe$Nothing,
+			show: false,
+			text: password
+		});
+};
+var author$project$Link$SignIn = {$: 'SignIn'};
+var author$project$Page$SignUp$signInLink = A2(
+	mdgriffith$elm_ui$Element$row,
 	_List_fromArray(
 		[
-			mdgriffith$elm_ui$Element$centerY,
-			mdgriffith$elm_ui$Element$alignRight,
+			mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor),
+			mdgriffith$elm_ui$Element$centerX,
+			mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
+		]),
+	_List_fromArray(
+		[
+			A2(
+			mdgriffith$elm_ui$Element$el,
+			_List_Nil,
+			mdgriffith$elm_ui$Element$text('Oops! I already have an account. ')),
+			A2(
+			mdgriffith$elm_ui$Element$link,
+			_List_fromArray(
+				[mdgriffith$elm_ui$Element$Font$bold, mdgriffith$elm_ui$Element$Font$underline]),
+			{
+				label: mdgriffith$elm_ui$Element$text('Sign in!'),
+				url: author$project$Link$getUrl(author$project$Link$SignIn)
+			})
+		]));
+var author$project$Page$SignUp$signUpButton = A2(
+	mdgriffith$elm_ui$Element$Input$button,
+	_List_fromArray(
+		[
+			mdgriffith$elm_ui$Element$centerX,
+			mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+			mdgriffith$elm_ui$Element$padding(5),
+			mdgriffith$elm_ui$Element$Border$width(2),
+			mdgriffith$elm_ui$Element$Border$rounded(5),
+			mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundDark),
 			mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
 		]),
 	{
-		label: mdgriffith$elm_ui$Element$text('Home'),
-		url: '/'
+		label: mdgriffith$elm_ui$Element$text('Sign up!'),
+		onPress: elm$core$Maybe$Just(author$project$Page$SignUp$SignUpButtonClicked)
 	});
-var author$project$Skeleton$settingsButton = A2(
-	mdgriffith$elm_ui$Element$link,
-	_List_fromArray(
-		[
-			mdgriffith$elm_ui$Element$centerY,
-			mdgriffith$elm_ui$Element$alignRight,
-			mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-		]),
-	{
-		label: mdgriffith$elm_ui$Element$text('Settings'),
-		url: '/settings'
-	});
-var author$project$Skeleton$signOutButton = A2(
-	mdgriffith$elm_ui$Element$link,
-	_List_fromArray(
-		[
-			mdgriffith$elm_ui$Element$centerY,
-			mdgriffith$elm_ui$Element$alignRight,
-			mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-		]),
-	{
-		label: mdgriffith$elm_ui$Element$text('Sign Out'),
-		url: '/signout'
-	});
-var author$project$Skeleton$buildHeader = F2(
-	function (state, headerSettings) {
-		if (headerSettings.$ === 'Nothing') {
-			return mdgriffith$elm_ui$Element$none;
-		} else {
-			var settings = headerSettings.a;
-			return A2(
-				mdgriffith$elm_ui$Element$row,
-				_List_fromArray(
-					[
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-						mdgriffith$elm_ui$Element$height(
-						mdgriffith$elm_ui$Element$px(50)),
-						mdgriffith$elm_ui$Element$inFront(
-						function () {
-							var _n1 = settings.actionButtonSettings;
-							if (_n1.$ === 'Nothing') {
-								return mdgriffith$elm_ui$Element$none;
-							} else {
-								var buttonSettings = _n1.a;
-								return author$project$Skeleton$actionButton(buttonSettings);
-							}
-						}())
-					]),
-				_List_fromArray(
-					[
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$padding(10),
-								mdgriffith$elm_ui$Element$centerY,
-								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-							]),
-						mdgriffith$elm_ui$Element$text(
-							'Written so far: ' + elm$core$String$fromInt(state.additiveCount))),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$padding(10),
-								mdgriffith$elm_ui$Element$centerY,
-								mdgriffith$elm_ui$Element$alignRight,
-								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-							]),
-						mdgriffith$elm_ui$Element$text(state.settings.displayName)),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$padding(10),
-								mdgriffith$elm_ui$Element$centerY,
-								mdgriffith$elm_ui$Element$alignRight,
-								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-							]),
-						author$project$Skeleton$homeButton),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$padding(10),
-								mdgriffith$elm_ui$Element$centerY,
-								mdgriffith$elm_ui$Element$alignRight,
-								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-							]),
-						author$project$Skeleton$settingsButton),
-						A2(
-						mdgriffith$elm_ui$Element$el,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$padding(10),
-								mdgriffith$elm_ui$Element$centerY,
-								mdgriffith$elm_ui$Element$alignRight,
-								mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
-							]),
-						author$project$Skeleton$signOutButton)
-					]));
-		}
-	});
+var author$project$Page$SignUp$validationMessage = function (message) {
+	return A2(
+		mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				mdgriffith$elm_ui$Element$centerX,
+				mdgriffith$elm_ui$Element$Font$color(author$project$Appearance$siteLightFontColor)
+			]),
+		mdgriffith$elm_ui$Element$text(
+			author$project$ValidationMessage$getMessage(message)));
+};
+var author$project$Page$SignUp$body = function (model) {
+	return A2(
+		mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				mdgriffith$elm_ui$Element$spacing(10),
+				mdgriffith$elm_ui$Element$centerX,
+				mdgriffith$elm_ui$Element$centerY,
+				author$project$CustomHtmlEvents$onEnter(author$project$Page$SignUp$SignUpButtonClicked)
+			]),
+		_List_fromArray(
+			[
+				author$project$Page$SignUp$validationMessage(model.validationMessage),
+				author$project$Page$SignUp$emailInput(model.email),
+				author$project$Page$SignUp$passwordInput(model.password),
+				author$project$Page$SignUp$confirmPasswordInput(model.confirmPassword),
+				author$project$Page$SignUp$signUpButton,
+				author$project$Page$SignUp$signInLink
+			]));
+};
+var author$project$Page$SignUp$view = function (model) {
+	return A3(
+		author$project$DisplayData$create,
+		'Sign up!',
+		author$project$Page$SignUp$body(model),
+		elm$core$Maybe$Nothing);
+};
+var author$project$DisplayData$getBody = function (_n0) {
+	var body = _n0.a.body;
+	return body;
+};
+var author$project$DisplayData$getTitle = function (_n0) {
+	var title = _n0.a.title;
+	return title;
+};
 var mdgriffith$elm_ui$Internal$Model$FocusStyleOption = function (a) {
 	return {$: 'FocusStyleOption', a: a};
 };
@@ -16463,24 +13261,6 @@ var mdgriffith$elm_ui$Element$focusStyle = mdgriffith$elm_ui$Internal$Model$Focu
 var author$project$Appearance$siteFocusStyle = mdgriffith$elm_ui$Element$focusStyle(
 	{backgroundColor: elm$core$Maybe$Nothing, borderColor: elm$core$Maybe$Nothing, shadow: elm$core$Maybe$Nothing});
 var author$project$Appearance$siteFontSize = 14;
-var author$project$Skeleton$horizontalSpacer = A2(
-	mdgriffith$elm_ui$Element$el,
-	_List_fromArray(
-		[
-			mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-			mdgriffith$elm_ui$Element$width(
-			mdgriffith$elm_ui$Element$px(5))
-		]),
-	mdgriffith$elm_ui$Element$none);
-var author$project$Skeleton$verticalSpacer = A2(
-	mdgriffith$elm_ui$Element$el,
-	_List_fromArray(
-		[
-			mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-			mdgriffith$elm_ui$Element$height(
-			mdgriffith$elm_ui$Element$px(5))
-		]),
-	mdgriffith$elm_ui$Element$none);
 var mdgriffith$elm_ui$Internal$Model$OnlyDynamic = F2(
 	function (a, b) {
 		return {$: 'OnlyDynamic', a: a, b: b};
@@ -16626,15 +13406,20 @@ var mdgriffith$elm_ui$Internal$Model$renderRoot = F3(
 						[child]))));
 	});
 var mdgriffith$elm_ui$Internal$Flag$fontFamily = mdgriffith$elm_ui$Internal$Flag$flag(5);
+var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
 var mdgriffith$elm_ui$Internal$Model$FontFamily = F2(
 	function (a, b) {
 		return {$: 'FontFamily', a: a, b: b};
 	});
+var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
+	return {$: 'FontSize', a: a};
+};
 var mdgriffith$elm_ui$Internal$Model$SansSerif = {$: 'SansSerif'};
 var mdgriffith$elm_ui$Internal$Model$Typeface = function (a) {
 	return {$: 'Typeface', a: a};
 };
 var elm$core$String$toLower = _String_toLower;
+var elm$core$String$words = _String_words;
 var mdgriffith$elm_ui$Internal$Model$renderFontClassName = F2(
 	function (font, current) {
 		return _Utils_ap(
@@ -16730,47 +13515,30 @@ var mdgriffith$elm_ui$Element$layoutWith = F3(
 				_Utils_ap(mdgriffith$elm_ui$Internal$Model$rootStyle, attrs)),
 			child);
 	});
-var mdgriffith$elm_ui$Element$scrollbars = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$overflow, mdgriffith$elm_ui$Internal$Style$classes.scrollbars);
-var author$project$Skeleton$composePage = F3(
-	function (state, header, body) {
-		return A3(
-			mdgriffith$elm_ui$Element$layoutWith,
-			{
-				options: _List_fromArray(
-					[author$project$Appearance$siteFocusStyle])
-			},
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$Font$size(author$project$Appearance$siteFontSize),
-					mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundDark),
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill)
-				]),
-			A2(
-				mdgriffith$elm_ui$Element$column,
-				_List_fromArray(
-					[
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill)
-					]),
-				_List_fromArray(
-					[
-						author$project$Skeleton$verticalSpacer,
-						header,
-						A2(
-						mdgriffith$elm_ui$Element$row,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-								mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
-								mdgriffith$elm_ui$Element$scrollbars
-							]),
-						_List_fromArray(
-							[author$project$Skeleton$horizontalSpacer, body, author$project$Skeleton$horizontalSpacer])),
-						author$project$Skeleton$verticalSpacer
-					])));
-	});
+var mdgriffith$elm_ui$Element$Font$size = function (i) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontSize,
+		mdgriffith$elm_ui$Internal$Model$FontSize(i));
+};
+var author$project$PageFrame$buildPage = function (body) {
+	return A3(
+		mdgriffith$elm_ui$Element$layoutWith,
+		{
+			options: _List_fromArray(
+				[author$project$Appearance$siteFocusStyle])
+		},
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$Font$size(author$project$Appearance$siteFontSize),
+				mdgriffith$elm_ui$Element$Background$color(author$project$Appearance$siteBackgroundDark),
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+				mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill)
+			]),
+		body);
+};
 var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
+var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
 var mdgriffith$elm_ui$Internal$Model$map = F2(
 	function (fn, el) {
 		switch (el.$) {
@@ -16802,55 +13570,45 @@ var mdgriffith$elm_ui$Internal$Model$map = F2(
 		}
 	});
 var mdgriffith$elm_ui$Element$map = mdgriffith$elm_ui$Internal$Model$map;
-var author$project$Skeleton$view = F3(
-	function (state, pageMapper, pageData) {
+var author$project$PageFrame$view = F2(
+	function (pageMapper, displayData) {
 		return {
 			body: _List_fromArray(
 				[
-					A3(
-					author$project$Skeleton$composePage,
-					state,
-					A2(author$project$Skeleton$buildHeader, state, pageData.headerSettings),
-					A2(mdgriffith$elm_ui$Element$map, pageMapper, pageData.body))
+					author$project$PageFrame$buildPage(
+					A2(
+						mdgriffith$elm_ui$Element$map,
+						pageMapper,
+						author$project$DisplayData$getBody(displayData)))
 				]),
-			title: pageData.title
+			title: author$project$DisplayData$getTitle(displayData)
 		};
 	});
 var author$project$Main$view = function (model) {
-	var _n0 = model.page;
-	switch (_n0.$) {
-		case 'NotFound':
-			return A3(author$project$Skeleton$view, model.state, elm$core$Basics$never, author$project$Skeleton$noPageFound);
-		case 'Writer':
-			var writerModel = _n0.a;
-			return A3(
-				author$project$Skeleton$view,
-				model.state,
-				author$project$Main$GotWriterMsg,
-				A2(author$project$Page$Writer$view, writerModel, model.state));
-		case 'TargetSelector':
-			var targetSelectorModel = _n0.a;
-			return A3(
-				author$project$Skeleton$view,
-				model.state,
-				author$project$Main$GotTargetSelectorMsg,
-				A2(author$project$Page$TargetSelector$view, targetSelectorModel, model.state));
-		case 'Authenticator':
-			var authenticatorModel = _n0.a;
-			return A3(
-				author$project$Skeleton$view,
-				model.state,
-				author$project$Main$GotAuthenticatorMsg,
-				A2(author$project$Page$Authenticator$view, authenticatorModel, model.state.messages));
-		case 'SignerOuter':
-			return A3(author$project$Skeleton$view, model.state, author$project$Main$GotSignerOuterMsg, author$project$Page$SignerOuter$view);
-		default:
-			var settingsModel = _n0.a;
-			return A3(
-				author$project$Skeleton$view,
-				model.state,
-				author$project$Main$GotSettingsMsg,
-				A2(author$project$Page$Settings$view, settingsModel, model.state));
+	if (model.$ === 'Unauthenticated') {
+		if (model.a.$ === 'SignIn') {
+			var subModel = model.a.a;
+			var session = model.b;
+			return A2(
+				author$project$PageFrame$view,
+				author$project$Main$GotSignInMsg,
+				author$project$Page$SignIn$view(subModel));
+		} else {
+			var subModel = model.a.a;
+			var session = model.b;
+			return A2(
+				author$project$PageFrame$view,
+				author$project$Main$GotSignUpMsg,
+				author$project$Page$SignUp$view(subModel));
+		}
+	} else {
+		return {
+			body: _List_fromArray(
+				[
+					elm$html$Html$text('You have found a non-existent page! WTF?')
+				]),
+			title: 'Egads!'
+		};
 	}
 };
 var elm$browser$Browser$application = _Browser_application;

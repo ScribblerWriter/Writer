@@ -1,4 +1,4 @@
-module Data.Target exposing (Target)
+module Target exposing (Target)
 
 
 type alias Target =
