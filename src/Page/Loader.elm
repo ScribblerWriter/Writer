@@ -52,7 +52,7 @@ resolvePortMsg model msg =
         Ports.SettingsLoaded ->
             updateSettings model msg
 
-        Ports.ContentLoaded ->
+        Ports.LocalStorageLoaded ->
             ( model, Cmd.none )
 
         _ ->

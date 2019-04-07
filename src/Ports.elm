@@ -2,6 +2,7 @@ port module Ports exposing
     ( InMessage
     , InOperation(..)
     , incomingMessage
+    , loadLocalSettings
     , loadSettings
     , signIn
     , signOut
@@ -34,8 +35,8 @@ port incomingMessage : (InMessage -> msg) -> Sub msg
 
 
 type OutOperation
-    = SaveContent
-    | LoadContent
+    = SaveLocalStorage
+    | LoadLocalStorage
     | QueryDbMultiple
     | QueryDbSingle
     | QueryDbSingleSubCollection
@@ -48,7 +49,7 @@ type OutOperation
 
 type InOperation
     = Unknown
-    | ContentLoaded
+    | LocalStorageLoaded
     | TargetListReturned
     | AuthStateChanged
     | SettingsLoaded
@@ -67,6 +68,11 @@ loadSettings : Uid -> Cmd msg
 loadSettings uid =
     Just (encodeLoadSettings uid)
         |> sendMessage QueryDbSingle (Just SettingsLoaded)
+
+
+loadLocalSettings : Cmd msg
+loadLocalSettings =
+    sendMessage LoadLocalStorage (Just LocalStorageLoaded) Nothing
 
 
 signIn : Credentials -> Cmd msg
@@ -102,26 +108,6 @@ encodeLoadSettings uid =
 -- PORT OPERATIONS
 
 
-sendJustMessage : OutOperation -> Cmd msg
-sendJustMessage operation =
-    sendMessage operation Nothing Nothing
-
-
-sendMessageWithJustContent : OutOperation -> Encode.Value -> Cmd msg
-sendMessageWithJustContent operation content =
-    sendMessage operation Nothing (Just content)
-
-
-sendMessageWithJustResponse : OutOperation -> InOperation -> Cmd msg
-sendMessageWithJustResponse operation returnOperation =
-    sendMessage operation (Just returnOperation) Nothing
-
-
-sendMessageWithContentAndResponse : OutOperation -> InOperation -> Encode.Value -> Cmd msg
-sendMessageWithContentAndResponse operation returnOperation content =
-    sendMessage operation (Just returnOperation) (Just content)
-
-
 sendMessage : OutOperation -> Maybe InOperation -> Maybe Encode.Value -> Cmd msg
 sendMessage operation returnOperation content =
     outgoingMessage
@@ -144,11 +130,11 @@ sendMessage operation returnOperation content =
 outOperationToString : OutOperation -> String
 outOperationToString operation =
     case operation of
-        SaveContent ->
-            "SaveContent"
+        SaveLocalStorage ->
+            "SaveLocalStorage"
 
-        LoadContent ->
-            "LoadContent"
+        LoadLocalStorage ->
+            "LoadLocalStorage"
 
         QueryDbMultiple ->
             "QueryDbMultiple"
@@ -178,8 +164,8 @@ outOperationToString operation =
 inOperationToString : InOperation -> String
 inOperationToString operation =
     case operation of
-        ContentLoaded ->
-            "ContentLoaded"
+        LocalStorageLoaded ->
+            "LocalStorageLoaded"
 
         Unknown ->
             "Unknown"
@@ -212,8 +198,8 @@ inOperationToString operation =
 stringToInOperation : String -> InOperation
 stringToInOperation operation =
     case operation of
-        "ContentLoaded" ->
-            ContentLoaded
+        "LocalStorageLoaded" ->
+            LocalStorageLoaded
 
         "TargetListReturned" ->
             TargetListReturned

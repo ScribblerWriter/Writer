@@ -5361,8 +5361,8 @@ var author$project$Ports$encodeLoadSettings = function (uid) {
 };
 var author$project$Ports$inOperationToString = function (operation) {
 	switch (operation.$) {
-		case 'ContentLoaded':
-			return 'ContentLoaded';
+		case 'LocalStorageLoaded':
+			return 'LocalStorageLoaded';
 		case 'Unknown':
 			return 'Unknown';
 		case 'TargetListReturned':
@@ -5385,10 +5385,10 @@ var author$project$Ports$inOperationToString = function (operation) {
 };
 var author$project$Ports$outOperationToString = function (operation) {
 	switch (operation.$) {
-		case 'SaveContent':
-			return 'SaveContent';
-		case 'LoadContent':
-			return 'LoadContent';
+		case 'SaveLocalStorage':
+			return 'SaveLocalStorage';
+		case 'LoadLocalStorage':
+			return 'LoadLocalStorage';
 		case 'QueryDbMultiple':
 			return 'QueryDbMultiple';
 		case 'QueryDbSingle':
@@ -5494,9 +5494,7 @@ var author$project$Page$SignIn$init = function (session) {
 		elm$core$Platform$Cmd$none);
 };
 var author$project$Ports$SignOut = {$: 'SignOut'};
-var author$project$Ports$sendJustMessage = function (operation) {
-	return A3(author$project$Ports$sendMessage, operation, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing);
-};
+var author$project$Ports$signOut = A3(author$project$Ports$sendMessage, author$project$Ports$SignOut, elm$core$Maybe$Nothing, elm$core$Maybe$Nothing);
 var author$project$Session$Session = function (a) {
 	return {$: 'Session', a: a};
 };
@@ -5515,7 +5513,7 @@ var author$project$Page$SignOut$init = function (session) {
 	return function (newSession) {
 		return _Utils_Tuple2(
 			{session: newSession},
-			author$project$Ports$sendJustMessage(author$project$Ports$SignOut));
+			author$project$Ports$signOut);
 	}(
 		A2(
 			author$project$Session$mapLastUrl,
@@ -6603,8 +6601,8 @@ var author$project$Page$Loader$updateSettings = F2(
 	});
 var author$project$Ports$AuthMsgReceived = {$: 'AuthMsgReceived'};
 var author$project$Ports$AuthStateChanged = {$: 'AuthStateChanged'};
-var author$project$Ports$ContentLoaded = {$: 'ContentLoaded'};
 var author$project$Ports$DisplayMessageReceived = {$: 'DisplayMessageReceived'};
+var author$project$Ports$LocalStorageLoaded = {$: 'LocalStorageLoaded'};
 var author$project$Ports$SettingsSaved = {$: 'SettingsSaved'};
 var author$project$Ports$TargetListReturned = {$: 'TargetListReturned'};
 var author$project$Ports$Unknown = {$: 'Unknown'};
@@ -6612,8 +6610,8 @@ var author$project$Ports$WordCountLoaded = {$: 'WordCountLoaded'};
 var author$project$Ports$WriterDataSaved = {$: 'WriterDataSaved'};
 var author$project$Ports$stringToInOperation = function (operation) {
 	switch (operation) {
-		case 'ContentLoaded':
-			return author$project$Ports$ContentLoaded;
+		case 'LocalStorageLoaded':
+			return author$project$Ports$LocalStorageLoaded;
 		case 'TargetListReturned':
 			return author$project$Ports$TargetListReturned;
 		case 'AuthStateChanged':
@@ -6640,7 +6638,7 @@ var author$project$Page$Loader$resolvePortMsg = F2(
 		switch (_n0.$) {
 			case 'SettingsLoaded':
 				return A2(author$project$Page$Loader$updateSettings, model, msg);
-			case 'ContentLoaded':
+			case 'LocalStorageLoaded':
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 			default:
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
@@ -6659,27 +6657,6 @@ var author$project$Credentials$create = F2(
 		return author$project$Credentials$Credentials(
 			{email: email, password: pass});
 	});
-var author$project$Email$encode = function (_n0) {
-	var email = _n0.a;
-	return elm$json$Json$Encode$string(email);
-};
-var author$project$Password$encode = function (_n0) {
-	var pass = _n0.a;
-	return elm$json$Json$Encode$string(pass);
-};
-var author$project$Credentials$encode = function (_n0) {
-	var creds = _n0.a;
-	return elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'email',
-				author$project$Email$encode(creds.email)),
-				_Utils_Tuple2(
-				'pass',
-				author$project$Password$encode(creds.password))
-			]));
-};
 var author$project$Email$Email = function (a) {
 	return {$: 'Email', a: a};
 };
@@ -6845,15 +6822,36 @@ var author$project$Password$Password = function (a) {
 var author$project$Password$create = function (pass) {
 	return author$project$Password$Password(pass);
 };
+var author$project$Email$encode = function (_n0) {
+	var email = _n0.a;
+	return elm$json$Json$Encode$string(email);
+};
+var author$project$Password$encode = function (_n0) {
+	var pass = _n0.a;
+	return elm$json$Json$Encode$string(pass);
+};
+var author$project$Credentials$encode = function (_n0) {
+	var creds = _n0.a;
+	return elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'email',
+				author$project$Email$encode(creds.email)),
+				_Utils_Tuple2(
+				'pass',
+				author$project$Password$encode(creds.password))
+			]));
+};
 var author$project$Ports$SignIn = {$: 'SignIn'};
-var author$project$Ports$sendMessageWithJustContent = F2(
-	function (operation, content) {
-		return A3(
-			author$project$Ports$sendMessage,
-			operation,
-			elm$core$Maybe$Nothing,
-			elm$core$Maybe$Just(content));
-	});
+var author$project$Ports$signIn = function (creds) {
+	return A3(
+		author$project$Ports$sendMessage,
+		author$project$Ports$SignIn,
+		elm$core$Maybe$Nothing,
+		elm$core$Maybe$Just(
+			author$project$Credentials$encode(creds)));
+};
 var author$project$Page$SignIn$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6877,14 +6875,11 @@ var author$project$Page$SignIn$update = F2(
 				return function (cmd) {
 					return _Utils_Tuple2(model, cmd);
 				}(
-					A2(
-						author$project$Ports$sendMessageWithJustContent,
-						author$project$Ports$SignIn,
-						author$project$Credentials$encode(
-							A2(
-								author$project$Credentials$create,
-								author$project$Email$create(model.email),
-								author$project$Password$create(model.password)))));
+					author$project$Ports$signIn(
+						A2(
+							author$project$Credentials$create,
+							author$project$Email$create(model.email),
+							author$project$Password$create(model.password))));
 			default:
 				var message = msg.a;
 				var _n2 = author$project$Ports$stringToInOperation(message.operation);
@@ -6945,6 +6940,14 @@ var author$project$Page$SignUp$resolveAuthChange = F2(
 		}
 	});
 var author$project$Ports$SignUp = {$: 'SignUp'};
+var author$project$Ports$signUp = function (creds) {
+	return A3(
+		author$project$Ports$sendMessage,
+		author$project$Ports$SignUp,
+		elm$core$Maybe$Nothing,
+		elm$core$Maybe$Just(
+			author$project$Credentials$encode(creds)));
+};
 var author$project$Page$SignUp$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6975,14 +6978,11 @@ var author$project$Page$SignUp$update = F2(
 				return _Utils_eq(model.password, model.confirmPassword) ? function (cmd) {
 					return _Utils_Tuple2(model, cmd);
 				}(
-					A2(
-						author$project$Ports$sendMessageWithJustContent,
-						author$project$Ports$SignUp,
-						author$project$Credentials$encode(
-							A2(
-								author$project$Credentials$create,
-								author$project$Email$create(model.email),
-								author$project$Password$create(model.password))))) : function (msgModel) {
+					author$project$Ports$signUp(
+						A2(
+							author$project$Credentials$create,
+							author$project$Email$create(model.email),
+							author$project$Password$create(model.password)))) : function (msgModel) {
 					return _Utils_Tuple2(msgModel, elm$core$Platform$Cmd$none);
 				}(
 					function (message) {
