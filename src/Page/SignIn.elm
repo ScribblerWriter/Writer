@@ -1,6 +1,16 @@
-module Page.SignIn exposing (Model, Msg, init, subscriptions, update, view)
+module Page.SignIn exposing
+    ( Model
+    , Msg
+    , init
+    , subscriptions
+    , toSession
+    , toUser
+    , update
+    , view
+    )
 
 import Appearance
+import Browser.Navigation as Nav
 import Credentials
 import CustomHtmlEvents
 import DisplayData exposing (DisplayData)
@@ -15,6 +25,9 @@ import Json.Decode as Decode
 import Link exposing (Destination(..))
 import Password
 import Ports
+import Route
+import Session exposing (Session)
+import User exposing (User)
 import ValidationMessage exposing (ValidationMessage)
 
 
@@ -22,6 +35,8 @@ type alias Model =
     { email : String
     , password : String
     , validationMessage : ValidationMessage
+    , session : Session
+    , user : Maybe User
     }
 
 
@@ -37,26 +52,28 @@ type InputType
 
 
 
--- init
+-- INIT
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Session -> ( Model, Cmd Msg )
+init session =
     ( { email = ""
       , password = ""
       , validationMessage = ValidationMessage.create ""
+      , session = session
+      , user = Nothing
       }
     , Cmd.none
     )
 
 
 
--- update
+-- UPDATE
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "SigIn.update" msg of
+    case msg of
         InputReceived inputType value ->
             case inputType of
                 Email ->
@@ -77,6 +94,9 @@ update msg model =
                     addValidationMessage message.content model
                         |> (\updated -> ( updated, Cmd.none ))
 
+                Ports.AuthStateChanged ->
+                    resolveAuthChange message.content model
+
                 _ ->
                     ( model, Cmd.none )
 
@@ -92,8 +112,25 @@ addValidationMessage message model =
             model
 
 
+resolveAuthChange : Maybe Decode.Value -> Model -> ( Model, Cmd Msg )
+resolveAuthChange maybeUser model =
+    case maybeUser of
+        Just jsonUser ->
+            case User.decode jsonUser of
+                Ok user ->
+                    Route.toAbsolute (Just Route.Loading)
+                        |> Nav.pushUrl (Session.getKey model.session)
+                        |> (\cmd -> ( { model | user = Just user }, cmd ))
 
--- view
+                Err error ->
+                    ( model, Cmd.none )
+
+        Nothing ->
+            ( model, Cmd.none )
+
+
+
+-- VIEW
 
 
 view : Model -> DisplayData Msg
@@ -192,9 +229,23 @@ signUpLink =
 
 
 
--- subscriptions
+-- SUBSCRIPTIONS
 
 
 subscriptions : Sub Msg
 subscriptions =
     Ports.incomingMessage AuthMsgReceived
+
+
+
+-- EXPORT
+
+
+toSession : Model -> Session
+toSession model =
+    model.session
+
+
+toUser : Model -> Maybe User
+toUser model =
+    model.user

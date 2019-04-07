@@ -3,6 +3,7 @@ port module Ports exposing
     , InOperation(..)
     , OutOperation(..)
     , incomingMessage
+    , loadSettings
     , sendJustMessage
     , sendMessageWithContentAndResponse
     , sendMessageWithJustContent
@@ -11,6 +12,7 @@ port module Ports exposing
     )
 
 import Json.Encode as Encode
+import Uid exposing (Uid)
 
 
 type alias OutMessage =
@@ -59,7 +61,29 @@ type InOperation
 
 
 
--- Port operations
+-- BUILD COMMANDS
+
+
+loadSettings : Uid -> Cmd msg
+loadSettings uid =
+    Just (encodeLoadSettings uid)
+        |> sendMessage QueryDbSingle (Just SettingsLoaded)
+
+
+
+-- ENCODE MESSAGES
+
+
+encodeLoadSettings : Uid -> Encode.Value
+encodeLoadSettings uid =
+    Encode.object
+        [ ( "collection", Encode.string "users" )
+        , ( "doc", Uid.encode uid )
+        ]
+
+
+
+-- PORT OPERATIONS
 
 
 sendJustMessage : OutOperation -> Cmd msg
@@ -69,21 +93,21 @@ sendJustMessage operation =
 
 sendMessageWithJustContent : OutOperation -> Encode.Value -> Cmd msg
 sendMessageWithJustContent operation content =
-    sendMessage operation (Just content) Nothing
+    sendMessage operation Nothing (Just content)
 
 
 sendMessageWithJustResponse : OutOperation -> InOperation -> Cmd msg
 sendMessageWithJustResponse operation returnOperation =
-    sendMessage operation Nothing (Just returnOperation)
+    sendMessage operation (Just returnOperation) Nothing
 
 
-sendMessageWithContentAndResponse : OutOperation -> Encode.Value -> InOperation -> Cmd msg
-sendMessageWithContentAndResponse operation content returnOperation =
-    sendMessage operation (Just content) (Just returnOperation)
+sendMessageWithContentAndResponse : OutOperation -> InOperation -> Encode.Value -> Cmd msg
+sendMessageWithContentAndResponse operation returnOperation content =
+    sendMessage operation (Just returnOperation) (Just content)
 
 
-sendMessage : OutOperation -> Maybe Encode.Value -> Maybe InOperation -> Cmd msg
-sendMessage operation content returnOperation =
+sendMessage : OutOperation -> Maybe InOperation -> Maybe Encode.Value -> Cmd msg
+sendMessage operation returnOperation content =
     outgoingMessage
         { operation = outOperationToString operation
         , returnOperation =
@@ -98,7 +122,7 @@ sendMessage operation content returnOperation =
 
 
 
--- Conversions
+-- CONVERSIONS
 
 
 outOperationToString : OutOperation -> String

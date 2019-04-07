@@ -1,4 +1,12 @@
-module Page.SignUp exposing (Model, Msg, init, subscriptions, update, view)
+module Page.SignUp exposing
+    ( Model
+    , Msg
+    , init
+    , subscriptions
+    , toSession
+    , update
+    , view
+    )
 
 import Appearance
 import Credentials
@@ -15,6 +23,7 @@ import Json.Decode as Decode
 import Link exposing (Destination(..))
 import Password
 import Ports
+import Session exposing (Session)
 import ValidationMessage exposing (ValidationMessage)
 
 
@@ -23,6 +32,7 @@ type alias Model =
     , password : String
     , confirmPassword : String
     , validationMessage : ValidationMessage
+    , session : Session
     }
 
 
@@ -39,22 +49,23 @@ type InputType
 
 
 
--- init
+-- INIT
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Session -> ( Model, Cmd Msg )
+init session =
     ( { email = ""
       , password = ""
       , confirmPassword = ""
       , validationMessage = ValidationMessage.create ""
+      , session = session
       }
     , Cmd.none
     )
 
 
 
--- update
+-- UPDATE
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -105,7 +116,7 @@ addValidationMessage message model =
 
 
 
--- view
+-- VIEW
 
 
 view : Model -> DisplayData Msg
@@ -218,9 +229,18 @@ signInLink =
 
 
 
--- subscriptions
+-- SUBSCRIPTIONS
 
 
 subscriptions : Sub Msg
 subscriptions =
     Ports.incomingMessage AuthMsgReceived
+
+
+
+-- EXPORT
+
+
+toSession : Model -> Session
+toSession model =
+    model.session

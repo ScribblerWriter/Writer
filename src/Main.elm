@@ -4,129 +4,191 @@ import Browser
 import Browser.Navigation as Nav
 import Html
 import Json.Decode as Decode
+import Link
+import Page.Loader as Loader
 import Page.SignIn as SignIn
+import Page.SignOut as SignOut
 import Page.SignUp as SignUp
 import PageFrame
 import Ports
+import Route exposing (Route)
 import Session exposing (Session)
+import State exposing (State)
 import Url exposing (Url)
-import Url.Parser as Parser exposing ((</>), Parser, custom, fragment, map, oneOf, s, top)
 import User exposing (User)
 
 
+
+-- MODEL
+
+
 type Model
-    = Unauthenticated UnauthPage Session
-    | Loading User Session
-    | Running User Session
-    | Failed (Maybe User) Session
-    | Redirect Session
-
-
-type UnauthPage
-    = SignIn SignIn.Model
+    = Redirect Session
+    | SignIn SignIn.Model
     | SignUp SignUp.Model
+    | SignOut SignOut.Model
+    | Loader Loader.Model
 
 
 
--- init
+-- INIT
 
 
-init : Decode.Value -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     Session.create flags url key
         |> Redirect
-        |> changeRouteTo url
+        |> changeRouteTo (Route.fromUrl url)
 
 
 
--- update
+-- UPDATE
 
 
 type Msg
     = UrlChanged Url.Url
     | LinkClicked Browser.UrlRequest
-    | PortMessageReceived Ports.InMessage
     | GotSignInMsg SignIn.Msg
     | GotSignUpMsg SignUp.Msg
+    | GotSignOutMsg SignOut.Msg
+    | GotLoaderMsg Loader.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        UrlChanged url ->
-            changeRouteTo url model
+    case ( msg, model ) of
+        ( UrlChanged url, _ ) ->
+            changeRouteTo (Route.fromUrl url) model
 
-        LinkClicked request ->
-            updateLinkClick request model
+        ( LinkClicked request, _ ) ->
+            case request of
+                Browser.Internal url ->
+                    toSession model
+                        |> Session.getKey
+                        |> (\key -> ( model, Nav.pushUrl key (Url.toString url) ))
 
-        PortMessageReceived portMsg ->
-            resolvePortMessage model portMsg
+                Browser.External href ->
+                    ( model
+                    , Nav.load href
+                    )
 
-        GotSignInMsg subMsg ->
-            updateSignIn subMsg model
+        ( GotSignInMsg subMsg, SignIn subModel ) ->
+            SignIn.update subMsg subModel
+                |> updateWith SignIn GotSignInMsg model
 
-        GotSignUpMsg subMsg ->
-            updateSignUp subMsg model
+        ( GotSignUpMsg subMsg, SignUp subModel ) ->
+            SignUp.update subMsg subModel
+                |> updateWith SignUp GotSignUpMsg model
+
+        ( GotLoaderMsg subMsg, Loader subModel ) ->
+            Loader.update subMsg subModel
+                |> updateWith Loader GotLoaderMsg model
+
+        _ ->
+            ( model, Cmd.none )
 
 
-updateLinkClick : Browser.UrlRequest -> Model -> ( Model, Cmd Msg )
-updateLinkClick request model =
-    case request of
-        Browser.Internal url ->
+changeRouteTo : Maybe Route -> Model -> ( Model, Cmd Msg )
+changeRouteTo maybeRoute model =
+    case maybeRoute of
+        Just Route.SignIn ->
             toSession model
-                |> Session.getKey
-                |> (\key -> ( model, Nav.pushUrl key (Url.toString url) ))
+                |> SignIn.init
+                |> updateWith SignIn GotSignInMsg model
 
-        Browser.External href ->
-            ( model, Nav.load href )
+        Just Route.SignUp ->
+            toSession model
+                |> SignUp.init
+                |> updateWith SignUp GotSignUpMsg model
 
+        Just Route.SignOut ->
+            toSession model
+                |> SignOut.init
+                |> updateWith SignOut GotSignOutMsg model
 
-resolvePortMessage : Model -> Ports.InMessage -> ( Model, Cmd Msg )
-resolvePortMessage model msg =
-    case Ports.stringToInOperation msg.operation of
-        Ports.AuthStateChanged ->
+        Just Route.Loading ->
+            routeWithUser Loader.init Loader GotLoaderMsg model
+
+        Just Route.Failure ->
             ( model, Cmd.none )
 
-        _ ->
+        Nothing ->
             ( model, Cmd.none )
 
 
-updateSignIn : SignIn.Msg -> Model -> ( Model, Cmd Msg )
-updateSignIn msg model =
+routeWithUser : (User -> Session -> ( subModel, Cmd subMsg )) -> (subModel -> Model) -> (subMsg -> Msg) -> Model -> ( Model, Cmd Msg )
+routeWithUser subInit toModel toMsg model =
+    let
+        session =
+            toSession model
+    in
+    case toUser model of
+        Just user ->
+            subInit user session
+                |> updateWith toModel toMsg model
+
+        Nothing ->
+            ( Session.getKey session, Link.getAbsolute Link.SignIn )
+                |> (\( key, url ) -> ( model, Nav.pushUrl key url ))
+
+
+updateWith : (subModel -> Model) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+updateWith toModel toMsg model ( subModel, subCmd ) =
+    ( toModel subModel
+    , Cmd.map toMsg subCmd
+    )
+
+
+toSession : Model -> Session
+toSession model =
     case model of
-        Unauthenticated (SignIn subModel) session ->
-            SignIn.update msg subModel
-                |> routeToSignIn session
+        Redirect session ->
+            session
 
-        _ ->
-            ( model, Cmd.none )
+        SignIn subModel ->
+            SignIn.toSession subModel
+
+        SignUp subModel ->
+            SignUp.toSession subModel
+
+        SignOut subModel ->
+            SignOut.toSession subModel
+
+        Loader subModel ->
+            Loader.toSession subModel
 
 
-updateSignUp : SignUp.Msg -> Model -> ( Model, Cmd Msg )
-updateSignUp msg model =
+toUser : Model -> Maybe User
+toUser model =
     case model of
-        Unauthenticated (SignUp subModel) session ->
-            SignUp.update msg subModel
-                |> routeToSignUp session
+        SignIn subModel ->
+            SignIn.toUser subModel
+
+        Loader subModel ->
+            Just <| Loader.toUser subModel
 
         _ ->
-            ( model, Cmd.none )
+            Nothing
 
 
 
--- view
+-- VIEW
 
 
 view : Model -> Browser.Document Msg
 view model =
     case model of
-        Unauthenticated (SignIn subModel) session ->
+        SignIn subModel ->
             SignIn.view subModel
                 |> PageFrame.view GotSignInMsg
 
-        Unauthenticated (SignUp subModel) session ->
+        SignUp subModel ->
             SignUp.view subModel
                 |> PageFrame.view GotSignUpMsg
+
+        Loader subModel ->
+            Loader.view subModel
+                |> PageFrame.view GotLoaderMsg
 
         _ ->
             { title = "Egads!"
@@ -135,88 +197,16 @@ view model =
 
 
 
--- routing
-
-
-changeRouteTo : Url -> Model -> ( Model, Cmd Msg )
-changeRouteTo url model =
-    let
-        parser =
-            let
-                session =
-                    toSession model
-            in
-            oneOf
-                [ route top (routeToSignIn session SignIn.init)
-                , route (s "signin") (routeToSignIn session SignIn.init)
-                , route (s "signup") (routeToSignUp session SignUp.init)
-                ]
-    in
-    case Parser.parse parser url of
-        Just result ->
-            result
-
-        Nothing ->
-            ( Failed Nothing (toSession model), Cmd.none )
-
-
-route : Parser a b -> a -> Parser (b -> c) c
-route parser handler =
-    Parser.map handler parser
-
-
-routeToSignIn : Session -> ( SignIn.Model, Cmd SignIn.Msg ) -> ( Model, Cmd Msg )
-routeToSignIn session ( subModel, subMsg ) =
-    ( Unauthenticated (SignIn subModel) session
-    , Cmd.map GotSignInMsg subMsg
-    )
-
-
-routeToSignUp : Session -> ( SignUp.Model, Cmd SignUp.Msg ) -> ( Model, Cmd Msg )
-routeToSignUp session ( subModel, subMsg ) =
-    ( Unauthenticated (SignUp subModel) session
-    , Cmd.map GotSignUpMsg subMsg
-    )
-
-
-toSession : Model -> Session
-toSession model =
-    case model of
-        Unauthenticated _ session ->
-            session
-
-        Loading _ session ->
-            session
-
-        Running _ session ->
-            session
-
-        Failed _ session ->
-            session
-
-        Redirect session ->
-            session
-
-
-
--- subscriptions
+-- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ pageSubscriptions model
-        , Ports.incomingMessage PortMessageReceived
-        ]
-
-
-pageSubscriptions : Model -> Sub Msg
-pageSubscriptions model =
     case model of
-        Unauthenticated (SignIn _) _ ->
+        SignIn _ ->
             Sub.map GotSignInMsg SignIn.subscriptions
 
-        Unauthenticated (SignUp _) _ ->
+        SignUp _ ->
             Sub.map GotSignUpMsg SignUp.subscriptions
 
         _ ->
@@ -224,7 +214,7 @@ pageSubscriptions model =
 
 
 
--- main
+-- MAIN
 
 
 main : Program Decode.Value Model Msg

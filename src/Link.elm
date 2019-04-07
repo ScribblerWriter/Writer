@@ -1,4 +1,6 @@
-module Link exposing (Destination(..), getUrl)
+module Link exposing (Destination(..), getAbsolute, getUrl)
+
+import Url.Builder
 
 
 type Destination
@@ -22,19 +24,24 @@ getUrl dest =
             "/"
 
         SignIn ->
-            "/signin"
+            "signin"
 
         SignUp ->
-            "/signup"
+            "signup"
 
         SignOut ->
-            "/signout"
+            "signout"
 
         Settings ->
-            "/settings"
+            "settings"
 
         Dashboard ->
-            "/dashboard"
+            "dashboard"
 
         Target ->
-            "/target"
+            "target"
+
+
+getAbsolute : Destination -> String
+getAbsolute dest =
+    Url.Builder.absolute [ getUrl dest ] []
