@@ -44,7 +44,7 @@ type alias Model =
 type Msg
     = InputReceived InputType String
     | SignUpButtonClicked
-    | AuthMsgReceived Ports.InMessage
+    | SignUpMsgReceived Ports.InMessage
 
 
 type InputType
@@ -76,7 +76,7 @@ init session =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "SigIn.update" msg of
+    case msg of
         InputReceived inputType value ->
             case inputType of
                 Email ->
@@ -100,7 +100,7 @@ update msg model =
                     |> (\message -> { model | validationMessage = message })
                     |> (\msgModel -> ( msgModel, Cmd.none ))
 
-        AuthMsgReceived message ->
+        SignUpMsgReceived message ->
             case Ports.stringToInOperation message.operation of
                 Ports.AuthMsgReceived ->
                     addValidationMessage message.content model
@@ -260,7 +260,7 @@ signInLink =
 
 subscriptions : Sub Msg
 subscriptions =
-    Ports.incomingMessage AuthMsgReceived
+    Ports.incomingMessage SignUpMsgReceived
 
 
 

@@ -4666,6 +4666,9 @@ var author$project$Page$Loader$toUser = function (model) {
 var author$project$Page$SignIn$toUser = function (model) {
 	return model.user;
 };
+var author$project$Page$SignUp$toUser = function (model) {
+	return model.user;
+};
 var elm$core$Basics$apL = F2(
 	function (f, x) {
 		return f(x);
@@ -4675,6 +4678,9 @@ var author$project$Main$toUser = function (model) {
 		case 'SignIn':
 			var subModel = model.a;
 			return author$project$Page$SignIn$toUser(subModel);
+		case 'SignUp':
+			var subModel = model.a;
+			return author$project$Page$SignUp$toUser(subModel);
 		case 'Loader':
 			var subModel = model.a;
 			return elm$core$Maybe$Just(
@@ -5525,6 +5531,7 @@ var author$project$Page$SignUp$init = function (session) {
 			email: '',
 			password: '',
 			session: session,
+			user: elm$core$Maybe$Nothing,
 			validationMessage: author$project$ValidationMessage$create('')
 		},
 		elm$core$Platform$Cmd$none);
@@ -6392,8 +6399,8 @@ var author$project$Main$init = F3(
 			author$project$Main$Redirect(
 				A3(author$project$Session$create, flags, url, key)));
 	});
-var author$project$Page$SignIn$AuthMsgReceived = function (a) {
-	return {$: 'AuthMsgReceived', a: a};
+var author$project$Page$SignIn$SignInMsgReceived = function (a) {
+	return {$: 'SignInMsgReceived', a: a};
 };
 var elm$json$Json$Decode$andThen = _Json_andThen;
 var elm$json$Json$Decode$null = _Json_decodeNull;
@@ -6422,11 +6429,11 @@ var author$project$Ports$incomingMessage = _Platform_incomingPort(
 							]))));
 		},
 		A2(elm$json$Json$Decode$field, 'operation', elm$json$Json$Decode$string)));
-var author$project$Page$SignIn$subscriptions = author$project$Ports$incomingMessage(author$project$Page$SignIn$AuthMsgReceived);
-var author$project$Page$SignUp$AuthMsgReceived = function (a) {
-	return {$: 'AuthMsgReceived', a: a};
+var author$project$Page$SignIn$subscriptions = author$project$Ports$incomingMessage(author$project$Page$SignIn$SignInMsgReceived);
+var author$project$Page$SignUp$SignUpMsgReceived = function (a) {
+	return {$: 'SignUpMsgReceived', a: a};
 };
-var author$project$Page$SignUp$subscriptions = author$project$Ports$incomingMessage(author$project$Page$SignUp$AuthMsgReceived);
+var author$project$Page$SignUp$subscriptions = author$project$Ports$incomingMessage(author$project$Page$SignUp$SignUpMsgReceived);
 var elm$core$Platform$Sub$map = _Platform_map;
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
@@ -6908,15 +6915,42 @@ var author$project$Page$SignUp$addValidationMessage = F2(
 			return model;
 		}
 	});
+var author$project$Page$SignUp$resolveAuthChange = F2(
+	function (maybeUser, model) {
+		if (maybeUser.$ === 'Just') {
+			var jsonUser = maybeUser.a;
+			var _n1 = author$project$User$decode(jsonUser);
+			if (_n1.$ === 'Ok') {
+				var user = _n1.a;
+				return function (cmd) {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								user: elm$core$Maybe$Just(user)
+							}),
+						cmd);
+				}(
+					A2(
+						elm$browser$Browser$Navigation$pushUrl,
+						author$project$Session$getKey(model.session),
+						author$project$Route$toAbsolute(
+							elm$core$Maybe$Just(author$project$Route$Loading))));
+			} else {
+				var error = _n1.a;
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			}
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
+	});
 var author$project$Ports$SignUp = {$: 'SignUp'};
-var elm$core$Debug$log = _Debug_log;
 var author$project$Page$SignUp$update = F2(
 	function (msg, model) {
-		var _n0 = A2(elm$core$Debug$log, 'SigIn.update', msg);
-		switch (_n0.$) {
+		switch (msg.$) {
 			case 'InputReceived':
-				var inputType = _n0.a;
-				var value = _n0.b;
+				var inputType = msg.a;
+				var value = msg.b;
 				switch (inputType.$) {
 					case 'Email':
 						return _Utils_Tuple2(
@@ -6958,15 +6992,18 @@ var author$project$Page$SignUp$update = F2(
 					}(
 						author$project$ValidationMessage$create('Password and confirm password must match.')));
 			default:
-				var message = _n0.a;
+				var message = msg.a;
 				var _n2 = author$project$Ports$stringToInOperation(message.operation);
-				if (_n2.$ === 'AuthMsgReceived') {
-					return function (updated) {
-						return _Utils_Tuple2(updated, elm$core$Platform$Cmd$none);
-					}(
-						A2(author$project$Page$SignUp$addValidationMessage, message.content, model));
-				} else {
-					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				switch (_n2.$) {
+					case 'AuthMsgReceived':
+						return function (updated) {
+							return _Utils_Tuple2(updated, elm$core$Platform$Cmd$none);
+						}(
+							A2(author$project$Page$SignUp$addValidationMessage, message.content, model));
+					case 'AuthStateChanged':
+						return A2(author$project$Page$SignUp$resolveAuthChange, message.content, model);
+					default:
+						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				}
 		}
 	});

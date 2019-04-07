@@ -43,7 +43,7 @@ type alias Model =
 type Msg
     = InputReceived InputType String
     | SignInButtonClicked
-    | AuthMsgReceived Ports.InMessage
+    | SignInMsgReceived Ports.InMessage
 
 
 type InputType
@@ -88,7 +88,7 @@ update msg model =
                 |> Ports.sendMessageWithJustContent Ports.SignIn
                 |> (\cmd -> ( model, cmd ))
 
-        AuthMsgReceived message ->
+        SignInMsgReceived message ->
             case Ports.stringToInOperation message.operation of
                 Ports.AuthMsgReceived ->
                     addValidationMessage message.content model
@@ -234,7 +234,7 @@ signUpLink =
 
 subscriptions : Sub Msg
 subscriptions =
-    Ports.incomingMessage AuthMsgReceived
+    Ports.incomingMessage SignInMsgReceived
 
 
 
