@@ -4,11 +4,13 @@ module Page.SignUp exposing
     , init
     , subscriptions
     , toSession
+    , toUser
     , update
     , view
     )
 
 import Appearance
+import Browser.Navigation as Nav
 import Credentials
 import CustomHtmlEvents
 import DisplayData exposing (DisplayData)
@@ -23,7 +25,9 @@ import Json.Decode as Decode
 import Link exposing (Destination(..))
 import Password
 import Ports
+import Route
 import Session exposing (Session)
+import User exposing (User)
 import ValidationMessage exposing (ValidationMessage)
 
 
@@ -33,6 +37,7 @@ type alias Model =
     , confirmPassword : String
     , validationMessage : ValidationMessage
     , session : Session
+    , user : Maybe User
     }
 
 
@@ -59,6 +64,7 @@ init session =
       , confirmPassword = ""
       , validationMessage = ValidationMessage.create ""
       , session = session
+      , user = Nothing
       }
     , Cmd.none
     )
@@ -100,6 +106,9 @@ update msg model =
                     addValidationMessage message.content model
                         |> (\updated -> ( updated, Cmd.none ))
 
+                Ports.AuthStateChanged ->
+                    resolveAuthChange message.content model
+
                 _ ->
                     ( model, Cmd.none )
 
@@ -113,6 +122,23 @@ addValidationMessage message model =
 
         Nothing ->
             model
+
+
+resolveAuthChange : Maybe Decode.Value -> Model -> ( Model, Cmd Msg )
+resolveAuthChange maybeUser model =
+    case maybeUser of
+        Just jsonUser ->
+            case User.decode jsonUser of
+                Ok user ->
+                    Route.toAbsolute (Just Route.Loading)
+                        |> Nav.pushUrl (Session.getKey model.session)
+                        |> (\cmd -> ( { model | user = Just user }, cmd ))
+
+                Err error ->
+                    ( model, Cmd.none )
+
+        Nothing ->
+            ( model, Cmd.none )
 
 
 
@@ -244,3 +270,8 @@ subscriptions =
 toSession : Model -> Session
 toSession model =
     model.session
+
+
+toUser : Model -> Maybe User
+toUser model =
+    model.user

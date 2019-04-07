@@ -164,6 +164,9 @@ toUser model =
         SignIn subModel ->
             SignIn.toUser subModel
 
+        SignUp subModel ->
+            SignUp.toUser subModel
+
         Loader subModel ->
             Just <| Loader.toUser subModel
 
