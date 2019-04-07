@@ -84,8 +84,7 @@ update msg model =
 
         SignInButtonClicked ->
             Credentials.create (Email.create model.email) (Password.create model.password)
-                |> Credentials.encode
-                |> Ports.sendMessageWithJustContent Ports.SignIn
+                |> Ports.signIn
                 |> (\cmd -> ( model, cmd ))
 
         SignInMsgReceived message ->

@@ -1,16 +1,15 @@
 port module Ports exposing
     ( InMessage
     , InOperation(..)
-    , OutOperation(..)
     , incomingMessage
     , loadSettings
-    , sendJustMessage
-    , sendMessageWithContentAndResponse
-    , sendMessageWithJustContent
-    , sendMessageWithJustResponse
+    , signIn
+    , signOut
+    , signUp
     , stringToInOperation
     )
 
+import Credentials exposing (Credentials)
 import Json.Encode as Encode
 import Uid exposing (Uid)
 
@@ -68,6 +67,23 @@ loadSettings : Uid -> Cmd msg
 loadSettings uid =
     Just (encodeLoadSettings uid)
         |> sendMessage QueryDbSingle (Just SettingsLoaded)
+
+
+signIn : Credentials -> Cmd msg
+signIn creds =
+    Just (Credentials.encode creds)
+        |> sendMessage SignIn Nothing
+
+
+signUp : Credentials -> Cmd msg
+signUp creds =
+    Just (Credentials.encode creds)
+        |> sendMessage SignUp Nothing
+
+
+signOut : Cmd msg
+signOut =
+    sendMessage SignOut Nothing Nothing
 
 
 

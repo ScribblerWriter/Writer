@@ -23,11 +23,7 @@ type Msg
 init : Session -> ( Model, Cmd Msg )
 init session =
     Session.mapLastUrl (\_ -> Nothing) session
-        |> (\newSession ->
-                ( { session = newSession }
-                , Ports.sendJustMessage Ports.SignOut
-                )
-           )
+        |> (\newSession -> ( { session = newSession }, Ports.signOut ))
 
 
 

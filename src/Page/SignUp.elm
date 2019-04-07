@@ -91,8 +91,7 @@ update msg model =
         SignUpButtonClicked ->
             if model.password == model.confirmPassword then
                 Credentials.create (Email.create model.email) (Password.create model.password)
-                    |> Credentials.encode
-                    |> Ports.sendMessageWithJustContent Ports.SignUp
+                    |> Ports.signUp
                     |> (\cmd -> ( model, cmd ))
 
             else
