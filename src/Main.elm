@@ -56,6 +56,10 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        _ =
+            Debug.log "main update" msg
+    in
     case ( msg, model ) of
         ( UrlChanged url, _ ) ->
             changeRouteTo (Route.fromUrl url) model
@@ -211,6 +215,9 @@ subscriptions model =
 
         SignUp _ ->
             Sub.map GotSignUpMsg SignUp.subscriptions
+
+        Loader _ ->
+            Sub.map GotLoaderMsg Loader.subscriptions
 
         _ ->
             Sub.none

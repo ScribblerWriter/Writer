@@ -5467,12 +5467,17 @@ var author$project$User$getUid = function (_n0) {
 	var uid = _n0.a.uid;
 	return uid;
 };
+var elm$core$Platform$Cmd$batch = _Platform_batch;
 var author$project$Page$Loader$init = F2(
 	function (user, session) {
 		return _Utils_Tuple2(
-			{session: session, settings: elm$core$Maybe$Nothing, user: user},
-			author$project$Ports$loadSettings(
-				author$project$User$getUid(user)));
+			{localState: elm$core$Maybe$Nothing, session: session, settings: elm$core$Maybe$Nothing, state: elm$core$Maybe$Nothing, user: user},
+			elm$core$Platform$Cmd$batch(
+				_List_fromArray(
+					[
+						author$project$Ports$loadSettings(
+						author$project$User$getUid(user))
+					])));
 	});
 var author$project$ValidationMessage$ValidationMessage = function (a) {
 	return {$: 'ValidationMessage', a: a};
@@ -5480,7 +5485,6 @@ var author$project$ValidationMessage$ValidationMessage = function (a) {
 var author$project$ValidationMessage$create = function (message) {
 	return author$project$ValidationMessage$ValidationMessage(message);
 };
-var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Page$SignIn$init = function (session) {
 	return _Utils_Tuple2(
@@ -6397,8 +6401,8 @@ var author$project$Main$init = F3(
 			author$project$Main$Redirect(
 				A3(author$project$Session$create, flags, url, key)));
 	});
-var author$project$Page$SignIn$SignInMsgReceived = function (a) {
-	return {$: 'SignInMsgReceived', a: a};
+var author$project$Page$Loader$LoaderMsgReceived = function (a) {
+	return {$: 'LoaderMsgReceived', a: a};
 };
 var elm$json$Json$Decode$andThen = _Json_andThen;
 var elm$json$Json$Decode$null = _Json_decodeNull;
@@ -6427,6 +6431,10 @@ var author$project$Ports$incomingMessage = _Platform_incomingPort(
 							]))));
 		},
 		A2(elm$json$Json$Decode$field, 'operation', elm$json$Json$Decode$string)));
+var author$project$Page$Loader$subscriptions = author$project$Ports$incomingMessage(author$project$Page$Loader$LoaderMsgReceived);
+var author$project$Page$SignIn$SignInMsgReceived = function (a) {
+	return {$: 'SignInMsgReceived', a: a};
+};
 var author$project$Page$SignIn$subscriptions = author$project$Ports$incomingMessage(author$project$Page$SignIn$SignInMsgReceived);
 var author$project$Page$SignUp$SignUpMsgReceived = function (a) {
 	return {$: 'SignUpMsgReceived', a: a};
@@ -6441,61 +6449,14 @@ var author$project$Main$subscriptions = function (model) {
 			return A2(elm$core$Platform$Sub$map, author$project$Main$GotSignInMsg, author$project$Page$SignIn$subscriptions);
 		case 'SignUp':
 			return A2(elm$core$Platform$Sub$map, author$project$Main$GotSignUpMsg, author$project$Page$SignUp$subscriptions);
+		case 'Loader':
+			return A2(elm$core$Platform$Sub$map, author$project$Main$GotLoaderMsg, author$project$Page$Loader$subscriptions);
 		default:
 			return elm$core$Platform$Sub$none;
 	}
 };
-var author$project$Route$routeToString = function (route) {
-	if (route.$ === 'Just') {
-		var route_ = route.a;
-		switch (route_.$) {
-			case 'SignIn':
-				return 'signin';
-			case 'SignUp':
-				return 'signup';
-			case 'SignOut':
-				return 'signout';
-			case 'Loading':
-				return 'loading';
-			default:
-				return 'failure';
-		}
-	} else {
-		return '/';
-	}
-};
-var author$project$Route$toAbsolute = function (route) {
-	return A2(
-		elm$url$Url$Builder$absolute,
-		_List_fromArray(
-			[
-				author$project$Route$routeToString(route)
-			]),
-		_List_Nil);
-};
-var author$project$Session$getLastUrl = function (_n0) {
-	var lastRequestedUrl = _n0.a.lastRequestedUrl;
-	return lastRequestedUrl;
-};
-var author$project$Page$Loader$routeIfLoaded = function (model) {
-	var _n0 = model.settings;
-	if (_n0.$ === 'Just') {
-		var settings = _n0.a;
-		return function (cmd) {
-			return _Utils_Tuple2(model, cmd);
-		}(
-			A2(
-				elm$browser$Browser$Navigation$pushUrl,
-				author$project$Session$getKey(model.session),
-				author$project$Route$toAbsolute(
-					author$project$Session$getLastUrl(model.session))));
-	} else {
-		return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-	}
-};
-var author$project$Settings$Additive = {$: 'Additive'};
-var author$project$Settings$Settings = function (a) {
-	return {$: 'Settings', a: a};
+var author$project$LocalState$LocalState = function (a) {
+	return {$: 'LocalState', a: a};
 };
 var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
 var elm$json$Json$Decode$fail = _Json_fail;
@@ -6542,6 +6503,111 @@ var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional = F4(
 				fallback),
 			decoder);
 	});
+var author$project$LocalState$localStateDecoder = A4(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+	'text',
+	elm$json$Json$Decode$string,
+	'',
+	A4(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+		'actualCount',
+		elm$json$Json$Decode$int,
+		0,
+		A4(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+			'count',
+			elm$json$Json$Decode$int,
+			0,
+			elm$json$Json$Decode$succeed(
+				F3(
+					function (additiveCount, actualCount, currentText) {
+						return author$project$LocalState$LocalState(
+							{actualCount: actualCount, additiveCount: additiveCount, currentText: currentText});
+					})))));
+var author$project$LocalState$decode = function (json) {
+	var _n0 = A2(elm$json$Json$Decode$decodeValue, author$project$LocalState$localStateDecoder, json);
+	if (_n0.$ === 'Ok') {
+		var localState = _n0.a;
+		return localState;
+	} else {
+		return author$project$LocalState$LocalState(
+			{actualCount: 0, additiveCount: 0, currentText: ''});
+	}
+};
+var author$project$Route$routeToString = function (route) {
+	if (route.$ === 'Just') {
+		var route_ = route.a;
+		switch (route_.$) {
+			case 'SignIn':
+				return 'signin';
+			case 'SignUp':
+				return 'signup';
+			case 'SignOut':
+				return 'signout';
+			case 'Loading':
+				return 'loading';
+			default:
+				return 'failure';
+		}
+	} else {
+		return '/';
+	}
+};
+var author$project$Route$toAbsolute = function (route) {
+	return A2(
+		elm$url$Url$Builder$absolute,
+		_List_fromArray(
+			[
+				author$project$Route$routeToString(route)
+			]),
+		_List_Nil);
+};
+var author$project$Session$getLastUrl = function (_n0) {
+	var lastRequestedUrl = _n0.a.lastRequestedUrl;
+	return lastRequestedUrl;
+};
+var elm$core$Debug$log = _Debug_log;
+var author$project$Page$Loader$routeIfLoaded = function (model) {
+	var _n0 = _Utils_Tuple2(model.settings, model.localState);
+	if ((_n0.a.$ === 'Just') && (_n0.b.$ === 'Just')) {
+		var settings = _n0.a.a;
+		var localState = _n0.b.a;
+		var _n1 = A2(
+			elm$core$Debug$log,
+			'Settings loaded!',
+			author$project$Session$getLastUrl(model.session));
+		return function (cmd) {
+			return _Utils_Tuple2(model, cmd);
+		}(
+			A2(
+				elm$browser$Browser$Navigation$pushUrl,
+				author$project$Session$getKey(model.session),
+				author$project$Route$toAbsolute(
+					author$project$Session$getLastUrl(model.session))));
+	} else {
+		return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+	}
+};
+var author$project$Page$Loader$updateLocalState = F2(
+	function (model, msg) {
+		var _n0 = msg.content;
+		if (_n0.$ === 'Just') {
+			var json = _n0.a;
+			return author$project$Page$Loader$routeIfLoaded(
+				_Utils_update(
+					model,
+					{
+						localState: elm$core$Maybe$Just(
+							author$project$LocalState$decode(json))
+					}));
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
+	});
+var author$project$Settings$Additive = {$: 'Additive'};
+var author$project$Settings$Settings = function (a) {
+	return {$: 'Settings', a: a};
+};
 var author$project$Settings$Subtractive = {$: 'Subtractive'};
 var author$project$Settings$methodDecoder = A2(
 	elm$json$Json$Decode$andThen,
@@ -6634,12 +6700,15 @@ var author$project$Ports$stringToInOperation = function (operation) {
 };
 var author$project$Page$Loader$resolvePortMsg = F2(
 	function (model, msg) {
-		var _n0 = author$project$Ports$stringToInOperation(msg.operation);
-		switch (_n0.$) {
+		var _n0 = A2(elm$core$Debug$log, 'resolvePortMsg', msg.content);
+		var _n1 = author$project$Ports$stringToInOperation(msg.operation);
+		switch (_n1.$) {
 			case 'SettingsLoaded':
+				var _n2 = A2(elm$core$Debug$log, 'Settings on their way in.', msg.content);
 				return A2(author$project$Page$Loader$updateSettings, model, msg);
 			case 'LocalStorageLoaded':
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				var _n3 = A2(elm$core$Debug$log, 'Local settings on their way in.', msg.content);
+				return A2(author$project$Page$Loader$updateLocalState, model, msg);
 			default:
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
@@ -7054,18 +7123,19 @@ var elm$url$Url$toString = function (url) {
 };
 var author$project$Main$update = F2(
 	function (msg, model) {
-		var _n0 = _Utils_Tuple2(msg, model);
-		_n0$5:
+		var _n0 = A2(elm$core$Debug$log, 'main update', msg);
+		var _n1 = _Utils_Tuple2(msg, model);
+		_n1$5:
 		while (true) {
-			switch (_n0.a.$) {
+			switch (_n1.a.$) {
 				case 'UrlChanged':
-					var url = _n0.a.a;
+					var url = _n1.a.a;
 					return A2(
 						author$project$Main$changeRouteTo,
 						author$project$Route$fromUrl(url),
 						model);
 				case 'LinkClicked':
-					var request = _n0.a.a;
+					var request = _n1.a.a;
 					if (request.$ === 'Internal') {
 						var url = request.a;
 						return function (key) {
@@ -7085,9 +7155,9 @@ var author$project$Main$update = F2(
 							elm$browser$Browser$Navigation$load(href));
 					}
 				case 'GotSignInMsg':
-					if (_n0.b.$ === 'SignIn') {
-						var subMsg = _n0.a.a;
-						var subModel = _n0.b.a;
+					if (_n1.b.$ === 'SignIn') {
+						var subMsg = _n1.a.a;
+						var subModel = _n1.b.a;
 						return A4(
 							author$project$Main$updateWith,
 							author$project$Main$SignIn,
@@ -7095,12 +7165,12 @@ var author$project$Main$update = F2(
 							model,
 							A2(author$project$Page$SignIn$update, subMsg, subModel));
 					} else {
-						break _n0$5;
+						break _n1$5;
 					}
 				case 'GotSignUpMsg':
-					if (_n0.b.$ === 'SignUp') {
-						var subMsg = _n0.a.a;
-						var subModel = _n0.b.a;
+					if (_n1.b.$ === 'SignUp') {
+						var subMsg = _n1.a.a;
+						var subModel = _n1.b.a;
 						return A4(
 							author$project$Main$updateWith,
 							author$project$Main$SignUp,
@@ -7108,12 +7178,12 @@ var author$project$Main$update = F2(
 							model,
 							A2(author$project$Page$SignUp$update, subMsg, subModel));
 					} else {
-						break _n0$5;
+						break _n1$5;
 					}
 				case 'GotLoaderMsg':
-					if (_n0.b.$ === 'Loader') {
-						var subMsg = _n0.a.a;
-						var subModel = _n0.b.a;
+					if (_n1.b.$ === 'Loader') {
+						var subMsg = _n1.a.a;
+						var subModel = _n1.b.a;
 						return A4(
 							author$project$Main$updateWith,
 							author$project$Main$Loader,
@@ -7121,10 +7191,10 @@ var author$project$Main$update = F2(
 							model,
 							A2(author$project$Page$Loader$update, subMsg, subModel));
 					} else {
-						break _n0$5;
+						break _n1$5;
 					}
 				default:
-					break _n0$5;
+					break _n1$5;
 			}
 		}
 		return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
